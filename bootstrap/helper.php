@@ -578,12 +578,16 @@ function connectToEpp(
             'verify_peer' => filter_var(envi('VERIFY_PEER'), FILTER_VALIDATE_BOOLEAN),
             'verify_peer_name' => filter_var(envi('VERIFY_PEER_NAME'), FILTER_VALIDATE_BOOLEAN),
             'verify_host' => filter_var(envi('VERIFY_HOST'), FILTER_VALIDATE_BOOLEAN),
-            'cafile' => $cafile,
             'local_cert' => $local_cert,
             'local_pk' => $local_pk,
-            'passphrase' => $passphrase,
             'allow_self_signed' => filter_var(envi('SELF_SIGNED'), FILTER_VALIDATE_BOOLEAN),
         );
+        if (!empty($cafile)) {
+            $info['cafile'] = $cafile;
+        }
+        if (!empty($passphrase)) {
+            $info['passphrase'] = $passphrase;
+        }
 
         $epp->connect($info);
 
