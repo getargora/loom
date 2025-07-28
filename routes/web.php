@@ -114,6 +114,7 @@ $app->group('', function ($route) {
     $route->get('/webauthn/register/challenge', ProfileController::class . ':getRegistrationChallenge')->setName('webauthn.register.challenge');
     $route->post('/webauthn/register/verify', ProfileController::class . ':verifyRegistration')->setName('webauthn.register.verify');
     $route->post('/token-well', ProfileController::class .':tokenWell')->setName('tokenWell');
+    $route->post('/profile/update-contacts', ProfileController::class .':updateContacts')->setName('updateContacts');
 
     $route->get('/mode', HomeController::class .':mode')->setName('mode');
     $route->post('/theme', HomeController::class . ':selectTheme')->setName('select.theme');

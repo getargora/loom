@@ -21,10 +21,13 @@ use RobThree\Auth\TwoFactorAuth;
 use RobThree\Auth\Providers\Qr\BaconQrCodeProvider;
 use App\Auth\Auth;
 use League\ISO3166\ISO3166;
+use Respect\Validation\Validator as v;
 
 class ProfileController extends Controller
 {
-    public function __construct() {
+    public function __construct(ContainerInterface $container) {
+        parent::__construct($container);
+
         $rpName = 'Foundry';
         $rpId = envi('APP_DOMAIN');
         $this->webAuthn = new \lbuchs\WebAuthn\WebAuthn($rpName, $rpId, ['android-key', 'android-safetynet', 'apple', 'fido-u2f', 'packed', 'tpm']);
@@ -32,10 +35,8 @@ class ProfileController extends Controller
 
     public function profile(Request $request, Response $response)
     {
-        global $container;
-
         $session = $_SESSION;
-        $db = $container->get('db');
+        $db = $this->container->get('db');
 
         $userId = $session['auth_user_id'];
         $email = $session['auth_email'];
@@ -58,7 +59,7 @@ class ProfileController extends Controller
         $qrcodeDataUri = $tfa->getQRCodeImageAsDataUri($email, $secret);
             
         // CSRF Tokens
-        $csrf = $container->get('csrf');
+        $csrf = $this->container->get('csrf');
         $csrfName = $csrf->getTokenName();
         $csrfValue = $csrf->getTokenValue();
 
@@ -104,18 +105,16 @@ class ProfileController extends Controller
 
     public function activate2fa(Request $request, Response $response)
     {
-        global $container;
-        
         if ($request->getMethod() === 'POST') {
             // Retrieve POST data
             $data = $request->getParsedBody();
-            $db = $container->get('db');
+            $db = $this->container->get('db');
             $verificationCode = $data['verificationCode'] ?? null;
             $userId = $_SESSION['auth_user_id'];
             $secret = $_SESSION['2fa_secret'];
 
-            $csrfName = $container->get('csrf')->getTokenName();
-            $csrfValue = $container->get('csrf')->getTokenValue();
+            $csrfName = $this->container->get('csrf')->getTokenName();
+            $csrfValue = $this->container->get('csrf')->getTokenValue();
             $username = $_SESSION['auth_username'];
             $email = $_SESSION['auth_email'];
             $status = $_SESSION['auth_status'];
@@ -164,10 +163,10 @@ class ProfileController extends Controller
                 $db->commit();
             } catch (Exception $e) {
                 $db->rollBack();
-                $container->get('flash')->addMessage('error', 'Database failure: ' . $e->getMessage());
+                $this->container->get('flash')->addMessage('error', 'Database failure: ' . $e->getMessage());
                 return $response->withHeader('Location', '/profile')->withStatus(302);
             }
-            $container->get('flash')->addMessage('success', '2FA for your user has been activated successfully');
+            $this->container->get('flash')->addMessage('success', '2FA for your user has been activated successfully');
             return $response->withHeader('Location', '/profile')->withStatus(302);
         }
     }
@@ -192,7 +191,6 @@ class ProfileController extends Controller
     
     public function verifyRegistration(Request $request, Response $response)
     {
-        global $container;
         $data = json_decode($request->getBody()->getContents(), null, 512, JSON_THROW_ON_ERROR);
         $userName = $_SESSION['auth_username'];
         $userEmail = $_SESSION['auth_email'];
@@ -215,7 +213,7 @@ class ProfileController extends Controller
             $credential->userDisplayName = $userName;
 
             // Store the credential data in the database
-            $db = $container->get('db');
+            $db = $this->container->get('db');
             $counter = is_null($credential->signatureCounter) ? 0 : $credential->signatureCounter;
             $db->insert(
                 'users_webauthn',
@@ -259,8 +257,7 @@ class ProfileController extends Controller
 
     public function logoutEverywhereElse(Request $request, Response $response)
     {
-        global $container;
-        $db = $container->get('db');
+        $db = $this->container->get('db');
         
         $currentDateTime = new \DateTime();
         $currentDate = $currentDateTime->format('Y-m-d H:i:s.v'); // Current timestamp
@@ -289,8 +286,7 @@ class ProfileController extends Controller
 
     public function tokenWell(Request $request, Response $response)
     {
-        global $container;
-        $csrf = $container->get('csrf');
+        $csrf = $this->container->get('csrf');
 
         // Get CSRF token name and value
         $csrfTokenName = $csrf->getTokenName();
@@ -311,6 +307,166 @@ class ProfileController extends Controller
         // Write response body and return with JSON header
         $response->getBody()->write($csrfResponse);
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+    }
+
+    public function updateContacts(Request $request, Response $response)
+    {
+        if ($request->getMethod() === 'POST') {
+            // Retrieve POST data
+            $data = $request->getParsedBody();
+            $db = $this->container->get('db');
+            $userId = $_SESSION['auth_user_id'];
+            $username = $_SESSION['auth_username'];
+
+            $data['owner']['cc'] = strtoupper($data['owner']['cc']);
+            $data['billing']['cc'] = strtoupper($data['billing']['cc']);
+            $data['tech']['cc'] = strtoupper($data['tech']['cc']);
+            $data['abuse']['cc'] = strtoupper($data['abuse']['cc']);
+
+            $phoneValidator = v::regex('/^\+\d{1,3}\.\d{2,12}$/');
+
+            // Define validation for nested fields
+            $contactValidator = [
+                v::key('first_name', v::stringType()->notEmpty()->length(1, 255), true),
+                v::key('last_name', v::stringType()->notEmpty()->length(1, 255), true),
+                v::key('org', v::optional(v::stringType()->length(1, 255)), false),
+                v::key('street1', v::optional(v::stringType()), false),
+                v::key('city', v::stringType()->notEmpty(), true),
+                v::key('sp', v::optional(v::stringType()), false),
+                v::key('pc', v::optional(v::stringType()), false),
+                v::key('cc', v::countryCode(), true),
+                v::key('voice', v::optional($phoneValidator), false),
+                v::key('fax', v::optional(v::phone()), false),
+                v::key('email', v::email(), true)
+            ];
+            
+            $validators = [
+                'owner' => v::optional(v::keySet(...$contactValidator)),
+                'billing' => v::optional(v::keySet(...$contactValidator)),
+                'tech' => v::optional(v::keySet(...$contactValidator)),
+                'abuse' => v::optional(v::keySet(...$contactValidator))
+            ];
+
+            $errors = [];
+            foreach ($validators as $field => $validator) {
+                try {
+                    $validator->assert(isset($data[$field]) ? $data[$field] : []);
+                } catch (\Respect\Validation\Exceptions\NestedValidationException $e) {
+                    $errors[$field] = $e->getMessages();
+                }
+            }
+
+            if (!empty($errors)) {
+                // Handle errors
+                $errorText = '';
+
+                foreach ($errors as $field => $messages) {
+                    $errorText .= ucfirst($field) . ' errors: ' . implode(', ', $messages) . '; ';
+                }
+
+                // Trim the final semicolon and space
+                $errorText = rtrim($errorText, '; ');
+                
+                $this->container->get('flash')->addMessage('error', $errorText);
+                return $response->withHeader('Location', '/profile')->withStatus(302);
+            }
+
+            $db->beginTransaction();
+
+            try {
+                $currentDateTime = new \DateTime();
+                $update = $currentDateTime->format('Y-m-d H:i:s.v');
+
+                $db->update(
+                    'users_contact',
+                    [
+                        'first_name' => $data['owner']['first_name'],
+                        'last_name' => $data['owner']['last_name'],
+                        'org' => $data['owner']['org'],
+                        'street1' => $data['owner']['street1'],
+                        'city' => $data['owner']['city'],
+                        'sp' => $data['owner']['sp'],
+                        'pc' => $data['owner']['pc'],
+                        'cc' => strtolower($data['owner']['cc']),
+                        'voice' => $data['owner']['voice'],
+                        'email' => $data['owner']['email']
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'type' => 'owner'
+                    ]
+                );
+
+                $db->update(
+                    'users_contact',
+                    [
+                        'first_name' => $data['billing']['first_name'],
+                        'last_name' => $data['billing']['last_name'],
+                        'org' => $data['billing']['org'],
+                        'street1' => $data['billing']['street1'],
+                        'city' => $data['billing']['city'],
+                        'sp' => $data['billing']['sp'],
+                        'pc' => $data['billing']['pc'],
+                        'cc' => strtolower($data['billing']['cc']),
+                        'voice' => $data['billing']['voice'],
+                        'email' => $data['billing']['email']
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'type' => 'billing'
+                    ]
+                );
+                
+                $db->update(
+                    'users_contact',
+                    [
+                        'first_name' => $data['tech']['first_name'],
+                        'last_name' => $data['tech']['last_name'],
+                        'org' => $data['tech']['org'],
+                        'street1' => $data['tech']['street1'],
+                        'city' => $data['tech']['city'],
+                        'sp' => $data['tech']['sp'],
+                        'pc' => $data['tech']['pc'],
+                        'cc' => strtolower($data['tech']['cc']),
+                        'voice' => $data['tech']['voice'],
+                        'email' => $data['tech']['email']
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'type' => 'tech'
+                    ]
+                );
+                
+                $db->update(
+                    'users_contact',
+                    [
+                        'first_name' => $data['abuse']['first_name'],
+                        'last_name' => $data['abuse']['last_name'],
+                        'org' => $data['abuse']['org'],
+                        'street1' => $data['abuse']['street1'],
+                        'city' => $data['abuse']['city'],
+                        'sp' => $data['abuse']['sp'],
+                        'pc' => $data['abuse']['pc'],
+                        'cc' => strtolower($data['abuse']['cc']),
+                        'voice' => $data['abuse']['voice'],
+                        'email' => $data['abuse']['email']
+                    ],
+                    [
+                        'user_id' => $userId,
+                        'type' => 'abuse'
+                    ]
+                );
+
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                $this->container->get('flash')->addMessage('error', 'Database failure during update: ' . $e->getMessage());
+                return $response->withHeader('Location', '/profile')->withStatus(302);
+            }
+
+            $this->container->get('flash')->addMessage('success', 'User ' . $username . ' has been updated successfully on ' . $update);
+            return $response->withHeader('Location', '/profile')->withStatus(302);
+        }
     }
 
 }
