@@ -19,6 +19,8 @@ use libphonenumber\PhoneNumberUtil;
 use libphonenumber\PhoneNumberFormat;
 use libphonenumber\NumberParseException;
 use ZxcvbnPhp\Zxcvbn;
+use Pinga\Tembo\EppRegistryFactory;
+use Utopia\Domains\Domain as uDomain;
 
 /**
  * @return mixed|string|string[]
@@ -550,4 +552,169 @@ function isValidHostname($hostname) {
 function sign($ts, $method, $path, $body, $secret_key) {
     $stringToSign = $ts . strtoupper($method) . $path . $body;
     return hash_hmac('sha256', $stringToSign, $secret_key);
+}
+
+function connectToEpp(
+    string $registry,
+    string $host,
+    int $port,
+    string $cafile,
+    string $local_cert,
+    string $local_pk,
+    string $passphrase,
+    string $clID,
+    string $pw
+) {
+    try {
+        $epp = EppRegistryFactory::create($registry);
+
+        $info = array(
+            'host' => $host,
+            'port' => $port,
+            'timeout' => 30,
+            'tls' => envi('TLS'),
+            'bind' => filter_var(envi('BIND'), FILTER_VALIDATE_BOOLEAN),
+            'bindip' => envi('BIND_IP'),
+            'verify_peer' => filter_var(envi('VERIFY_PEER'), FILTER_VALIDATE_BOOLEAN),
+            'verify_peer_name' => filter_var(envi('VERIFY_PEER_NAME'), FILTER_VALIDATE_BOOLEAN),
+            'verify_host' => filter_var(envi('VERIFY_HOST'), FILTER_VALIDATE_BOOLEAN),
+            'cafile' => $cafile,
+            'local_cert' => $local_cert,
+            'local_pk' => $local_pk,
+            'passphrase' => $passphrase,
+            'allow_self_signed' => filter_var(envi('SELF_SIGNED'), FILTER_VALIDATE_BOOLEAN),
+        );
+
+        $epp->connect($info);
+
+        $login = $epp->login(array(
+            'clID' => $clID,
+            'pw' => $pw,
+            'prefix' => 'plexepp'
+        ));
+
+        if (isset($login['error'])) {
+            throw new \Exception('Login Error: ' . $login['error']);
+        }
+
+        return $epp;
+    } catch (\Pinga\Tembo\Exception\EppException $e) {
+        //throw new \Exception("Error: " . $e->getMessage());
+    } catch (Throwable $e) {
+        //throw new \Exception("Error: " . $e->getMessage());
+    }
+}
+
+function getDomainConfig($domains, \Pinga\Db\PdoDatabase $db): array
+{
+    if (!is_array($domains)) {
+        $domains = [$domains];
+    }
+
+    $results = [];
+
+    foreach ($domains as $domainName) {
+        $domainName = strtolower(trim($domainName));
+
+        // Convert IDN domains to ASCII (Punycode)
+        $asciiDomain = idn_to_ascii($domainName, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+        
+        // Skip invalid domains
+        if ($asciiDomain === false) {
+            continue;
+        }
+
+        $domain = new uDomain($asciiDomain);
+        $tld = strtolower($domain->getTLD());
+
+        // Get all active domain providers
+        $providers = $db->select('SELECT * FROM providers WHERE type = \'domain\' AND status = \'active\'');
+
+        $matchedProvider = null;
+        foreach ($providers as $provider) {
+            if (empty($provider['pricing'])) {
+                continue;
+            }
+
+            $pricing = json_decode($provider['pricing'], true);
+            if (!is_array($pricing)) {
+                continue;
+            }
+
+            foreach (array_keys($pricing) as $tldKey) {
+                $cleanTld = ltrim($tldKey, '.');
+                if ($cleanTld === $tld) {
+                    $matchedProvider = $provider;
+                    break 2;
+                }
+            }
+        }
+
+        if ($matchedProvider === null) {
+            continue;
+        }
+
+        // Parse endpoint into host/port
+        $api = explode(':', $matchedProvider['api_endpoint']);
+        $host = $api[0] ?? null;
+        $port = isset($api[1]) ? (int) $api[1] : 700;
+
+        // Parse credentials
+        $credentials = json_decode($matchedProvider['credentials'], true);
+        if (!$credentials || !isset($credentials['auth']['username'], $credentials['auth']['password'])) {
+            continue;
+        }
+
+        $results[] = [
+            'domain' => $domainName,
+            'tld' => $tld,
+            'host' => $host,
+            'port' => $port,
+            'ssl' => $credentials['ssl'] ?? true,
+            'cert_file' => $credentials['cert_file'] ?? null,
+            'key_file' => $credentials['key_file'] ?? null,
+            'cafile' => $credentials['cafile'] ?? null,
+            'passphrase' => $credentials['passphrase'] ?? null,
+            'username' => $credentials['auth']['username'],
+            'password' => $credentials['auth']['password'],
+            'client_id' => $credentials['client_id'] ?? null
+        ];
+    }
+
+    return $results;
+}
+
+function getRegistryExtensionByTld(string $tld): string
+{
+    static $tldMap = [
+        'fr' => 'FR',
+        'pm' => 'FR',
+        're' => 'FR',
+        'tf' => 'FR',
+        'wf' => 'FR',
+        'yt' => 'FR',
+        'hr' => 'HR',
+        'lt' => 'LT',
+        'eu' => 'EU',
+        'gr' => 'GR',
+        'ελ' => 'GR',
+        'cz' => 'FRED',
+        'ua' => 'UA',
+        'se' => 'SE',
+        'nu' => 'SE',
+        'hk' => 'HK',
+        'pl' => 'PL',
+        'mx' => 'MX',
+        'lv' => 'LV',
+        'no' => 'NO',
+        'pt' => 'PT',
+        'it' => 'IT',
+        'fi' => 'FI',
+        'com' => 'VRSN',
+        'net' => 'VRSN'
+    ];
+
+    $tld = strtolower(ltrim($tld, '.'));
+
+    return $tldMap[$tld] ?? 'generic';
 }

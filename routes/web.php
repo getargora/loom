@@ -31,6 +31,7 @@ use Tqdev\PhpCrudApi\Api;
 use Tqdev\PhpCrudApi\Config\Config;
 
 $app->get('/', HomeController::class .':index')->setName('index');
+$app->post('/spark/domain/check', [SparkController::class, 'domainCheck']);
 
 $app->group('', function ($route) {
     $route->get('/register', AuthController::class . ':createRegister')->setName('register');

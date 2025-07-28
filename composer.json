@@ -61,7 +61,9 @@
         "league/iso3166": "^4.3.3",
         "stripe/stripe-php": "^17.4.0",
         "adyen/php-api-library": "^28.1",
-        "argora/tabler-assets": "^1.4"
+        "argora/tabler-assets": "^1.4",
+        "pinga/tembo": "^1.1.0-beta1",
+        "utopia-php/domains": "^0.8.0"
     },
     "autoload": {
         "psr-4": {

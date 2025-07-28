@@ -147,20 +147,38 @@ async function checkDomain(event) {
         return;
     }
 
-    // Send POST request
     try {
-        const response = await fetch('/dapi/domain/check', {
+        const response = await fetch('/spark/domain/check', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ domain: [domain] }) // Sending domain array
+            body: JSON.stringify({ domains: [domain] })
         });
 
-        const data = await response.json();
+        const contentType = response.headers.get("content-type") || "";
+        let data = {};
+
+        if (contentType.includes("application/json")) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            // Try to extract error manually if malformed
+            const match = text.match(/"message"\s*:\s*"([^"]+)"/);
+            const msg = match ? match[1] : 'An unknown error occurred.';
+
+            resultContainer.innerHTML = `<div class="alert alert-danger">${msg}</div>`;
+            return;
+        }
+
+        if (!response.ok || !data.success) {
+            resultContainer.innerHTML = `<div class="alert alert-danger">${data.message || 'Domain check failed.'}</div>`;
+            return;
+        }
+
         resultContainer.innerHTML = formatResult(data);
     } catch (error) {
-        resultContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+        resultContainer.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
     }
 }
 

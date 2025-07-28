@@ -357,4 +357,87 @@ class SparkController extends Controller
         return $response;
     }
 
+    public function domainCheck(Request $request, Response $response): Response
+    {
+        if ($request->getMethod() !== 'POST') {
+            return $response
+                ->withHeader('Location', '/')
+                ->withStatus(302);
+        }
+
+        $params = json_decode($request->getBody()->getContents(), true);
+        $db = $this->container->get('db');
+        $domains = $params['domains'] ?? [];
+
+        $domainData = getDomainConfig($domains, $db);
+
+        if (empty($domainData) || !isset($domainData[0]['tld'])) {
+            $payload = [
+                'success' => false,
+                'message' => 'Error checking domain.'
+            ];
+
+            $response = $response->withHeader('Content-Type', 'application/json; charset=UTF-8');
+            $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
+            return $response;
+        }
+
+        $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
+
+        try {
+            $epp = connectToEpp(
+                $registryType,
+                $domainData[0]['host'],
+                $domainData[0]['port'],
+                $domainData[0]['cafile'] ?? '',
+                $domainData[0]['cert_file'],
+                $domainData[0]['key_file'],
+                $domainData[0]['passphrase'] ?? '',
+                $domainData[0]['username'],
+                $domainData[0]['password']
+            );
+
+            if (!$epp) {
+                throw new \Exception('Failed to connect to EPP server.');
+            }
+
+            $domainCheck = $epp->domainCheck(['domains' => $domains]);
+
+            if (isset($domainCheck['error'])) {
+                $payload = [
+                    'success' => false,
+                    'message' => $domainCheck['error']
+                ];
+            } else {
+                $results = [];
+                $x = 1;
+                foreach ($domainCheck['domains'] as $domain) {
+                    $results[] = [
+                        'index' => $x++,
+                        'name' => $domain['name'],
+                        'available' => $domain['avail'],
+                        'reason' => $domain['avail'] ? null : $domain['reason']
+                    ];
+                }
+
+                $payload = [
+                    'success' => true,
+                    'results' => count($results),
+                    'domains' => $results
+                ];
+            }
+
+            $epp->logout();
+        } catch (\Throwable $e) {
+            $payload = [
+                'success' => false,
+                'message' => 'EPP error: ' . $e->getMessage()
+            ];
+        }
+
+        $response = $response->withHeader('Content-Type', 'application/json; charset=UTF-8');
+        $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
+        return $response->withStatus(200);
+    }
+
 }
