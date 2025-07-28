@@ -1,0 +1,104 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('User Deposit') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('User Deposit') }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('User Deposit') }}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% include 'partials/flash.twig' %}
+              <div class="card">
+                <div class="card-body">
+                  <form id="depositForm" action="/deposit" method="post">
+                  {{ csrf.field | raw }}
+                    <div class="mb-3">
+                        <label for="userSelect" class="form-label required">{{ __('User') }}</label>
+                        <select class="form-select" id="userSelect" name="user" required>
+                                <option selected disabled value="">{{ __('Choose User...') }}</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="deposit-info">
+                        <h5>{{ __('Current Balance for') }} <span id="userName"></span></h5>
+                        <p class="fs-4"><span id="currentFunds">0.00</span></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label required">{{ __('Amount') }}</label>
+                        <input type="number" step="0.01" class="form-control" id="amount" name="amount" placeholder="{{ __('Enter deposit amount') }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">{{ __('Description') }}</label>
+                        <input type="text" class="form-control" id="description" name="description" placeholder="{{ __('Optional deposit description') }}">
+                    </div>
+                </div>
+                <div class="card-footer">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <button type="submit" class="btn btn-primary">{{ __('Add Deposit') }}</button>
+                    </div>
+                  </div>
+                </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<script>
+const userSelect = document.getElementById('userSelect');
+userSelect.addEventListener('change', function() {
+    const selectedUserId = userSelect.value;
+
+    // API call to get user details
+    fetch(`/api/records/users`)
+    .then(response => response.json())
+    .then(data => {
+        const userData = data.records.find(users => users.id == selectedUserId);
+        
+        if (userData) {
+            document.getElementById('userName').textContent = userData.username;
+            document.getElementById('currentFunds').textContent = `${userData.currency} ${parseFloat(userData.account_balance).toFixed(2)}`;
+        } else {
+            document.getElementById('userName').textContent = 'N/A';
+            document.getElementById('currentFunds').textContent = '0.00';
+        }
+
+        document.querySelector('.deposit-info').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('There was an error with the request:', error);
+    });
+});
+</script>
+{% endblock %}

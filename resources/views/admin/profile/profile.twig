@@ -1,0 +1,670 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('My Profile') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <!-- Page pre-title -->
+                <div class="page-pretitle">
+                  {{ __('Overview') }}
+                </div>
+                <h2 class="page-title">
+                  {{ __('My Profile') }}
+                </h2>
+              </div>
+              <div class="col-auto ms-auto d-print-none">
+                <span class="status status-success">
+                  {{ __('Balance') }}: {{ user_data.account_balance|number_format(2) }} {{ user_data.currency }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+          {% include 'partials/flash.twig' %}
+            <div class="row row-cards">
+              <div class="col-12">
+                <div class="card mb-3">
+                  <div class="card-header">
+                      <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+                        <li class="nav-item">
+                          <a href="#tabs-details" class="nav-link active" data-bs-toggle="tab">{{ __('Details') }}</a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#tabs-2fa" class="nav-link" data-bs-toggle="tab">2FA</a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#tabs-webauthn" class="nav-link" data-bs-toggle="tab">WebAuthn</a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#tabs-security" class="nav-link" data-bs-toggle="tab">{{ __('Security') }}</a>
+                        </li>
+                        <li class="nav-item">
+                          <a href="#tabs-log" class="nav-link" data-bs-toggle="tab">{{ __('Log') }}</a>
+                        </li>
+                      </ul>
+                  </div>
+                  <div class="card-body">
+                      <div class="tab-content">
+                        <div class="tab-pane active show" id="tabs-details">
+                          <h3 class="card-title">{{ __('Details') }}</h3>
+                          <div class="datagrid">
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('User Name') }}</div>
+                              <div class="datagrid-content">{{ username }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Email') }}</div>
+                              <div class="datagrid-content">{{ email }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Status') }}</div>
+                              <div class="datagrid-content">
+                                <span class="status status-azure">
+                                  {{ status }}
+                                </span>
+                              </div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Role') }}</div>
+                              <div class="datagrid-content">
+                                <span class="status status-{% if role == 'Administrator' %}purple{% elseif role == 'Client' %}indigo{% elseif role == 'Client Assistant' %}azure{% endif %}">
+                                  {{ role }}
+                                </span>
+                              </div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('ID Number') }}</div>
+                              <div class="datagrid-content">{{ user_data.nin ?: 'N/A' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('VAT Number') }}</div>
+                              <div class="datagrid-content">{{ user_data.vat_number ?: 'N/A' }}</div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Account Type') }}</div>
+                              <div class="datagrid-content">
+                                {% if user_data.nin_type == 'business' %}
+                                  <span class="status status-green">{{ __('Business Account') }}</span>
+                                {% else %}
+                                  <span class="status status-purple">{{ __('Personal Account') }}</span>
+                                {% endif %}
+                              </div>
+                            </div>
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Validation Status') }}</div>
+                              <div class="datagrid-content">
+                                {% if user_data.validation == 1 %}
+                                  <span class="status status-blue">{{ __('Validated') }}</span>
+                                {% else %}
+                                  <span class="status status-warning">{{ __('Not Validated') }}</span>
+                                {% endif %}
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row g-5">
+                            <div class="col-md-6">
+                              <form action="{{route('change.password')}}" name="register" method="post">
+                              {{ csrf.field | raw }}
+                              <h3 class="card-title mt-4">{{ __('Change Password') }}</h3>
+                              <div class="row g-3 mb-3">
+                                <div class="col-md">
+                                  <div class="form-label required">{{ __('Old Password') }}</div>
+                                  <input type="password" class="form-control{{ errors.old_password ? ' is-invalid' : '' }}" name="old_password" placeholder="{{ __('Enter old password') }}" required>
+                                  {% if errors.old_password %}
+                                      <small class="form-hint">{{ errors.old_password | first }}</small>
+                                  {% endif %}
+                                </div>
+                                <div class="col-md">
+                                  <div class="form-label required">{{ __('New Password') }}</div>
+                                  <input type="password" class="form-control{{ errors.new_password ? ' is-invalid' : '' }}" name="new_password" placeholder="{{ __('Enter new password') }}" required>
+                                  {% if errors.new_password %}
+                                      <small class="form-hint">{{ errors.new_password | first }}</small>
+                                  {% endif %}
+                                </div>
+                              </div>
+                                <button type="submit" class="btn btn-primary">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path></svg> {{ __('Update') }}
+                                </button>
+                              </form>
+                            </div>
+                            <div class="col-md-6">
+                              <form action="{{route('select.theme')}}" name="theme" method="post">
+                              {{ csrf.field | raw }}
+                              <h3 class="card-title mt-4">{{ __('Select Theme') }}</h3>                    
+                              <div class="row g-3 mb-3">
+                                <div class="row g-2">
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="blue" class="form-colorinput-input" {% if theme == 'blue' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-blue"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="azure" class="form-colorinput-input" {% if theme == 'azure' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-azure"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="indigo" class="form-colorinput-input" {% if theme == 'indigo' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-indigo"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="purple" class="form-colorinput-input" {% if theme == 'purple' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-purple"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="pink" class="form-colorinput-input" {% if theme == 'pink' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-pink"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="red" class="form-colorinput-input" {% if theme == 'red' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-red"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="orange" class="form-colorinput-input" {% if theme == 'orange' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-orange"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="yellow" class="form-colorinput-input" {% if theme == 'yellow' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-yellow"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="lime" class="form-colorinput-input" {% if theme == 'lime' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-lime"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="green" class="form-colorinput-input" {% if theme == 'green' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-green"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="teal" class="form-colorinput-input" {% if theme == 'teal' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-teal"></span>
+                                    </label>
+                                  </div>
+                                  <div class="col-auto">
+                                    <label class="form-colorinput">
+                                      <input name="theme-primary" type="radio" value="cyan" class="form-colorinput-input" {% if theme == 'cyan' %}checked{% endif %} />
+                                      <span class="form-colorinput-color bg-cyan"></span>
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                                <button type="submit" class="btn btn-outline-primary">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /><path d="M19 6h1a2 2 0 0 1 2 2a5 5 0 0 1 -5 5l-5 0v2" /><path d="M10 15m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" /></svg> {{ __('Select') }}
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                          <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h5 class="card-title">{{ __('User Contacts') }}</h5>
+                                <ul class="nav nav-tabs nav-fill" id="contactTabs" role="tablist">
+                                  <!-- Tab Headers -->
+                                  <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="owner-tab" data-bs-toggle="tab" data-bs-target="#owner" type="button" role="tab" aria-controls="owner" aria-selected="true">{{ __('Owner') }}</button>
+                                  </li>
+                                  <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab" aria-controls="billing" aria-selected="false">{{ __('Billing') }}</button>
+                                  </li>
+                                  <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tech-tab" data-bs-toggle="tab" data-bs-target="#tech" type="button" role="tab" aria-controls="tech" aria-selected="false">{{ __('Technical') }}</button>
+                                  </li>
+                                  <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="abuse-tab" data-bs-toggle="tab" data-bs-target="#abuse" type="button" role="tab" aria-controls="abuse" aria-selected="false">{{ __('Abuse') }}</button>
+                                  </li>
+                                </ul>
+
+                                <div class="tab-content" id="contactTabsContent">
+                                  <!-- Owner Tab -->
+                                  <div class="tab-pane fade show active" id="owner" role="tabpanel" aria-labelledby="owner-tab">
+                                    <div class="mt-3">
+                                      <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" value="" id="copyOwnerData">
+                                        <label class="form-check-label" for="copyOwnerData">
+                                          <strong>{{ __('Copy data to other contacts') }}</strong>
+                                        </label>
+                                      </div>
+                                      <div class="row">
+                                      {% for contact in contacts %}
+                                      {% if contact.type == 'owner' %}
+                                        <!-- First Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="ownerFirstName" class="form-label required">{{ __('First Name') }}</label>
+                                            <input type="text" class="form-control" id="ownerFirstName" name="owner[first_name]" value="{{ contact.first_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerLastName" class="form-label required">{{ __('Last Name') }}</label>
+                                            <input type="text" class="form-control" id="ownerLastName" name="owner[last_name]" value="{{ contact.last_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerOrg" class="form-label">{{ __('Organization') }}</label>
+                                            <input type="text" class="form-control" id="ownerOrg" name="owner[org]" value="{{ contact.org }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerStreet1" class="form-label">{{ __('Street Address') }}</label>
+                                            <input type="text" class="form-control" id="ownerStreet1" name="owner[street1]" value="{{ contact.street1 }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerCity" class="form-label required">{{ __('City') }}</label>
+                                            <input type="text" class="form-control" id="ownerCity" name="owner[city]" value="{{ contact.city }}" required>
+                                          </div>
+                                        </div>
+
+                                        <!-- Second Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="ownerSp" class="form-label">{{ __('State/Province') }}</label>
+                                            <input type="text" class="form-control" id="ownerSp" name="owner[sp]" value="{{ contact.sp }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerPc" class="form-label">{{ __('Postal Code') }}</label>
+                                            <input type="text" class="form-control" id="ownerPc" name="owner[pc]" value="{{ contact.pc }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerCc" class="form-label required">{{ __('Country') }}</label>
+                                            <select class="form-select" id="ownerCc" name="owner[cc]" required="required">
+                                              {% for country in countries %}
+                                                <option value="{{ country.alpha2 }}" {% if country.alpha2|lower == contact.cc %}selected{% endif %}>{{ country.name }}</option>
+                                              {% endfor %}
+                                            </select>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerVoice" class="form-label">{{ __('Phone') }}</label>
+                                            <input type="tel" class="form-control" id="ownerVoice" name="owner[voice]" value="{{ contact.voice }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="ownerEmail" class="form-label required">{{ __('Email') }}</label>
+                                            <input type="text" class="form-control" id="ownerEmail" name="owner[email]" required autocapitalize="none" value="{{ contact.email }}">
+                                          </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Billing Tab -->
+                                  <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+                                    <div class="mt-3">
+                                      <div class="row">
+                                      {% for contact in contacts %}
+                                      {% if contact.type == 'billing' %}
+                                        <!-- First Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="billingFirstName" class="form-label required">{{ __('First Name') }}</label>
+                                            <input type="text" class="form-control" id="billingFirstName" name="billing[first_name]" value="{{ contact.first_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingLastName" class="form-label required">{{ __('Last Name') }}</label>
+                                            <input type="text" class="form-control" id="billingLastName" name="billing[last_name]" value="{{ contact.last_name }}"required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingOrg" class="form-label">{{ __('Organization') }}</label>
+                                            <input type="text" class="form-control" id="billingOrg" name="billing[org]" value="{{ contact.org }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingStreet1" class="form-label">{{ __('Street Address') }}</label>
+                                            <input type="text" class="form-control" id="billingStreet1" name="billing[street1]" value="{{ contact.street1 }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingCity" class="form-label required">{{ __('City') }}</label>
+                                            <input type="text" class="form-control" id="billingCity" name="billing[city]" value="{{ contact.city }}" required>
+                                          </div>
+                                        </div>
+
+                                        <!-- Second Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="billingSp" class="form-label">{{ __('State/Province') }}</label>
+                                            <input type="text" class="form-control" id="billingSp" name="billing[sp]" value="{{ contact.sp }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingPc" class="form-label">{{ __('Postal Code') }}</label>
+                                            <input type="text" class="form-control" id="billingPc" name="billing[pc]" value="{{ contact.pc }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingCc" class="form-label required">{{ __('Country') }}</label>
+                                            <select class="form-select" id="billingCc" name="billing[cc]" required="required">
+                                              {% for country in countries %}
+                                                <option value="{{ country.alpha2 }}" {% if country.alpha2|lower == contact.cc %}selected{% endif %}>{{ country.name }}</option>
+                                              {% endfor %}
+                                            </select>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingVoice" class="form-label">{{ __('Phone') }}</label>
+                                            <input type="tel" class="form-control" id="billingVoice" name="billing[voice]" value="{{ contact.voice }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="billingEmail" class="form-label required">{{ __('Email') }}</label>
+                                            <input type="text" class="form-control" id="billingEmail" name="billing[email]" required autocapitalize="none" value="{{ contact.email }}">
+                                          </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <!-- Tech Tab -->
+                                  <div class="tab-pane fade" id="tech" role="tabpanel" aria-labelledby="tech-tab">
+                                    <div class="mt-3">
+                                      <div class="row">
+                                      {% for contact in contacts %}
+                                      {% if contact.type == 'tech' %}
+                                        <!-- First Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="techFirstName" class="form-label required">{{ __('First Name') }}</label>
+                                            <input type="text" class="form-control" id="techFirstName" name="tech[first_name]" value="{{ contact.first_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techLastName" class="form-label required">{{ __('Last Name') }}</label>
+                                            <input type="text" class="form-control" id="techLastName" name="tech[last_name]" value="{{ contact.last_name }}"required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techOrg" class="form-label">{{ __('Organization') }}</label>
+                                            <input type="text" class="form-control" id="techOrg" name="tech[org]" value="{{ contact.org }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techStreet1" class="form-label">{{ __('Street Address') }}</label>
+                                            <input type="text" class="form-control" id="techStreet1" name="tech[street1]" value="{{ contact.street1 }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techCity" class="form-label required">{{ __('City') }}</label>
+                                            <input type="text" class="form-control" id="techCity" name="tech[city]" value="{{ contact.city }}" required>
+                                          </div>
+                                        </div>
+
+                                        <!-- Second Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="techSp" class="form-label">{{ __('State/Province') }}</label>
+                                            <input type="text" class="form-control" id="techSp" name="tech[sp]" value="{{ contact.sp }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techPc" class="form-label">{{ __('Postal Code') }}</label>
+                                            <input type="text" class="form-control" id="techPc" name="tech[pc]" value="{{ contact.pc }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techCc" class="form-label required">{{ __('Country') }}</label>
+                                            <select class="form-select" id="techCc" name="tech[cc]" required="required">
+                                              {% for country in countries %}
+                                                <option value="{{ country.alpha2 }}" {% if country.alpha2|lower == contact.cc %}selected{% endif %}>{{ country.name }}</option>
+                                              {% endfor %}
+                                            </select>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techVoice" class="form-label">{{ __('Phone') }}</label>
+                                            <input type="tel" class="form-control" id="techVoice" name="tech[voice]" value="{{ contact.voice }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="techEmail" class="form-label required">{{ __('Email') }}</label>
+                                            <input type="text" class="form-control" id="techEmail" name="tech[email]" required autocapitalize="none" value="{{ contact.email }}">
+                                          </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Abuse Tab -->
+                                  <div class="tab-pane fade" id="abuse" role="tabpanel" aria-labelledby="abuse-tab">
+                                    <div class="mt-3">
+                                      <div class="row">
+                                      {% for contact in contacts %}
+                                      {% if contact.type == 'abuse' %}
+                                        <!-- First Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="abuseFirstName" class="form-label required">{{ __('First Name') }}</label>
+                                            <input type="text" class="form-control" id="abuseFirstName" name="abuse[first_name]" value="{{ contact.first_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseLastName" class="form-label required">{{ __('Last Name') }}</label>
+                                            <input type="text" class="form-control" id="abuseLastName" name="abuse[last_name]" value="{{ contact.last_name }}" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseOrg" class="form-label">{{ __('Organization') }}</label>
+                                            <input type="text" class="form-control" id="abuseOrg" name="abuse[org]" value="{{ contact.org }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseStreet1" class="form-label">{{ __('Street Address') }}</label>
+                                            <input type="text" class="form-control" id="abuseStreet1" name="abuse[street1]" value="{{ contact.street1 }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseCity" class="form-label required">{{ __('City') }}</label>
+                                            <input type="text" class="form-control" id="abuseCity" name="abuse[city]" required value="{{ contact.city }}">
+                                          </div>
+                                        </div>
+
+                                        <!-- Second Column -->
+                                        <div class="col-md-6">
+                                          <div class="mb-3">
+                                            <label for="abuseSp" class="form-label">{{ __('State/Province') }}</label>
+                                            <input type="text" class="form-control" id="abuseSp" name="abuse[sp]" value="{{ contact.sp }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abusePc" class="form-label">{{ __('Postal Code') }}</label>
+                                            <input type="text" class="form-control" id="abusePc" name="abuse[pc]" value="{{ contact.pc }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseCc" class="form-label required">{{ __('Country') }}</label>
+                                            <select class="form-select" id="abuseCc" name="abuse[cc]" required="required">
+                                              {% for country in countries %}
+                                                <option value="{{ country.alpha2 }}" {% if country.alpha2|lower == contact.cc %}selected{% endif %}>{{ country.name }}</option>
+                                              {% endfor %}
+                                            </select>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseVoice" class="form-label">{{ __('Phone') }}</label>
+                                            <input type="tel" class="form-control" id="abuseVoice" name="abuse[voice]" value="{{ contact.voice }}">
+                                          </div>
+                                          <div class="mb-3">
+                                            <label for="abuseEmail" class="form-label required">{{ __('Email') }}</label>
+                                            <input type="text" class="form-control" id="abuseEmail" name="abuse[email]" required autocapitalize="none" value="{{ contact.email }}">
+                                          </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="tab-pane" id="tabs-2fa">
+                          {% if secret is defined %}
+                            <h3 class="card-title">{{ __('Two-Factor Authentication') }} (2FA)</h3>
+                            <form action="{{route('activate2fa')}}" name="2fa" method="post">
+                            {{ csrf.field | raw }}
+                              <h4>1. {{ __('Download Google Authenticator app') }}</h4>
+                              <div class="d-flex flex-wrap justify-content-start gap-3 pb-3">
+                                <a target="_blank" href="https://apps.apple.com/us/app/google-authenticator/id388497605" 
+                                   class="btn btn-dark btn-pill px-4">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                     <path d="M9 7c-3 0 -4 3 -4 5.5c0 3 2 7.5 4 7.5c1.088 -.046 1.679 -.5 3 -.5c1.312 0 1.5 .5 3 .5s4 -3 4 -5c-.028 -.01 -2.472 -.403 -2.5 -3c-.019 -2.17 2.416 -2.954 2.5 -3c-1.023 -1.492 -2.951 -1.963 -3.5 -2c-1.433 -.111 -2.83 1 -3.5 1c-.68 0 -1.9 -1 -3 -1z"></path>
+                                     <path d="M12 4a2 2 0 0 0 2 -2a2 2 0 0 0 -2 2"></path>
+                                   </svg> App Store
+                                </a>
+                                <a target="_blank" href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" 
+                                   class="btn btn-success btn-pill px-4">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                     <path d="M4 3.71v16.58a0.7 .7 0 0 0 1.05 .606l14.622 -8.42a0.55 .55 0 0 0 0 -.953l-14.622 -8.419a0.7 .7 0 0 0 -1.05 .607z"></path>
+                                     <line x1="15" y1="9" x2="4.5" y2="20.5"></line>
+                                     <line x1="4.5" y1="3.5" x2="15" y2="15"></line>
+                                   </svg> Google Play
+                                </a>
+                                <a target="_blank" href="https://apps.kde.org/keysmith/" 
+                                   class="btn btn-info btn-pill px-4">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2">
+                                     <path style="fill:currentColor;fill-opacity:1;stroke:none" d="M 7 3 C 6.446 3 6 3.446 6 4 C 6 4.554 6.446 5 7 5 C 7.554 5 8 4.554 8 4 C 8 3.446 7.554 3 7 3 z M 14 3 L 12 5 L 15 8 L 12 11 L 14 13 L 17 10 L 19 8 L 14 3 z M 4.5 9 C 3.669 9 3 9.669 3 10.5 C 3 11.331 3.669 12 4.5 12 C 5.331 12 6 11.331 6 10.5 C 6 9.669 5.331 9 4.5 9 z M 9 15 C 7.892 15 7 15.892 7 17 C 7 18.108 7.892 19 9 19 C 10.108 19 11 18.108 11 17 C 11 15.892 10.108 15 9 15 z "/>
+                                   </svg> Plasma Mobile
+                                </a>
+                              </div>
+                              <h4>2. {{ __('Scan the QR code with your authentication app') }}</h4>
+                              <div class="mb-3">
+                                <img src="{{ qrcodeDataUri }}" alt="2FA QR Code" class="img-fluid">
+                              </div>
+                              <div class="mb-3">
+                                <p class="font-weight-bold mb-1">{{ __('Manual Entry Secret') }}</p>
+                                <p class="user-select-all tracking-wide mb-0"><kbd>{{ secret }}</kbd></p>
+                                <small class="form-text text-muted">
+                                  {{ __('If you\'re unable to scan the QR code, enter this secret manually into your authentication app. The secret is case-sensitive and should be entered exactly as shown.') }}
+                                </small>
+                              </div>
+                              <div class="mb-3">
+                                <label for="verificationCode" class="form-label required">3. {{ __('Verification Code') }}</label>
+                                <input type="number" class="form-control" id="verificationCode" name="verificationCode" placeholder="{{ __('Enter code') }}" required="required">
+                                <small class="form-text text-muted">
+                                  {{ __('Enter the code generated by your authentication app. This code verifies that your 2FA setup is working correctly. Once entered, click') }} {{ __('Save 2FA Settings') }} {{ __('to activate two-factor authentication for your account.') }}
+                                </small>
+                              </div>
+                              <button type="submit" class="btn btn-primary">{{ __('Save 2FA Settings') }}</button>
+                            </form>
+                          {% else %}
+                            <h3 class="card-title">{{ __('Two-Factor Authentication') }} (2FA)</h3>
+                            <div class="d-flex align-items-center">
+                              <span class="badge bg-green text-green-fg me-3"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /><path d="M12 11m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 12l0 2.5" /></svg></span>
+                              <div>
+                                <h5 class="card-title mb-1">{{ __('Your account is secured with an additional layer of protection.') }}</h5>
+                                <p class="text-muted mb-2">{{ __('2FA is currently') }} <strong>{{ __('enabled') }}</strong> {{ __('for your account. If you encounter any issues or need to disable 2FA, please contact our support team for assistance.') }}</p>
+                              </div>
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div class="tab-pane" id="tabs-webauthn">
+                          {% if weba is defined %}
+                            <h3 class="card-title">{{ __('WebAuthn Authentication') }}</h3>
+                            <div class="d-flex align-items-center">
+                              <span class="badge bg-green text-green-fg me-3"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3a12 12 0 0 0 8.5 3a12 12 0 0 1 -8.5 15a12 12 0 0 1 -8.5 -15a12 12 0 0 0 8.5 -3" /><path d="M12 11m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M12 12l0 2.5" /></svg></span>
+                              <div>
+                                <h5 class="card-title mb-1">{{ __('Your account is secured with an additional layer of protection.') }}</h5>
+                                <p class="text-muted mb-2">{{ __('WebAuthn is currently') }} <strong>{{ __('enabled') }}</strong> {{ __('for your account. If you encounter any issues or need to disable WebAuthn, please contact our support team for assistance.') }}</p>
+                              </div>
+                            </div>
+                            <button type="button" class="btn btn-primary mt-4" id="connectWebAuthnButton">{{ __('Connect WebAuthn Device') }}</button>
+                            <div class="table-responsive mt-4">
+                              <table class="table table-striped">
+                                <thead>
+                                  <tr>
+                                    <th>{{ __('Device/Browser Info') }}</th>
+                                    <th>{{ __('Registration Date') }}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                {% for device in weba %}
+                                  <tr>
+                                    <td>{{ device.user_agent }}</td>
+                                    <td>{{ device.created_at }}</td>
+                                  </tr>
+                                {% else %}
+                                  <tr>
+                                    <td colspan="3">{{ __('No devices found.') }}</td>
+                                  </tr>
+                                {% endfor %}
+                                </tbody>
+                              </table>
+                            </div>
+                          {% else %}
+                          {% if isWebaEnabled %}
+                            <h3 class="card-title">{{ __('WebAuthn Authentication') }}</h3>
+                            <p>{{ __('Secure your account with WebAuthn. Click the button below to register your device for passwordless sign-in.') }}</p>
+                            <button type="button" class="btn btn-primary" id="connectWebAuthnButton">{{ __('Connect WebAuthn Device') }}</button>
+                          {% else %}
+                            <h3 class="card-title">{{ __('WebAuthn Authentication') }}<span class="badge bg-red text-red-fg ms-2">{{ __('Disabled') }}</span></h3>
+                            <p>{{ __('WebAuthn is currently disabled for this installation. To enable WebAuthn authentication, please contact the system administrator.') }}</p>
+                          {% endif %}
+                          {% endif %}
+                        </div>
+                        <div class="tab-pane" id="tabs-security">
+                          <h3 class="card-title">{{ __('Security') }}</h3>
+                          <p>{{ __('If you\’ve logged in on multiple devices or browsers and want to ensure your account remains secure, you can log out from all other sessions except this one. This will end access from any other logged-in devices.') }}</p>
+                          <form action="{{route('profile.logout.everywhere')}}" name="logoutEverywhere" method="post">
+                          {{ csrf.field | raw }}
+                          <button type="submit" class="btn btn-danger">
+                            {{ __('Log Out from All Devices') }}
+                          </button>
+                          </form>
+                        </div>
+                        <div class="tab-pane" id="tabs-log">
+                          <h3 class="card-title">{{ __('User Audit Log') }}</h3>
+                          <p>{{ __('Track and review all user activities in your account below. Monitor logins, profile changes, and other key actions to ensure security and transparency.') }}</p>
+                          <div class="table-responsive mt-4">
+                            <div id="auditTable"></div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyCheckbox = document.getElementById('copyOwnerData');
+
+    // Function to copy data to another tab
+    function copyDataToTab(tabId) {
+        const ownerInputs = document.querySelectorAll('#owner input:not([type="checkbox"]), #owner select');
+        const targetFields = document.querySelectorAll(`${tabId} input:not([type='checkbox']), ${tabId} select`);
+
+        ownerInputs.forEach((input, index) => {
+            if (targetFields[index] && input.tagName === targetFields[index].tagName) {
+                targetFields[index].value = input.value;
+            }
+        });
+    }
+
+    copyCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            copyDataToTab('#billing');
+            copyDataToTab('#tech');
+            copyDataToTab('#abuse');
+        } else {
+            // Clear fields when unchecked, if desired
+            ['#billing', '#tech', '#abuse'].forEach(tabId => {
+                const fields = document.querySelectorAll(`${tabId} input:not([type='checkbox']), ${tabId} select`);
+                fields.forEach(field => {
+                    field.value = '';
+                });
+            });
+        }
+    });
+
+});
+</script>
+{% endblock %}

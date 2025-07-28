@@ -1,0 +1,199 @@
+<script src="/assets/modules/js/tabulator.min.js" defer></script>
+<script src="/assets/js/tabler.min.js" defer></script>
+<script src="/assets/modules/js/jspdf.umd.min.js" defer></script>
+<script src="/assets/modules/js/jspdf.plugin.autotable.min.js" defer></script>
+<script>
+    var table;
+   
+    document.addEventListener("DOMContentLoaded", function(){
+
+    function emailLinkFormatter(cell){
+        var value = cell.getValue();
+        return `<span style="font-weight:bold;">${value}</a>`;
+    }
+
+    function actionsFormatter(cell, formatterParams, onRendered) {
+        return `
+            <a class="btn btn-outline-primary btn-icon update-btn" href="/user/update/${cell.getRow().getData().username}" title="{{ __('Manage User') }}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg></a> <a class="btn btn-outline-purple btn-icon update-btn" href="/user/impersonate/${cell.getRow().getData().username}" title="{{ __('Impersonate') }}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2" /><path d="M3 12h13l-3 -3" /><path d="M13 15l3 -3" /></svg></a>
+        `;
+    }
+
+    function statusFormatter(cell) {
+        var statusArray = cell.getValue();
+        if (statusArray && Array.isArray(statusArray)) {
+            return statusArray.map(item => item.status).join(', ');
+        }
+        return "";
+    }
+
+    function roleLabelFormatter(cell) {
+        var value = cell.getValue();
+
+        // Define role mappings with labels and styles
+        var roles = [
+            { bit: 0, label: 'Administrator', class: 'status status-purple' },
+            { bit: 4, label: 'Client', class: 'status status-indigo' },
+            { bit: 8, label: 'Accountant', class: 'status status-green' },
+            { bit: 16, label: 'Support', class: 'status status-azure' },
+            { bit: 32, label: 'Auditor', class: 'status status-orange' },
+            { bit: 64, label: 'Sales', class: 'status status-teal' }
+        ];
+
+        // Special case for Administrator (no roles assigned)
+        if (value === 0) {
+            return '<span class="status status-purple">Administrator</span>';
+        }
+
+        // Check assigned roles using bitmask
+        var assignedRoles = roles
+            .filter(function (role) {
+                return role.bit !== 0 && (value & role.bit);
+            })
+            .map(function (role) {
+                return '<span class="' + role.class + '">' + role.label + '</span>';
+            });
+
+        // Join assigned roles with separators
+        return assignedRoles.length > 0 ? assignedRoles.join(', ') : '<span class="status status-secondary">Unknown Role</span>';
+    }
+    
+    function verifiedFormatter(cell) {
+        var value = cell.getValue();
+        if (value === false) {
+            return '<span class="status status-orange">Pending</span>';
+        } else if (value === true) {
+            return '<span class="status status-green">ok</span>';
+        } else {
+            return '<span class="status status-dark">?</span>';
+        }
+        return value;
+    }
+
+    function statusBadgeFormatter(cell) {
+        const value = cell.getValue();
+        let badgeClass = 'secondary';
+        let statusText = 'Unknown';
+
+        switch (value) {
+            case 0: // NORMAL
+                badgeClass = 'success';
+                statusText = 'Normal';
+                break;
+            case 1: // ARCHIVED
+                badgeClass = 'dark';
+                statusText = 'Archived';
+                break;
+            case 2: // BANNED
+                badgeClass = 'danger';
+                statusText = 'Banned';
+                break;
+            case 4: // PENDING_REVIEW
+                badgeClass = 'warning';
+                statusText = 'Pending Review';
+                break;
+            case 5: // SUSPENDED
+                badgeClass = 'info';
+                statusText = 'Suspended';
+                break;
+            default:
+                badgeClass = 'secondary';
+                statusText = 'Unknown';
+        }
+
+        return `<span class="status status-${badgeClass}">${statusText}</span>`;
+    }
+    
+    var searchTerm = ""; // global variable to hold the search term
+
+    function updateSearchTerm(term) {
+        searchTerm = term;
+        table.replaceData();
+    }
+
+    table = new Tabulator("#userTable", {
+        pagination: true,
+        paginationMode: "remote",
+        paginationSize: 10,
+        paginationSizeSelector:[10, 25, 50, 100],
+        clipboard:true,
+        clipboardPasteAction:"replace",
+        sortMode: "remote",
+        ajaxURL: "/api/records/users",
+        ajaxURLGenerator: function(url, config, params) {
+            var queryParts = [];
+
+            // Handle search term
+            if (searchTerm) {
+                queryParts.push("filter1=username,cs," + encodeURIComponent(searchTerm));
+                queryParts.push("filter2=email,cs," + encodeURIComponent(searchTerm));
+                queryParts.push("filter3=roles_mask,cs," + encodeURIComponent(searchTerm));
+            }
+
+            // Handle sorting from Tabulator
+            if (params.sort && params.sort.length > 0) {
+                var sorter = params.sort[0]; // single-column sorting
+                var sortField = encodeURIComponent(sorter.field);
+                var sortDir = (sorter.dir === "asc" ? "asc" : "desc");
+                queryParts.push("order=" + sortField + "," + sortDir);
+            } else {
+                // fallback default order if no sorters
+                queryParts.push("order=id,desc");
+            }
+
+            // Include pagination parameters
+            if (params.page) {
+                queryParts.push("page=" + params.page + "," + params.size);
+            }
+
+            return url + "?" + queryParts.join("&");
+        },
+        ajaxResponse: function(url, params, response) {
+            if (response && Array.isArray(response.records) && typeof response.results === 'number') {
+                var pageSize = params.size || this.options.paginationSize;
+                var lastPage = Math.ceil(response.results / pageSize);
+                return {
+                    last_page: lastPage,
+                    data: response.records,
+                };
+            } else {
+                console.error('Unexpected response format', response);
+                return { last_page: 1, data: [] };
+            }
+        },
+        layout:"fitColumns",
+        responsiveLayout: "collapse",
+        responsiveLayoutCollapseStartOpen:false,
+        resizableColumns:false,
+        placeholder: "{{ __('No Data') }}",
+        columns:[
+            {formatter:"responsiveCollapse", width:40, minWidth:40, hozAlign:"center", resizable:false, headerSort:false, responsive:0},
+            {title:"{{ __('Email') }}", field:"email", minWidth:200, resizable:false, headerSort:true, formatter: emailLinkFormatter, responsive:0},
+            {title:"{{ __('User Name') }}", field:"username", width:200, resizable:false, headerSort:true, responsive:2},
+            {title:"{{ __('Roles') }}", field:"roles_mask", width:300, resizable:false, headerSort:true, formatter: roleLabelFormatter, responsive:2},
+            {title:"{{ __('Verified') }}", field:"verified", width:150, resizable:false, headerSort:true, formatter: verifiedFormatter, responsive:2},
+            {title:"{{ __('Status') }}", field:"status", width:200, resizable:false, headerSort:true, formatter: statusBadgeFormatter, responsive:2},
+            {title: "{{ __('Actions') }}", formatter: actionsFormatter, responsive:0, headerSort: false, download:false, hozAlign: "center", cellClick:function(e, cell){ e.stopPropagation(); }},
+        ]
+    });
+    var searchInput = document.getElementById("search-input");
+    let searchTimeout;
+
+    searchInput.addEventListener("input", function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        updateSearchTerm(searchInput.value);
+      }, 300); // 300ms delay
+    });
+    });
+
+    function downloadCSV() {
+        table.download("csv", "users.csv");
+    }
+    
+    function downloadPDF() {
+        table.download("pdf", "users.pdf", {
+            orientation:"portrait",
+            title:"My Users"
+        });
+    }
+</script>

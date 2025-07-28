@@ -1,0 +1,101 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('Edit Provider') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('listProviders')}}">{{ __('Providers') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Edit Provider') }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Edit Provider') }}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% include 'partials/flash.twig' %}
+              <div class="card">
+                <div class="card-body">
+                  <form action="/providers/{{ provider.id }}/update" method="post">
+                  {{ csrf.field | raw }}
+                    <div class="form-group">
+                        <label class="form-label required">{{ __('Provider Name') }}:</label>
+                        <input type="text" name="name" class="form-control" value="{{ provider.name }}" required>
+                    </div>
+
+                    {% if provider.type %}
+                        <div class="mt-3">
+                            <label class="form-label">{{ __('Service Type') }}</label>
+                            <span class="status
+                                {% if provider.type == 'domain' %} status-green
+                                {% elseif provider.type == 'hosting' %} status-blue
+                                {% elseif provider.type == 'email' %} status-yellow
+                                {% elseif provider.type == 'api' %} status-purple
+                                {% elseif provider.type == 'custom' %} status-orange
+                                {% else %} status-secondary{% endif %}">
+                                {{ provider.type|title }}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ __('API Endpoint or Host:Port') }}</label>
+                        <input type="text" name="api_connection" class="form-control" value="{{ provider.api_endpoint }}">
+                    </div>
+                    
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ __('Credentials / Configuration (JSON)') }}</label>
+                        <textarea name="credentials" rows="6" class="form-control font-monospace">{{ provider.credentials }}</textarea>
+                        <small class="form-hint">{{ __('Include any connection details or configuration here as valid JSON.') }}</small>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label">{{ __('Pricing / Product Definitions (JSON)') }}</label>
+                        <textarea name="pricing" rows="6" class="form-control font-monospace">{{ provider.pricing }}</textarea>
+                        <small class="form-hint">{{ __('Define service types and their prices as valid JSON. For example: domain, hosting, etc.') }}</small>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label class="form-label required">{{ __('Status') }}</label>
+                        <select name="status" class="form-select" required>
+                            <option value="active" {{ provider.status == 'active' ? 'selected' : '' }}>{{ __('Active') }}</option>
+                            <option value="inactive" {{ provider.status == 'inactive' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
+                            <option value="testing" {{ provider.status == 'testing' ? 'selected' : '' }}>{{ __('Testing') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-footer">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <button type="submit" class="btn btn-primary">{{ __('Update Provider') }}</button>
+                    </div>
+                  </div>
+                </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+{% endblock %}

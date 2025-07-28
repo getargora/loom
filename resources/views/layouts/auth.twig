@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>{% block title %}{% endblock %} | Loom</title>
+    <!-- CSS files -->
+    {% include 'partials/css.twig' %}
+    <style>
+      @import url('/assets/fonts/inter/inter.css');
+      :root {
+          --tblr-font-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+      }
+      @supports (font-variation-settings: normal) {
+          :root {
+              --tblr-font-sans-serif: "InterVariable", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+              font-optical-sizing: auto;
+          }
+      }
+    </style>
+  </head>
+  <body class="border-top-wide border-primary d-flex flex-column">
+    {% block content %}{% endblock %}
+    <!-- Libs JS -->
+    {% include 'partials/js.twig' %}
+  </body>
+</html>

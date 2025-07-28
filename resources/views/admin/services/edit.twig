@@ -1,0 +1,213 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('Manage') }} {% if service.type == 'domain' %}{{ __('Domain') }} {{ config.domain }}{% endif %}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('listServices')}}">{{ __('Services') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Manage') }} {% if service.type == 'domain' %}{{ __('Domain') }} {{ config.domain }}{% endif %}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Manage') }} {% if service.type == 'domain' %}{{ __('Domain') }} {{ config.domain }}{% endif %}
+                </h2>
+              </div>
+              <!-- Page title actions -->
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  {% if service.type == 'domain' %}
+                  <a href="/contact/history/#" class="btn btn-outline-success d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                    {{ __('Renew Domain') }}
+                  </a>
+                  <a href="/contact/history/#" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Renew Domain') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                  </a>
+                  <a href="/contact/update/#" class="btn btn-primary d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                    {{ __('Update Domain') }}
+                  </a>
+                  <a href="/contact/update/#" class="btn btn-primary d-sm-none btn-icon" aria-label="{{ __('Update Domain') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                  </a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% if service.type == 'domain' %}
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h3 class="card-title">{{ __('Domain') }} {{ config.domain }}&nbsp;{{ config.status|map(status => '<span class="status status-green">' ~ status ~ '</span>')|join(' ')|raw }}</h3>
+                </div>
+                <div class="card-body">
+                  <div class="datagrid">
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Registered On') }}</div>
+                      <div class="datagrid-content">{{ service.registered_at }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Last Updated') }}</div>
+                      <div class="datagrid-content">{{ service.updated_at }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Expiration Date') }}</div>
+                      <div class="datagrid-content">{{ service.expires_at }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Provider') }}</div>
+                      <div class="datagrid-content">{{ provider }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Registrant') }}</div>
+                      <div class="datagrid-content"><strong>{{ config.contacts.registrant.registry_id }}</strong></div>
+                    </div>
+                    {% for role in ['admin', 'tech', 'billing'] %}
+                        {% set contact = attribute(config.contacts, role) %}
+                        {% if contact.registry_id is defined and contact.registry_id is not null %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ role|capitalize }} {{ __('Contact') }}</div>
+                      <div class="datagrid-content"><strong>{{ contact.registry_id }}</strong></div>
+                    </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Auth Info') }}</div>
+                      <div class="datagrid-content blur" id="authInfo" onclick="toggleBlur()">
+                        {{ config.authcode }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-12">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h5 class="card-title">{{ __('Nameservers') }}</h5>
+                      {% if config.nameservers is not empty %}
+                        <div class="datagrid">
+                          {% for ns in config.nameservers %}
+                            <div class="datagrid-item">
+                              <div class="datagrid-title">{{ __('Nameserver') }} {{ loop.index }}</div>
+                              <div class="datagrid-content"><strong>{{ ns }}</strong></div>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-12">
+                  <div class="card h-100">
+                    <div class="card-body">
+                      <h5 class="card-title">{{ __('DNSSEC Data') }}</h5>
+
+                      {% if config.dnssec.enabled %}
+                          {% set domainSecdns = config.dnssec.ds_records %}
+                          {% if domainSecdns|length > 0 %}
+                          <div id="dnssecTable" class="mb-3">
+                            <div class="table-responsive">
+                              <table class="table table-vcenter card-table table-striped">
+                                <thead>
+                                  <tr>
+                                    {% set dsDataExists = false %}
+                                    {% set keyDataExists = false %}
+
+                                    {% for row in domainSecdns %}
+                                        {% if row.interface == 'dsData' %}
+                                        {% set dsDataExists = true %}
+                                      {% elseif row.interface == 'keyData' %}
+                                        {% set keyDataExists = true %}
+                                      {% endif %}
+                                    {% endfor %}
+
+                                    {% if dsDataExists %}
+                                      <th>Keytag</th>
+                                      <th>Algorithm</th>
+                                      <th>Digest Type</th>
+                                      <th>Digest</th>
+                                    {% endif %}
+
+                                    {% if keyDataExists %}
+                                      <th>Flags</th>
+                                      <th>Protocol</th>
+                                      <th>Keydata Algorithm</th>
+                                      <th>Public Key</th>
+                                    {% endif %}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {% for row in domainSecdns %}
+                                    <tr>
+                                      {% if row.interface == 'dsData' %}
+                                        <td>{{ row.keytag }}</td>
+                                        <td>{{ row.alg }}</td>
+                                        <td>{{ row.digesttype }}</td>
+                                        <td>{{ row.digest }}</td>
+                                      {% elseif row.interface == 'keyData' %}
+                                        <td>{{ row.flags }}</td>
+                                        <td>{{ row.protocol }}</td>
+                                        <td>{{ row.keydata_alg }}</td>
+                                        <td>{{ row.pubkey }}</td>
+                                      {% endif %}
+                                    </tr>
+                                  {% endfor %}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                          {% else %}
+                            <p class="text-muted">DNSSEC is active but no records are present.</p>
+                          {% endif %}
+                      {% else %}
+                          <p class="text-muted">DNSSEC is not active for this domain.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<style>
+.blur {
+  filter: blur(5px);
+  cursor: pointer;
+}
+
+.blur:hover {
+  filter: blur(2px);
+}
+</style>
+<script>
+function toggleBlur() {
+  const authInfo = document.getElementById("authInfo");
+  authInfo.classList.toggle("blur");
+}
+</script>
+{% endblock %}

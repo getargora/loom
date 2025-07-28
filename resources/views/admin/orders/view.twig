@@ -1,0 +1,155 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('View Order') }} {{ order.id }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('listOrders')}}">{{ __('Orders') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('View Order') }} {{ order.id }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('View Order') }} {{ order.id }}
+                </h2>
+              </div>
+              <!-- Page title actions -->
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  {% if order.service_type == 'domain' %}
+                  {% if order.status == 'pending' %}
+                  <a href="/orders/{{ order.id }}/pay" class="btn btn-outline-success d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                    {{ __('Pay Now') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/pay" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Pay Now') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                  </a>
+                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                    {{ __('Cancel Order') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-sm-none btn-icon" aria-label="{{ __('Cancel Order') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                  </a>
+                  {% elseif order.status == 'inactive' %}
+                  <a href="/orders/{{ order.id }}/activate" class="btn btn-outline-info d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg>
+                    {{ __('Activate Service') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/activate" class="btn btn-outline-info d-sm-none btn-icon" aria-label="{{ __('Activate Service') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg>
+                  </a>
+                  {% elseif order.status == 'failed' %}
+                  <a href="/orders/{{ order.id }}/activate" class="btn btn-outline-info d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg>
+                    {{ __('Activate Service') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/activate" class="btn btn-outline-info d-sm-none btn-icon" aria-label="{{ __('Activate Service') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg>
+                  </a>
+                  <a href="/orders/{{ order.id }}/retry" class="btn btn-outline-purple d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                    {{ __('Retry Payment') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/retry" class="btn btn-outline-purple d-sm-none btn-icon" aria-label="{{ __('Retry Payment') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                  </a>
+                  <a href="/orders/{{ order.id }}/delete" class="btn btn-outline-danger d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7h16" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
+                    {{ __('Delete Order') }}
+                  </a>
+                  <a href="/orders/{{ order.id }}/delete" class="btn btn-outline-danger d-sm-none btn-icon" aria-label="{{ __('Delete Order') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7h16" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
+                  </a>
+                  {% endif %}
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% if order.service_type == 'domain' %}
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h3 class="card-title">{{ __('Order') }} {{ order.id }}&nbsp;{% set status = order.status %}
+                  {% set status_classes = {
+                      'pending': 'status-yellow',
+                      'active': 'status-green',
+                      'failed': 'status-red',
+                      'cancelled': 'status-gray'
+                  } %}
+                  <span class="status {{ status_classes[status]|default('status-default') }}">
+                    {{ status|capitalize }}
+                  </span>
+                  </h3>
+                </div>
+                <div class="card-body">
+                  <div class="datagrid">
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('User') }}</div>
+                      <div class="datagrid-content">{{ user_name }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Created At') }}</div>
+                      <div class="datagrid-content">{{ order.created_at }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Paid At') }}</div>
+                      <div class="datagrid-content">{{ order.paid_at|default('Unpaid') }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Invoice') }}</div>
+                      <div class="datagrid-content"><a href="/invoice/{{ order.invoice_id }}">{{ order.invoice_id }}</a></div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Amount') }}</div>
+                      <div class="datagrid-content">{{ order.currency }} {{ order.amount_due }}</div>
+                    </div>
+                    {% if service_data.type == 'domain_register' or service_data.type == 'domain_transfer' %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Domain Name') }}</div>
+                      <div class="datagrid-content"><strong>{{ service_data.domain }}</strong></div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Years') }}</div>
+                      <div class="datagrid-content">{{ service_data.years }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Nameservers') }}</div>
+                      <div class="datagrid-content">
+                        {{ service_data.nameservers|join(', ') }}
+                      </div>
+                    </div>
+                    {% endif %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Provider') }}</div>
+                      <div class="datagrid-content">{{ service_data.provider|capitalize }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+{% endblock %}

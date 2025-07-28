@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="{{ _lang ?: 'en' }}" dir="{{ _lang in ['ar', 'ar_SA'] ? 'rtl' : 'ltr' }}"{% if screen_mode == 'dark' %} data-bs-theme="dark"{% endif %}{% if theme is not defined or theme is empty %} data-bs-theme-primary="blue"{% else %} data-bs-theme-primary="{{ theme }}"{% endif %}>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>{% block title %}{% endblock %} | Loom</title>
+    <meta name="theme-color" content="#066fd1">
+    <!-- CSS files -->
+{% if route_is('transactions') or route_is('users') or is_current_url('listOrders') or route_is('services') or route_is('providers') or route_is('service-logs') or is_current_url('ticketview') or route_is('invoices') or route_is('profile') %}{% include 'partials/css-tables.twig' %}{% else %}{% include 'partials/css.twig' %}{% endif %}
+  </head>
+  <body>
+    <div class="page">
+      <!-- Navbar -->
+      <header class="navbar navbar-expand-md navbar-light d-print-none">
+        <div class="container-xl">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <h1 class="navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
+            <a href="{{route('home')}}">
+              <img src="{{ logoPath }}" alt="Loom" class="navbar-brand-image responsive-logo">
+            </a>
+          </h1>
+          <div class="navbar-nav flex-row order-md-last">
+            <div class="nav-item d-md-flex me-1 me-sm-2 me-md-3">
+              <div class="btn-list">
+                <div class="dropdown small-dropdown">
+                  <a href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown"><span class="flag flag-country-{{ uiLang }}"></span>&nbsp;{{ lang }}</a>
+                    <div class="dropdown-menu">
+                      <a href="/lang?en_US" class="dropdown-item"><span class="flag flag-country-us"></span>&nbsp;English</a>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex me-1 me-sm-2 me-md-3 gap-1 gap-sm-2">
+              <a href="/mode" class="nav-link px-0 hide-theme-dark" title="{{ __('Enable dark mode') }}" data-bs-toggle="tooltip"
+           data-bs-placement="bottom">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" /></svg>
+              </a>
+              <a href="/mode" class="nav-link px-0 hide-theme-light" title="{{ __('Enable light mode') }}" data-bs-toggle="tooltip"
+           data-bs-placement="bottom">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="4" /><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" /></svg>
+              </a>
+            </div>
+            <div class="nav-item dropdown">
+              <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+                <span class="avatar bg-{% if roles == 0 %}primary{% else %}green{% endif %}-lt">{{ auth.user.username|slice(0, 2)|upper }}</span>
+                <div class="d-none d-xl-block ps-2">
+                  <div>{{auth.user.username}}</div>
+                  <div class="mt-1 small text-muted">{{auth.user.email}}</div>
+                </div>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                <a href="{{route('profile')}}" class="dropdown-item">{{ __('My Profile') }}</a>
+                {% if isAdminImpersonation %}<a href="{{ route('leave_impersonation') }}" class="dropdown-item">{{ __('Leave Impersonation') }}</a>{% endif %}
+                <a href="{{route('logout')}}" class="dropdown-item">{{ __('Logout') }}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>  
+      <div class="navbar-expand-md">
+        <div class="collapse navbar-collapse" id="navbar-menu">
+          <div class="navbar navbar-light">
+            <div class="container-xl">
+              <ul class="navbar-nav">
+                <li {{ is_current_url('home') ? 'class="nav-item active"' : 'class="nav-item"' }}>
+                  <a class="nav-link" href="{{route('home')}}">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Dashboard') }}
+                    </span>
+                  </a>
+                </li>
+                <li {{ is_current_url('listOrders') or is_current_url('createOrder') or 'orders' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2m4 -14h6m-6 4h6m-2 4h2" /></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Orders') }}
+                    </span>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{route('listOrders')}}">
+                      {{ __('List Orders') }}
+                    </a>
+                    <a class="dropdown-item" href="{{route('createOrder')}}">
+                      {{ __('Create Order') }}
+                    </a>
+                  </div>
+                </li>
+                <li {{ is_current_url('listServices') or is_current_url('listProviders') or is_current_url('serviceLogs') or is_current_url('createProvider') or 'service' in currentUri or 'providers' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Services') }}
+                    </span>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{route('listServices')}}">
+                      {{ __('List Services') }}
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    {% if roles == 0 %}<a class="dropdown-item" href="{{route('listProviders')}}">
+                      {{ __('Providers') }}
+                    </a>{% endif %}
+                    <a class="dropdown-item" href="{{route('serviceLogs')}}">
+                      {{ __('Service Logs') }}
+                    </a>
+                  </div>
+                </li>
+                <li {{ is_current_url('deposit') or is_current_url('transactions') or is_current_url('invoices') or is_current_url('successStripe') or 'invoice' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z"></path><path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2"></path></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Billing') }}
+                    </span>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{route('transactions')}}">
+                      {{ __('Transactions') }}
+                    </a>
+                    <a class="dropdown-item" href="{{route('invoices')}}">
+                      {{ __('Invoices') }}
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{route('deposit')}}">
+                      {{ __('Add Deposit') }}
+                    </a>
+                  </div>
+                </li>
+                {% if roles == 0 %}<li {{ is_current_url('listUsers') or is_current_url('createUser') or 'user/update/' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 13a3 3 0 1 0 0 -6a3 3 0 0 0 0 6z"></path><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z"></path><path d="M6 20.05v-.05a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v.05"></path></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Users') }}
+                    </span>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{route('listUsers')}}">
+                      {{ __('List Users') }}
+                    </a>
+                    <a class="dropdown-item" href="{{route('createUser')}}">
+                      {{ __('Create User') }}
+                    </a>
+                  </div>
+                </li>{% endif %}
+                <li {{ is_current_url('ticketview') or is_current_url('newticket') or 'ticket' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                  <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M15 15l3.35 3.35"></path><path d="M9 15l-3.35 3.35"></path><path d="M5.65 5.65l3.35 3.35"></path><path d="M18.35 5.65l-3.35 3.35"></path></svg>
+                    </span>
+                    <span class="nav-link-title">
+                      {{ __('Support') }}
+                    </span>
+                  </a>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{route('ticketview')}}">
+                      {{ __('Support Tickets') }}
+                    </a>
+                    <a class="dropdown-item" href="{{route('newticket')}}">
+                      {{ __('Create Ticket') }}
+                    </a>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+     {% block content %}{% endblock %}
+    </div>
+    <!-- Libs JS -->
+{% if route_is('dashboard') %}
+    {% include 'partials/js-home.twig' %}
+{% elseif route_is('transactions') %}
+    {% include 'partials/js-transactions.twig' %}
+{% elseif route_is('users') %}
+    {% include 'partials/js-users.twig' %}
+{% elseif is_current_url('listOrders') %}
+    {% include 'partials/js-orders.twig' %}
+{% elseif route_is('services') %}
+    {% include 'partials/js-services.twig' %}
+{% elseif route_is('providers') %}
+    {% include 'partials/js-providers.twig' %}
+{% elseif route_is('service-logs') %}
+    {% include 'partials/js-logs.twig' %}
+{% elseif is_current_url('ticketview') %}
+    {% include 'partials/js-support.twig' %}
+{% elseif route_is('invoices') %}
+    {% include 'partials/js-invoices.twig' %}
+{% elseif route_is('profile') %}
+    {% include 'partials/js-profile.twig' %}
+{% elseif route_is('deposit') %}
+    {% include 'partials/js-deposit.twig' %}
+{% else %}
+    {% include 'partials/js.twig' %}
+{% endif %}
+  </body>
+</html>

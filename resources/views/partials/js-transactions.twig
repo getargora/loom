@@ -1,0 +1,113 @@
+<script src="/assets/modules/js/tabulator.min.js" defer></script>
+<script src="/assets/js/tabler.min.js" defer></script>
+<script src="/assets/modules/js/jspdf.umd.min.js" defer></script>
+<script src="/assets/modules/js/jspdf.plugin.autotable.min.js" defer></script>
+<script>
+    var table;
+    document.addEventListener("DOMContentLoaded", function(){
+    
+    var searchTerm = ""; // global variable to hold the search term
+
+    function updateSearchTerm(term) {
+        searchTerm = term;
+        table.replaceData();
+    }
+
+    table = new Tabulator("#transactionTable", {
+        pagination: true,
+        paginationMode: "remote",
+        paginationSize: 10,
+        paginationSizeSelector:[10, 25, 50, 100],
+        paginationCounter:"rows",
+        paginationCounterElement:"#page-count",
+        clipboard:true,
+        clipboardPasteAction:"replace",
+        printAsHtml:true,
+        sortMode: "remote",
+        ajaxURL: "/spark/transactions",
+        ajaxURLGenerator: function(url, config, params) {
+            var queryParts = [];
+
+            // Handle search term
+            if (searchTerm) {
+                queryParts.push("filter1=created_at,cs," + encodeURIComponent(searchTerm));
+                queryParts.push("filter2=category,cs," + encodeURIComponent(searchTerm));
+                queryParts.push("filter3=status,cs," + encodeURIComponent(searchTerm));
+                queryParts.push("filter4=amount,cs," + encodeURIComponent(searchTerm));
+            }
+
+            // Handle sorting from Tabulator
+            if (params.sort && params.sort.length > 0) {
+                var sorter = params.sort[0]; // single-column sorting
+                var sortField = encodeURIComponent(sorter.field);
+                var sortDir = (sorter.dir === "asc" ? "asc" : "desc");
+                queryParts.push("order=" + sortField + "," + sortDir);
+            } else {
+                // fallback default order if no sorters
+                queryParts.push("order=created_at,desc");
+            }
+
+            // Include pagination parameters
+            if (params.page) {
+                queryParts.push("page=" + params.page + "," + params.size);
+            }
+
+            return url + "?" + queryParts.join("&");
+        },
+        ajaxResponse: function(url, params, response) {
+            if (response && Array.isArray(response.records) && typeof response.results === 'number') {
+                var pageSize = params.size || this.options.paginationSize;
+                var lastPage = Math.ceil(response.results / pageSize);
+                return {
+                    last_page: lastPage,
+                    last_row: response.results,
+                    data: response.records,
+                };
+            } else {
+                console.error('Unexpected response format', response);
+                return { last_page: 1, last_row: 0, data: [] };
+            }
+        },
+        layout:"fitColumns",
+        responsiveLayout: "collapse",
+        responsiveLayoutCollapseStartOpen:false,
+        resizableColumns:false,
+        placeholder: "{{ __('No Data') }}",
+        columns:[
+            {formatter:"responsiveCollapse", width:40, minWidth:40, hozAlign:"center", resizable:false, headerSort:false, responsive:0},
+            {title:"{{ __('User') }}", field:"username", minWidth:150, resizable:false, headerSort:true, responsive:0},
+            {title:"{{ __('Date') }}", field:"created_at", minWidth:250, resizable:false, headerSort:true, responsive:2},
+            {title:"{{ __('Category') }}", field:"category", resizable:false, headerSort:true, responsive:2},
+            {title:"{{ __('Status') }}", field:"status", resizable:false, headerSort:true, download:false, responsive:2},
+            {title:"{{ __('Amount') }}", field:"amount", resizable:false, minWidth:150, headerSort:true, responsive:0, formatter:"money",  formatterParams:function(cell){
+                return {
+                    decimal: ".",
+                    thousand: " ",
+                    symbol: (cell.getRow().getData().currency || "$") + " ", // Ensures space after currency symbol
+                    negativeSign: true
+                };
+            }}
+        ]
+    });
+    var searchInput = document.getElementById("search-input");
+    let searchTimeout;
+
+    searchInput.addEventListener("input", function () {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        updateSearchTerm(searchInput.value);
+      }, 300); // 300ms delay
+    });
+    });
+   
+    function downloadCSV() {
+        table.download("csv", "transactions.csv");
+    }
+
+    function downloadPDF() {
+        table.download("pdf", "transactions.pdf", {
+            orientation:"portrait",
+            title:"My Transactions"
+        });
+    }
+</script>

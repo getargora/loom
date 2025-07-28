@@ -1,0 +1,350 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('Pay Invoice') }} {{ invoice_details.invoice_number }}{% endblock %}
+
+{% block content %}
+<link href="/assets/modules/css/sweetalert2.min.css" rel="stylesheet">
+<style>
+    .payment-provider-custom {
+        display: inline-block;
+        background-image: url('/assets/nicky.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    /* Fullscreen overlay */
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8); /* Whiteout effect */
+        z-index: 9999; /* Ensure it appears above all content */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Spinner container for alignment */
+    .spinner-container {
+        text-align: center;
+    }
+
+    /* Spinner size adjustment */
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+<div id="loading-overlay" style="display: none;">
+    <div class="spinner-container">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-secondary mt-3">Processing your payment, please wait...</p>
+    </div>
+</div>
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('invoices')}}">{{ __('Invoices') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Pay Invoice') }} {{ invoice_details.invoice_number }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Pay Invoice') }} {{ invoice_details.invoice_number }}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% include 'partials/flash.twig' %}
+              <div class="card">
+                <div class="card-body">
+                  <form id="depositForm" action="#" method="post">
+                  {{ csrf.field | raw }}
+                    <div class="datagrid">
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">{{ __('Invoice') }}</div>
+                        <div class="datagrid-content">{{ invoice_details.invoice_number }}</div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">{{ __('Amount') }}</div>
+                        <div class="datagrid-content">{{ total }}</div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">{{ __('Invoice Issued On') }}</div>
+                        <div class="datagrid-content">{{ invoice_details.issue_date|date("Y-m-d") }}</div>
+                      </div>
+                      <div class="datagrid-item">
+                        <div class="datagrid-title">{{ __('Due Date') }}</div>
+                        <div class="datagrid-content">{{ invoice_details.due_date|date("Y-m-d") }}</div>
+                      </div>
+                    </div>
+
+                    <div class="mt-3 mb-3">
+                        <label class="form-label">{{ __('Payment Method') }}</label>
+                        <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="sepa" class="form-selectgroup-input" required>
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-sepa-dark payment-xs me-2"></span>
+                                        SEPA
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="stripe" class="form-selectgroup-input" required>
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-stripe-dark payment-xs me-2"></span>
+                                        {{ __('Stripe') }}
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="adyen" class="form-selectgroup-input">
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-adyen-dark payment-xs me-2"></span>
+                                        {{ __('Adyen') }}
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="nicky" class="form-selectgroup-input">
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-custom payment-xs me-2"></span>
+                                        {{ __('Crypto') }}: Nicky
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="crypto" class="form-selectgroup-input">
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-bitcoin-dark payment-xs me-2"></span>
+                                        {{ __('Crypto') }}: NOW
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                  <div class="row align-items-center">
+                    <div class="d-grid gap-2 d-md-block">
+                      <button type="submit" class="btn btn-primary">{{ __('Pay Invoice') }}</button>
+                    </div>
+                  </div>
+                </div>
+                </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<script src="https://js.stripe.com/v3/"></script>
+<script type="text/javascript">
+document.getElementById('depositForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const paymentMethod = formData.get('paymentMethod');
+
+    // Route the request based on the payment method
+    if (paymentMethod === 'stripe') {
+        handleStripePayment(formData);
+    } else if (paymentMethod === 'adyen') {
+        handleAdyenPayment(formData);
+    } else if (paymentMethod === 'crypto') {
+        handleCryptoPayment(formData);
+    } else if (paymentMethod === 'nicky') {
+        handleNickyPayment(formData);
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: '{{ __("Error") }}',
+            text: '{{ __("No payment method selected.") }}'
+        });
+    }
+});
+
+// Function to handle Stripe payment
+function handleStripePayment(formData) {
+    const stripe = Stripe('{{ stripe_key }}'); // Initialize Stripe with the correct key
+
+    fetch('/create-payment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(session => {
+        if (session.error) {
+            console.error('Stripe Error:', session.error);
+            Swal.fire({
+                icon: 'error',
+                title: '{{ __("Payment Error") }}',
+                text: session.error
+            });
+        } else {
+            console.log('Stripe session created:', session);
+            stripe.redirectToCheckout({ sessionId: session.id });
+        }
+    })
+    .catch(error => {
+        console.error('Error in Stripe payment:', error);
+        Swal.fire({
+            icon: 'error',
+            title: '{{ __("Unexpected Error") }}',
+            text: '{{ __("An unexpected error occurred. Please try again later. Ensure the payment gateway is properly configured.") }}'
+        });
+    });
+}
+
+// Function to handle Adyen payment
+function handleAdyenPayment(formData) {
+    fetch('/create-adyen-payment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Adyen Error:', data.error);
+            Swal.fire({
+                icon: 'error',
+                title: '{{ __("Payment Error") }}',
+                text: data.error
+            });
+        } else {
+            console.log('Adyen payment success:', data);
+            window.location.href = data.url;
+        }
+    })
+    .catch(error => {
+        console.error('Error in Adyen payment:', error);
+        Swal.fire({
+            icon: 'error',
+            title: '{{ __("Unexpected Error") }}',
+            text: '{{ __("An unexpected error occurred. Please try again later. Ensure the payment gateway is properly configured.") }}'
+        });
+    });
+}
+
+// Function to handle Crypto payment
+function handleCryptoPayment(formData) {
+    fetch('/create-crypto-payment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Crypto Error:', data.error);
+            Swal.fire({
+                icon: 'error',
+                title: '{{ __("Payment Error") }}',
+                text: data.error
+            });
+        } else {
+            console.log('Crypto payment success:', data);
+            window.location.href = data.invoice_url;
+        }
+    })
+    .catch(error => {
+        console.error('Error in Crypto payment:', error);
+        Swal.fire({
+            icon: 'error',
+            title: '{{ __("Unexpected Error") }}',
+            text: '{{ __("An unexpected error occurred. Please try again later. Ensure the payment gateway is properly configured.") }}'
+        });
+    });
+}
+
+// Function to handle Nicky payment
+function handleNickyPayment(formData) {
+    // Show the loading overlay
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+
+    fetch('/create-nicky-payment', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide the loading overlay
+        overlay.style.display = 'none';
+
+        if (data.error) {
+            console.error('Nicky Error:', data.error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Error',
+                text: data.error
+            });
+        } else if (data.invoice_url) {
+            console.log('Nicky payment success:', data);
+            window.location.href = data.invoice_url;
+        } else {
+            console.error('Unexpected API response:', data);
+            Swal.fire({
+                icon: 'error',
+                title: 'Unexpected Response',
+                text: 'The payment gateway did not return a valid payment URL.'
+            });
+        }
+    })
+    .catch(error => {
+        // Hide the loading overlay
+        overlay.style.display = 'none';
+
+        console.error('Error in Nicky payment:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Unexpected Error',
+            text: 'An unexpected error occurred. Please try again later. Ensure the payment gateway is properly configured.'
+        });
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('Create Order') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('listOrders')}}">{{ __('Orders') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Create Order') }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Create Order') }}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            {% include 'partials/flash.twig' %}
+
+            {% if domainProducts|length > 0 %}
+            <div class="card mb-4">
+              <div class="card-body">
+                <h3 class="card-title">{{ __('Find Your Perfect Domain') }}</h3>
+                <p class="text-muted">{{ __('Start your online journey by searching for an available domain.') }}</p>
+                <form class="row g-2 align-items-stretch" onsubmit="checkDomain(event)">
+                  <div class="col-md-9">
+                    <input type="text" id="domainInput" class="form-control form-control-lg rounded" placeholder="example.com" required>
+                  </div>
+                  <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary btn-lg w-100 rounded" type="submit">{{ __('Check') }}</button>
+                  </div>
+                </form>
+                <div id="resultContainer" class="mt-4"></div>
+              </div>
+            </div>
+            <style>
+            input[name="domain"],
+            button[type="submit"] {
+              height: calc(2.875rem + 2px);
+              border-radius: 0.5rem;
+            }
+            </style>
+            {% endif %}
+
+            {% if otherProducts|length > 0 %}
+            <h3 class="mb-3">Other Services</h3>
+            <div class="row">
+              {% for item in otherProducts %}
+                {% set provider = item.provider %}
+                {% set product = item.product %}
+                <div class="col-md-4 mb-4">
+                  <div class="card h-100 cursor-pointer" onclick="showProductOptions('{{ provider.id }}', '{{ product.label }}')">
+                    <div class="card-body">
+                      <h4 class="card-title">{{ product.label }}</h4>
+                      <p class="text-muted small">{{ provider.name }} — {{ product.description }}</p>
+                      <span class="badge bg-blue text-blue-fg">from {{ currency }} {{ product.price }}/{{ product.billing }}</span>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div id="productOptions" class="card mt-4 d-none">
+              <div class="card-body">
+                <h4>{{ __('Configure Product') }}</h4>
+                <form method="post" action="{{ route('createOrder') }}">
+                  {{ csrf.field | raw }}
+                  <input type="hidden" name="product_choice" id="selectedProductChoice">
+                  <div class="row g-3" id="dynamicFields"></div>
+                  <div class="mt-3"><button class="btn btn-primary">{{ __('Submit Order') }}</button></div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<script>
+const productData = {{ otherProducts|json_encode|raw }};
+const currency = {{ currency|json_encode|raw }};
+
+function showProductOptions(providerId, productLabel) {
+  const target = productData.find(p => p.provider.id == providerId && p.product.label == productLabel);
+  if (!target) return;
+
+  const product = target.product;
+  const fieldsDiv = document.getElementById('dynamicFields');
+  const choiceInput = document.getElementById('selectedProductChoice');
+
+  fieldsDiv.innerHTML = '';
+  choiceInput.value = `${providerId}::${productLabel}`;
+  document.getElementById('productOptions').classList.remove('d-none');
+
+  fieldsDiv.innerHTML += `
+    <div class="col-md-6">
+      <label class="form-label">Service Name</label>
+      <input type="text" name="config[name]" class="form-control" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Billing Cycle</label>
+      <select name="config[cycle]" class="form-select" required>
+        <option value="monthly">Monthly</option>
+        <option value="yearly" selected>Yearly</option>
+      </select>
+    </div>
+  `;
+
+  if (product.fields) {
+    for (const [field, def] of Object.entries(product.fields)) {
+      fieldsDiv.innerHTML += `
+        <div class="col-md-6">
+          <label class="form-label">${def.label || field}</label>
+          <input type="${def.type || 'text'}" name="config[${field}]" class="form-control" placeholder="${def.hint || ''}" ${def.required ? 'required' : ''}>
+        </div>
+      `;
+    }
+  }
+}
+
+async function checkDomain(event) {
+    event.preventDefault();
+    const domainInput = document.getElementById("domainInput");
+    const resultContainer = document.getElementById("resultContainer");
+
+    const domain = domainInput.value.trim();
+    if (!domain) {
+        resultContainer.innerHTML = '<div class="alert alert-warning">Please enter a domain name.</div>';
+        return;
+    }
+
+    // Send POST request
+    try {
+        const response = await fetch('/dapi/domain/check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ domain: [domain] }) // Sending domain array
+        });
+
+        const data = await response.json();
+        resultContainer.innerHTML = formatResult(data);
+    } catch (error) {
+        resultContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+    }
+}
+
+function formatResult(data) {
+    if (!data.domains || data.domains.length === 0) {
+        return '<div class="alert alert-info">No results found.</div>';
+    }
+
+    return data.domains.map(domain => `
+                <div class="card border-${domain.available ? 'success' : 'danger'} mt-3">
+            <div class="card-body">
+                <h5 class="card-title">${domain.name}</h5>
+                <p class="card-text">
+                    <strong>Status:</strong> 
+                    <span class="badge bg-${domain.available ? 'success' : 'danger'} text-${domain.available ? 'success' : 'danger'}-fg">
+                        ${domain.available ? 'Available' : 'Not Available'}
+                    </span>
+                </p>
+                ${domain.reason ? `<p class="text-muted"><strong>Reason:</strong> ${domain.reason}</p>` : ''}
+                ${domain.available ? `
+                    <a href="/register?domain=${encodeURIComponent(domain.name)}" class="btn btn-success">
+                        Register
+                    </a>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+</script>
+{% endblock %}

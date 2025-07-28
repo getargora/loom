@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A skeleton for a PHP application built on Slim Framework 4.">
+    <meta name="author" content="Taras Kondratyuk">
+    <meta name="theme-color" content="#066fd1">
+    <title>Home | Foundry</title>
+    {% include 'partials/css.twig' %}
+    <style>
+      @import url('/assets/fonts/inter/inter.css');
+      :root {
+          --tblr-font-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+      }
+      @supports (font-variation-settings: normal) {
+          :root {
+              --tblr-font-sans-serif: "InterVariable", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+              font-optical-sizing: auto;
+          }
+      }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+    <header>
+        <nav class="navbar navbar-expand-lg h-100 navbar-light bg-white border-bottom shadow-sm">
+            <div class="container">
+                <a class="navbar-brand" href="."><img src="{{ logoPath }}" style="height: 35px; width: auto;" /></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar">
+                    <ul class="navbar-nav">
+                        {% if auth.isLogin %}
+                        <li class="nav-item">
+                            <a {{ is_current_url('home') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('home')}}">
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('logout') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('logout')}}">
+                                Logout
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a {{ is_current_url('login') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('login')}}">
+                                Login
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow-1 d-flex align-items-center justify-content-center">
+        <div class="container text-center">
+
+            <!-- Welcome Section -->
+            <div class="p-5 mb-4 bg-light rounded-3">
+              <div class="container-fluid py-5 text-center">
+                <h1 class="display-5 fw-bold">Welcome to Foundry</h1>
+                <p class="col-lg-8 mx-auto fs-5 text-muted">
+                  A powerful PHP boilerplate for building SaaS platforms, admin panels, and custom control systems — fast, flexible, and production-ready.
+                </p>
+                <div class="mt-4">
+                  {% if auth.isLogin %}
+                  <a href="{{ route('home') }}" class="btn btn-primary btn-lg me-2">Dashboard</a>
+                  <a href="{{ route('logout') }}" class="btn btn-outline-primary btn-lg">Logout</a>
+                  {% else %}
+                  <a href="{{ route('login') }}" class="btn btn-primary btn-lg me-2">Login</a>
+                  <a href="{{ route('register') }}" class="btn btn-outline-primary btn-lg">Get Started</a>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="row row-cols-1 row-cols-md-3 g-4 mt-4">
+              <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title">Modular Architecture</h5>
+                    <p class="card-text">Clean and extensible structure built with Slim 4 and Twig.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title">Built-in Auth System</h5>
+                    <p class="card-text">User registration, login, and role management ready to use.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="card h-100 text-center shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title">Production Ready</h5>
+                    <p class="card-text">Preconfigured for real apps with environment support and CSRF protection.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer CTA -->
+            <div class="text-center mt-5">
+              <p class="text-muted small">
+                To edit this page, open <code>resources/views/index.twig</code> and replace the content.
+              </p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer bg-white border-top shadow-sm py-3">
+        <div class="container">
+            <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
+        </div>
+    </footer>
+    {% include 'partials/js.twig' %}
+</body>
+</html>

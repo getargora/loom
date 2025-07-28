@@ -1,0 +1,151 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('View Invoice') }} {{ invoice_details.invoice_number }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+       <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('invoices')}}">{{ __('Invoices') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Invoice') }} {{ invoice_details.invoice_number }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Invoice') }} {{ invoice_details.invoice_number }}
+                </h2>
+              </div>
+              <!-- Page title actions -->
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  {% if invoice_details.payment_status in ['unpaid', 'overdue'] %}
+                  <a href="/invoice/{{ invoice_details.invoice_number }}/pay" class="btn btn-outline-green d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                    {{ __('Pay Invoice') }}
+                  </a>
+                  <a href="/invoice/{{ invoice_details.invoice_number }}/pay" class="btn btn-outline-green d-sm-none btn-icon" aria-label="{{ __('Pay Invoice') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
+                  </a>
+                  {% endif %}
+                  <button type="button" class="btn btn-primary" onclick="javascript:window.print();">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
+                    {{ __('Print Invoice') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="card card-lg">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-6">
+                    <p class="h3">{{ __('Provider') }}</p>
+                    <address>
+                      {{ company_name }}<br>
+                      {{ vat_number }}<br>
+                      {{ address }}<br>
+                      {{ address2 }}<br>
+                      {{ cc }}<br>
+                      {{ email }}
+                    </address>
+                  </div>
+                  <div class="col-6 text-end">
+                    <p class="h3">{{ __('Client') }}</p>
+                    <address>
+                      {{ billing.org }}<br>
+                      {{ billing_company }} / {{ billing_vat|default('N/A') }} {% if validVAT %}<svg xmlns="http://www.w3.org/2000/svg" class="icon text-success" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>{% endif %}<br>
+                      {{ billing.street1 }}<br>
+                      {{ billing.city }}, {{ billing.sp }}<br>
+                      {{ billing.pc }}, {{ billing_country }}<br>
+                      {{ billing.email }}
+                    </address>
+                  </div>
+                  <div class="col-6">
+                    <p class="h3">{{ __('Invoice Issued On') }}: {{ invoice_details.issue_date|date("Y-m-d") }}</p>
+                  </div>
+                  <div class="col-6 text-end">
+                    <p class="h3">{{ __('Due Date') }}: {{ invoice_details.due_date|date("Y-m-d") }}</p>
+                  </div>
+                  <div class="col-12 my-5">
+                    <h1>{{ __('Invoice') }} {{ invoice_details.invoice_number }} {% set status = invoice_details.payment_status %}
+                    <span class="badge 
+                        {% if status == 'unpaid' %}bg-orange text-orange-fg
+                        {% elseif status == 'paid' %}bg-green text-green-fg
+                        {% elseif status == 'overdue' %}bg-red text-red-fg
+                        {% elseif status == 'cancelled' %}bg-grey text-grey-fg
+                        {% else %}bg-dark
+                        {% endif %}">
+                        {{ status|capitalize }}
+                    </span>
+                    </h1>
+                  </div>
+                </div>
+                <table class="table table-transparent table-responsive">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width: 1%"></th>
+                      <th>{{ __('Product') }}</th>
+                      <th class="text-end" style="width: 1%">{{ __('Amount') }}</th>
+                    </tr>
+                  </thead>
+                  {% if statement is not empty %}
+                      {% set totalAmount = 0 %}
+                      {% for item in statement %}
+                          <tr>
+                              <td class="text-center">{{ loop.index }}</td>
+                              <td>
+                                    <p class="strong mb-1">{{ item.category|capitalize }} — {{ item.description }}</p>
+                                  <small class="text-muted">{{ item.created_at }}</small>
+                              </td>
+                              <td class="text-end">{{ item.amount }} {{ item.currency }}</td>
+                          </tr>
+                          {% set totalAmount = totalAmount + item.amount %}
+                      {% endfor %}
+                  {% else %}
+                      <tr>
+                          <td colspan="3" class="text-center">{{ __('No items found.') }}</td>
+                      </tr>
+                  {% endif %}
+                  <tr>
+                    <td colspan="2" class="strong text-end">{{ __('Subtotal') }}</td>
+                    <td class="text-end">{{ netPrice }}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="strong text-end">{{ __('Vat Rate') }}</td>
+                    <td class="text-end">{{ vatRate }}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="strong text-end">{{ __('Vat Due') }}</td>
+                    <td class="text-end">{{ vatAmount }}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="font-weight-bold text-uppercase text-end">{{ __('Total Due') }}</td>
+                    <td class="font-weight-bold text-end">{{ total }}</td>
+                  </tr>
+                </table>
+                {% if invoice_details.notes %}
+                    <p class="text-secondary text-center mt-5">{{ __('Notes') }}: {{ invoice_details.notes }}</p>
+                {% endif %}
+                <p class="text-secondary text-center mt-5">{{ __('Thank you very much for doing business with us. We look forward to working with you again!') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+{% endblock %}
