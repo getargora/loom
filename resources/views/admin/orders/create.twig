@@ -39,15 +39,47 @@
               <div class="card-body">
                 <h3 class="card-title">{{ __('Find Your Perfect Domain') }}</h3>
                 <p class="text-muted">{{ __('Start your online journey by searching for an available domain.') }}</p>
-                <form class="row g-2 align-items-stretch" onsubmit="checkDomain(event)">
-                  <div class="col-md-9">
-                    <input type="text" id="domainInput" class="form-control form-control-lg rounded" placeholder="example.com" required>
+                <div class="card">
+                  <div class="card-body">
+                    <form class="row g-2 align-items-stretch" onsubmit="checkDomain(event)">
+                      <div class="col-md-9">
+                        <input type="text" id="domainInput" class="form-control form-control-lg rounded" placeholder="example.com" autocapitalize="none" required>
+                      </div>
+                      <div class="col-md-3 d-grid">
+                        <button class="btn btn-primary btn-lg w-100 rounded" type="submit">{{ __('Check') }}</button>
+                      </div>
+                    </form>
+                    <div id="resultContainer" class="mt-4"></div>
                   </div>
-                  <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary btn-lg w-100 rounded" type="submit">{{ __('Check') }}</button>
+                </div>
+                {% if domainPricingTable|length > 0 %}
+                <div class="card mt-4">
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>{{ __('Domain') }}</th>
+                            <th>{{ __('Registration') }}</th>
+                            <th>{{ __('Renewal') }}</th>
+                            <th>{{ __('Transfer') }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for row in domainPricingTable %}
+                            <tr>
+                              <td><strong>{{ row.tld }}</strong></td>
+                              <td>{{ row.register ? (row.register ~ ' ' ~ currency) : '-' }}</td>
+                              <td>{{ row.renew ? (row.renew ~ ' ' ~ currency) : '-' }}</td>
+                              <td>{{ row.transfer ? (row.transfer ~ ' ' ~ currency) : '-' }}</td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </form>
-                <div id="resultContainer" class="mt-4"></div>
+                </div>
+                {% endif %}
               </div>
             </div>
             <style>
@@ -97,6 +129,7 @@
 <script>
 const productData = {{ otherProducts|json_encode|raw }};
 const currency = {{ currency|json_encode|raw }};
+const domainPrices = {{ domainPrices|json_encode|raw }};
 
 function showProductOptions(providerId, productLabel) {
   const target = productData.find(p => p.provider.id == providerId && p.product.label == productLabel);
@@ -105,10 +138,22 @@ function showProductOptions(providerId, productLabel) {
   const product = target.product;
   const fieldsDiv = document.getElementById('dynamicFields');
   const choiceInput = document.getElementById('selectedProductChoice');
+  const optionsCard = document.getElementById('productOptions');
+
+  // Toggle behavior
+  const isAlreadyShown = !optionsCard.classList.contains('d-none') &&
+                         choiceInput.value === `${providerId}::${productLabel}`;
+
+  if (isAlreadyShown) {
+    optionsCard.classList.add('d-none');
+    choiceInput.value = '';
+    fieldsDiv.innerHTML = '';
+    return;
+  }
 
   fieldsDiv.innerHTML = '';
   choiceInput.value = `${providerId}::${productLabel}`;
-  document.getElementById('productOptions').classList.remove('d-none');
+  optionsCard.classList.remove('d-none');
 
   fieldsDiv.innerHTML += `
     <div class="col-md-6">
@@ -187,25 +232,38 @@ function formatResult(data) {
         return '<div class="alert alert-info">No results found.</div>';
     }
 
-    return data.domains.map(domain => `
-                <div class="card border-${domain.available ? 'success' : 'danger'} mt-3">
-            <div class="card-body">
-                <h5 class="card-title">${domain.name}</h5>
-                <p class="card-text">
-                    <strong>Status:</strong> 
-                    <span class="badge bg-${domain.available ? 'success' : 'danger'} text-${domain.available ? 'success' : 'danger'}-fg">
-                        ${domain.available ? 'Available' : 'Not Available'}
-                    </span>
-                </p>
-                ${domain.reason ? `<p class="text-muted"><strong>Reason:</strong> ${domain.reason}</p>` : ''}
-                ${domain.available ? `
-                    <a href="/register?domain=${encodeURIComponent(domain.name)}" class="btn btn-success">
-                        Register
-                    </a>
-                ` : ''}
+    return data.domains.map(domain => {
+        const tld = domain.name.split('.').pop().toLowerCase();
+        let domainPrice = domainPrices?.[tld] ? `${currency} ${domainPrices[tld]}` : null;
+
+        return `
+            <div class="card border-${domain.available ? 'success' : 'danger'} mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center flex-wrap gap-3">
+                            <strong class="me-2">${domain.name}</strong>
+                            <span class="status ${domain.available ? 'status-green' : 'status-red'}">
+                                ${domain.available ? 'Available' : 'Not Available'}
+                            </span>
+                            ${domainPrice && domain.available ? `<span class="text-muted">${domainPrice}</span>` : ''}
+                            ${domain.reason ? `<span class="text-muted small ms-2">${domain.reason}</span>` : ''}
+                        </div>
+                        <div>
+                            ${domain.available ? `
+                                <a href="/orders/domain/register?domain=${encodeURIComponent(domain.name)}" class="btn btn-success">
+                                    Register
+                                </a>
+                            ` : `
+                                <a href="/orders/domain/transfer?domain=${encodeURIComponent(domain.name)}" class="btn btn-outline-green">
+                                    Transfer
+                                </a>
+                            `}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 </script>
 {% endblock %}

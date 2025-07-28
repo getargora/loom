@@ -78,18 +78,24 @@ class OrdersController extends Controller
 
         $domainProducts = [];
         $otherProducts = [];
+        $domainPricingTable = [];
+        $domainPrices = [];
 
         foreach ($providers as &$provider) {
+            $provider['credentials'] = json_decode($provider['credentials'], true) ?? [];
             $rawProducts = json_decode($provider['pricing'], true) ?? [];
-            $credentials = json_decode($provider['credentials'], true) ?? [];
+            $credentials = $provider['credentials'];
+
             $enrichedProducts = [];
 
             foreach ($rawProducts as $label => $actions) {
+                $price = $actions['register']['1'] ?? $actions['price'] ?? 0;
+
                 $product = [
-                    'type' => $provider['type'], // domain, server, etc.
+                    'type' => $provider['type'],
                     'label' => $label,
                     'description' => ucfirst($provider['type']) . ' service: ' . $label,
-                    'price' => $actions['register']['1'] ?? $actions['price'] ?? 0,
+                    'price' => $price,
                     'billing' => $actions['billing'] ?? 'year',
                     'fields' => $credentials['required_fields'] ?? [],
                     'actions' => $actions,
@@ -99,18 +105,32 @@ class OrdersController extends Controller
 
                 if ($product['type'] === 'domain') {
                     $domainProducts[] = ['provider' => $provider, 'product' => $product];
+
+                    $register = $actions['register'][1] ?? null;
+                    $renew = $actions['renew'][1] ?? null;
+                    $transfer = $actions['transfer'][1] ?? null;
+
+                    $domainPricingTable[] = [
+                        'tld' => $label,
+                        'register' => $register,
+                        'renew' => $renew,
+                        'transfer' => $transfer,
+                    ];
+
+                    $domainPrices[ltrim($label, '.')] = $price;
                 } else {
                     $otherProducts[] = ['provider' => $provider, 'product' => $product];
                 }
             }
 
             $provider['products'] = $enrichedProducts;
-            $provider['credentials'] = json_decode($provider['credentials'], true) ?? [];
         }
 
         return $this->container->get('view')->render($response, 'admin/orders/create.twig', [
             'domainProducts' => $domainProducts,
             'otherProducts' => $otherProducts,
+            'domainPrices' => $domainPrices,
+            'domainPricingTable' => $domainPricingTable,
             'currency' => $_SESSION['_currency'] ?? 'EUR'
         ]);
     }
