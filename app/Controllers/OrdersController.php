@@ -155,6 +155,17 @@ class OrdersController extends Controller
         return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
     }
 
+    public function registerOrder(Request $request, Response $response, string $args): Response
+    {
+        var_dump ($args);die();
+        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+    }
+
+    public function transferOrder(Request $request, Response $response, string $args): Response
+    {
+        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+    }
+
     public function deleteOrder(Request $request, Response $response, string $args): Response
     {
         return view($response, 'admin/orders/delete.twig', ['id' => $args['id'] ?? null]);

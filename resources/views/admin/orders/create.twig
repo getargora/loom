@@ -250,11 +250,11 @@ function formatResult(data) {
                         </div>
                         <div>
                             ${domain.available ? `
-                                <a href="/orders/domain/register?domain=${encodeURIComponent(domain.name)}" class="btn btn-success">
+                                <a href="/orders/register/${encodeURIComponent(domain.name)}" class="btn btn-success">
                                     Register
                                 </a>
                             ` : `
-                                <a href="/orders/domain/transfer?domain=${encodeURIComponent(domain.name)}" class="btn btn-outline-green">
+                                <a href="/orders/transfer/${encodeURIComponent(domain.name)}" class="btn btn-outline-green">
                                     Transfer
                                 </a>
                             `}

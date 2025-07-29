@@ -72,6 +72,8 @@ $app->group('', function ($route) {
     $route->map(['GET', 'POST'], '/orders/{order}/activate', OrdersController::class .':activateOrder')->setName('activateOrder');
     $route->map(['GET', 'POST'], '/orders/{order}/cancel', OrdersController::class .':cancelOrder')->setName('cancelOrder');
     $route->map(['GET', 'POST'], '/orders/{order}/retry', OrdersController::class .':retryOrder')->setName('retryOrder');
+    $route->map(['GET', 'POST'], '/orders/register/{domain}', OrdersController::class .':registerOrder')->setName('registerOrder');
+    $route->map(['GET', 'POST'], '/orders/transfer/{domain}', OrdersController::class .':transferOrder')->setName('transferOrder');
     $route->get('/orders/{order}/delete', OrdersController::class .':deleteOrder')->setName('deleteOrder');
 
     $route->get('/services', ServicesController::class .':listServices')->setName('listServices');
