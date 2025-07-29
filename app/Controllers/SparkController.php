@@ -34,6 +34,7 @@ class SparkController extends Controller
             'currency' => 'o.currency',
             'created_at' => 'o.created_at',
             'paid_at' => 'o.paid_at',
+            'invoice_id' => 'o.invoice_id',
             'username' => 'u.username'
         ];
 
@@ -160,6 +161,7 @@ class SparkController extends Controller
             o.currency,
             o.created_at,
             o.paid_at,
+            o.invoice_id,
             u.username
         ";
 

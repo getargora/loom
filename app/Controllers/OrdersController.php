@@ -136,11 +136,6 @@ class OrdersController extends Controller
         ]);
     }
 
-    public function payOrder(Request $request, Response $response, string $args): Response
-    {
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
-    }
-    
     public function activateOrder(Request $request, Response $response, string $args): Response
     {
         return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
