@@ -1,0 +1,347 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('Create Domain') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item">
+                      <a href="{{route('listOrders')}}">{{ __('Orders') }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('Create Domain') }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('Create Domain') }}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="col-12">
+            {% include 'partials/flash.twig' %}
+                <div class="card">
+                    <div class="card-body">
+                        <form id="domainCreateForm" action="/orders/register/{{ domain }}" method="post" enctype="multipart/form-data">
+                        {{ csrf.field | raw }}
+                        
+                        <div class="row">
+                          <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <div class="alert alert-primary shadow-sm border rounded py-3 px-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style="color: var(--tblr-primary);" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M3.6 9h16.8" /><path d="M3.6 15h16.8" /><path d="M11.5 3a17 17 0 0 0 0 18" /><path d="M12.5 3a17 17 0 0 1 0 18" /></svg>
+                                        </div>
+                                        <div>
+                                            <div class="text-uppercase text-muted small mb-1">{{ __('This domain will be yours in seconds') }}</div>
+                                            <div class="h4 fw-bold text-primary mb-0">{{ domain }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="reg-years" class="form-label">{{ __('Choose registration period') }}</label>
+                                <select name="reg-years" id="reg-years" class="form-select">
+                                  {% for years, price in pricing.nam.register %}
+                                    <option value="{{ years }}">
+                                      {{ years }} year{% if years != '1' %}s{% endif %} – {{ price }} {{ currency }}
+                                    </option>
+                                  {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label required mb-0">{{ __('Domain Contacts') }}</label>
+                                    <a href="{{ route('profile') }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path stroke="none" d="M0 0h24v24H0z"/><path d="M10 6h10m-10 6h10m-10 6h10M3 6v.01M3 12v.01M3 18v.01"/>
+                                        </svg>
+                                        {{ __('Edit Contacts') }}
+                                    </a>
+                                </div>
+
+                                <!-- Master toggle -->
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="useDefaultOwnerContact" name="useDefaultOwnerContact" checked>
+                                    <label class="form-check-label" for="useDefaultOwnerContact">{{ __('Use default owner contact for all roles') }}</label>
+                                </div>
+
+                                <!-- Hidden by default -->
+                                <div id="customContactsBlock" class="row g-3 d-none">
+                                    {% for role in ['Owner', 'Admin', 'Tech', 'Billing'] %}
+                                        {% set inputId = 'contact' ~ role %}
+                                        <div class="col-md-6">
+                                            <label for="{{ inputId }}" class="form-label">{{ __(role ~ ' Contact') }}</label>
+                                            <div class="input-group input-group-flat mb-1">
+                                                <input type="text" class="form-control contact-field" placeholder="{{ __(role ~ ' Contact ID') }}"
+                                                       name="{{ inputId }}" id="{{ inputId }}" readonly>
+                                            </div>
+                                            <div class="form-check form-switch small">
+                                                <input class="form-check-input toggle-role" type="checkbox" id="toggle{{ role }}" data-input="{{ inputId }}" checked>
+                                                <label class="form-check-label" for="toggle{{ role }}">{{ __('Use default ' ~ role|lower ~ ' contact') }}</label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            {% if required_fields %}
+                            <div class="mb-3">
+                              <h4 class="mb-3">{{ __('Additional Information Required') }}</h4>
+
+                              {% for field, config in required_fields %}
+                                <div class="mb-3">
+                                  <label class="form-label" for="{{ field }}">
+                                    {{ config.label }}
+                                    {% if config.required %}
+                                      <span class="text-danger">*</span>
+                                    {% endif %}
+                                  </label>
+                                  <input type="{{ config.type }}" name="{{ field }}" id="{{ field }}" class="form-control" {% if config.required %}required{% endif %}>
+                                  {% if config.hint %}
+                                    <div class="form-text">{{ config.hint }}</div>
+                                  {% endif %}
+                                </div>
+                              {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- AuthInfo -->
+                            <div class="mb-3">
+                                <label for="authInfo" class="form-label required">{{ __('Auth Info') }}</label>
+                                <input type="text" class="form-control" id="authInfo" name="authInfo" required>
+                            </div>
+
+                          </div>
+                          <div class="col-md-6">
+
+                            <!-- Fields for nameservers -->
+                            <div id="nameserverFields">
+                                <div class="form-label">{{ __('Nameservers') }}&nbsp;<button type="button" id="addNameserver" class="btn btn-success btn-sm mb-2">+</button> <button type="button" id="removeNameserver" class="btn btn-danger btn-sm mb-2">-</button></div>
+
+                                <div class="nameserver-group mb-1 row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 1" name="nameserver[]" autocapitalize="none">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 1 - IPv4" name="nameserver_ipv4[]">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 1 - IPv6" name="nameserver_ipv6[]" autocapitalize="none">
+                                    </div>
+                                </div>
+
+                                <div class="nameserver-group mb-1 row">
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 2" name="nameserver[]" autocapitalize="none">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 2 - IPv4" name="nameserver_ipv4[]">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control mb-1" placeholder="{{ __('Nameserver') }} 2 - IPv6" name="nameserver_ipv6[]" autocapitalize="none">
+                                    </div>
+                                </div>
+                            </div>
+
+                          </div>
+                        </div>
+
+                            <!-- DNSSEC Data with checkbox -->
+                            <div class="mb-3 mt-2 form-check">
+                                <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
+                                <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC Data') }}</label>
+                            </div>
+                            <div id="dnssecData" style="display: none;">
+                                <div class="row mb-3">
+                                  <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
+                                  <div class="col-sm-4 col-md-4">
+                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
+                                  </div>
+                                  <div class="col-sm-4 col-md-4">
+                                    <select class="form-select mb-2" name="dsAlg">
+                                      <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
+                                      <option value="8">RSA/SHA-256</option>
+                                      <option value="13">ECDSA Curve P-256 with SHA-256</option>
+                                      <option value="14">ECDSA Curve P-384 with SHA-384</option>
+                                      <option value="15">Ed25519</option>
+                                      <option value="16">Ed448</option>
+                                    </select>
+                                  </div>
+                                  <div class="col-sm-4 col-md-4">
+                                    <select class="form-select mb-2" name="dsDigestType">
+                                      <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
+                                      <option value="2">SHA-256</option>
+                                      <option value="4">SHA-384</option>
+                                    </select>
+                                  </div>
+                                  <div class="col-sm-12 col-md-12">
+                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Digest') }}" name="dsDigest">
+                                  </div>
+                                </div>
+                                <div class="row mb-3">
+                                  <label for="dnskeyFlags" class="form-label">{{ __('DNSKEY Record') }}</label>
+                                  <div class="col-sm-4 col-md-4">
+                                    <input type="number" class="form-control mb-2" placeholder="{{ __('Flags') }}" name="dnskeyFlags" id="dnskeyFlags">
+                                  </div>
+                                  <div class="col-sm-4 col-md-4">
+                                    <input type="number" class="form-control mb-2" placeholder="{{ __('Protocol') }}" name="dnskeyProtocol" value="3" readonly>
+                                  </div>
+                                  <div class="col-sm-4 col-md-4">
+                                    <select class="form-select mb-2" name="dnskeyAlg">
+                                      <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
+                                      <option value="8">RSA/SHA-256</option>
+                                      <option value="13">ECDSA Curve P-256 with SHA-256</option>
+                                      <option value="14">ECDSA Curve P-384 with SHA-384</option>
+                                      <option value="15">Ed25519</option>
+                                      <option value="16">Ed448</option>
+                                    </select>
+                                  </div>
+                                  <div class="col-sm-12 col-md-12">
+                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Public Key') }}" name="dnskeyPubKey">
+                                  </div>
+                                </div>
+                            </div>
+
+                    </div>
+                <div class="card-footer">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <button type="submit" class="btn btn-primary">{{ __('Submit Order') }}</button>
+                    </div>
+                  </div>
+                </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const masterToggle = document.getElementById('useDefaultOwnerContact');
+    const customBlock = document.getElementById('customContactsBlock');
+    const roleToggles = document.querySelectorAll('.toggle-role');
+
+    masterToggle.addEventListener('change', function () {
+        customBlock.classList.toggle('d-none', this.checked);
+    });
+
+    roleToggles.forEach(function (toggle) {
+        toggle.addEventListener('change', function () {
+            const inputId = this.getAttribute('data-input');
+            const input = document.getElementById(inputId);
+            input.readOnly = this.checked;
+            if (this.checked) {
+                input.value = '';
+            }
+        });
+    });
+
+    const addNameserverBtn = document.getElementById('addNameserver');
+    const removeNameserverBtn = document.getElementById('removeNameserver');
+    const nameserverFields = document.getElementById('nameserverFields');
+    const authInfoField = document.getElementById('authInfo');
+
+    function createNameserverGroup(count) {
+        const group = document.createElement('div');
+        group.className = 'nameserver-group mb-1 row';
+
+        const nameserverCol = document.createElement('div');
+        nameserverCol.className = 'col-md-4';
+        const nameserverField = document.createElement('input');
+        nameserverField.type = 'text';
+        nameserverField.className = 'form-control mb-1';
+        nameserverField.placeholder = `{{ __('Nameserver') }} ${count}`;
+        nameserverField.name = `nameserver[]`;
+        nameserverCol.appendChild(nameserverField);
+
+        const ipv4Col = document.createElement('div');
+        ipv4Col.className = 'col-md-4';
+        const ipv4Field = document.createElement('input');
+        ipv4Field.type = 'text';
+        ipv4Field.className = 'form-control mb-1';
+        ipv4Field.placeholder = `{{ __('Nameserver') }} ${count} - IPv4`;
+        ipv4Field.name = `nameserver_ipv4[]`;
+        ipv4Col.appendChild(ipv4Field);
+
+        const ipv6Col = document.createElement('div');
+        ipv6Col.className = 'col-md-4';
+        const ipv6Field = document.createElement('input');
+        ipv6Field.type = 'text';
+        ipv6Field.className = 'form-control mb-1';
+        ipv6Field.placeholder = `{{ __('Nameserver') }} ${count} - IPv6`;
+        ipv6Field.name = `nameserver_ipv6[]`;
+        ipv6Col.appendChild(ipv6Field);
+
+        group.appendChild(nameserverCol);
+        group.appendChild(ipv4Col);
+        group.appendChild(ipv6Col);
+
+        return group;
+    }
+
+    // Add nameserver fields
+    let nameserverCount = 2;
+    addNameserverBtn.addEventListener('click', function() {
+        if (nameserverCount < 13) {
+            nameserverCount++;
+            const nameserverGroup = createNameserverGroup(nameserverCount);
+            nameserverFields.appendChild(nameserverGroup);
+        }
+    });
+
+    // Remove nameserver group
+    removeNameserverBtn.addEventListener('click', function() {
+        if (nameserverCount > 2) {
+            const lastGroup = nameserverFields.querySelector('.nameserver-group:last-child');
+            if (lastGroup) {
+                nameserverFields.removeChild(lastGroup);
+                nameserverCount--;
+            }
+        }
+    });
+
+    // Generate random AuthInfo and set it to the field
+    function generateAuthInfo() {
+        const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let result = "";
+        for (let i = 0; i < 16; i++) {
+            result += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+        return result;
+    }
+    authInfoField.value = generateAuthInfo();
+    
+    // Display DNSSEC data when the checkbox is ticked
+    document.getElementById('addDnssec').addEventListener('change', function() {
+        const dnssecData = document.getElementById('dnssecData');
+        if (this.checked) {
+            dnssecData.style.display = 'block';
+        } else {
+            dnssecData.style.display = 'none';
+        }
+    });
+
+});
+</script>
+{% endblock %}

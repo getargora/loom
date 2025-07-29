@@ -580,14 +580,10 @@ function connectToEpp(
             'verify_host' => filter_var(envi('VERIFY_HOST'), FILTER_VALIDATE_BOOLEAN),
             'local_cert' => $local_cert,
             'local_pk' => $local_pk,
+            'cafile' => $cafile ?? '',
+            'passphrase' => $passphrase ?? '',
             'allow_self_signed' => filter_var(envi('SELF_SIGNED'), FILTER_VALIDATE_BOOLEAN),
         );
-        if (!empty($cafile)) {
-            $info['cafile'] = $cafile;
-        }
-        if (!empty($passphrase)) {
-            $info['passphrase'] = $passphrase;
-        }
 
         $epp->connect($info);
 
