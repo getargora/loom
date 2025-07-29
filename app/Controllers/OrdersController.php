@@ -17,6 +17,7 @@ use App\Models\Orders;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Container\ContainerInterface;
+use Utopia\Domains\Domain as uDomain;
 
 class OrdersController extends Controller
 {
@@ -157,44 +158,206 @@ class OrdersController extends Controller
 
     public function registerOrder(Request $request, Response $response, string $args): Response
     {
+        if ($request->getMethod() === 'POST') {
+            // Retrieve POST data
+            $data = $request->getParsedBody();
+            $db = $this->container->get('db');
+
+            $userId = $_SESSION['auth_user_id'];
+            $currency = $_SESSION['_currency'];
+            $domainName = $_SESSION['domains_to_create'][0];
+            $amount = $_SESSION['domains_to_register_price'][0];
+            $years = (int) ($data['reg-years'] ?? 1);
+            $authInfo = trim($data['authInfo'] ?? '');
+            $nameservers = $data['nameserver'] ?? [];
+            
+            if (empty($authInfo)) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo is required');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+            if (mb_strlen($authInfo) > 128) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo is too long');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+            if (!preg_match('/^[\p{L}\p{N}\p{P}\p{S} ]+$/u', $authInfo)) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo contains invalid characters');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+
+            $domain = new uDomain($domainName);
+            $tld = '.' . strtolower($domain->getTLD());
+
+            try {
+                $db->beginTransaction();
+
+                // Get provider name
+                $providers = $db->select('SELECT name, pricing FROM providers WHERE status = ?', [ 'active' ]);
+
+                $providerName = null;
+
+                foreach ($providers as $provider) {
+                    $pricing = json_decode($provider['pricing'], true);
+                    if (isset($pricing[$tld])) {
+                        $providerName = $provider['name'];
+                        break; // stop at the first match
+                    }
+                }
+
+                // Get billing contact ID
+                $billingContactId = $db->selectValue(
+                    'SELECT id FROM users_contact WHERE user_id = ? AND type = ? LIMIT 1',
+                    [ $userId, 'billing' ]
+                );
+
+                // Insert into invoices
+                $db->insert('invoices', [
+                    'user_id' => $userId,
+                    'billing_contact_id' => $billingContactId,
+                    'issue_date' => date('Y-m-d H:i:s'),
+                    'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
+                    'total_amount' => $amount,
+                    'payment_status' => 'unpaid',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+
+                $invoiceId = $db->getLastInsertId();
+
+                $db->update('invoices', [
+                    'invoice_number' => $invoiceId
+                ],
+                [
+                    'id' => $invoiceId
+                ]
+                );
+
+                $contacts = [];
+
+                foreach (['registrant' => 'owner', 'admin' => 'admin', 'tech' => 'tech', 'billing' => 'billing'] as $role => $type) {
+                    $row = $db->selectRow(
+                        'SELECT * FROM users_contact WHERE user_id = ? AND type = ? LIMIT 1',
+                        [ $userId, $type ]
+                    );
+
+                    $contacts[$role] = [
+                        'name' => $first_name . $last_name ?? '',
+                        'org' => $row['org'] ?? '',
+                        'street1' => $row['street1'] ?? '',
+                        'street2' => $row['street2'] ?? '',
+                        'street3' => $row['street3'] ?? '',
+                        'city' => $row['city'] ?? '',
+                        'sp' => $row['sp'] ?? '',
+                        'pc' => $row['pc'] ?? '',
+                        'cc' => $row['cc'] ?? '',
+                        'voice' => $row['voice'] ?? '',
+                        'email' => $row['email'] ?? ''
+                    ];
+                }
+
+                // Build service_data
+                $serviceData = json_encode([
+                    'type' => 'domain_register',
+                    'domain' => $domainName,
+                    'years' => $years,
+                    'tld' => $tld,
+                    'provider' => $providerName,
+                    'authInfo' => $authInfo,
+                    'error_message' => null,
+                    'notes' => 'Customer requested domain registration',
+                    'contacts' => $contacts,
+                    'nameservers' => array_values($nameservers),
+                    'dnssec' => [
+                        'enabled' => false,
+                        'ds_records' => []
+                    ]
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+                // Insert into orders
+                $db->insert('orders', [
+                    'user_id' => $userId,
+                    'service_type' => 'domain.register',
+                    'service_data' => $serviceData,
+                    'status' => 'pending',
+                    'amount_due' => $amount,
+                    'currency' => $currency,
+                    'invoice_id' => $invoiceId,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+           
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                $this->container->get('flash')->addMessage('error', 'Database failure during order creation: ' . $e->getMessage());
+                return $response->withHeader('Location', '/orders/register/'.$domainName)->withStatus(302);
+            }
+
+            unset($_SESSION['domains_to_create']);
+            unset($_SESSION['domains_to_register_price']);
+            $this->container->get('flash')->addMessage('success','Registration order for domain ' . $domainName . ' has been created. Please proceed with payment to complete the order.');
+            return $response->withHeader('Location', '/invoice/'.$invoiceId)->withStatus(302);
+        }
+
         $db = $this->container->get('db');
         $uri = $request->getUri()->getPath();
 
         if ($args) {
             $args = trim($args);
-var_dump($args);die();
-            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
-                $this->container->get('flash')->addMessage('error', 'Invalid order ID format');
+
+            $regex = '/^
+              (?: # 1st or 2nd label (e.g., example or example.co)
+                (?:xn--)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?
+                \.
+              ){1,2}
+              (?: # Final label (TLD)
+                (?:xn--)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])
+              )
+            $/ix';
+
+            if (!preg_match($regex, $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid domain name requested');
                 return $response->withHeader('Location', '/orders')->withStatus(302);
             }
 
-            $order = $db->selectRow('SELECT id, user_id, service_type, service_data, status, amount_due, currency, invoice_id, created_at, paid_at FROM orders WHERE id = ?',
-            [ $args ]);
+            $db = $this->container->get('db');
+            $providers = $db->select("SELECT id, name, type, api_endpoint, credentials, pricing FROM providers WHERE status = 'active'");
 
-            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
-                return $response->withHeader('Location', '/orders')->withStatus(302);
+            $domainName = strtolower(trim($args));
+            $asciiDomain = idn_to_ascii($domainName, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+
+            $domain = new uDomain($asciiDomain);
+            $tld = '.' . strtolower($domain->getTLD());
+
+            foreach ($providers as $provider) {
+                $pricingData = json_decode($provider['pricing'], true);
+
+                if (isset($pricingData[$tld])) {
+                    $tldKey = ltrim($tld, '.');
+                    $credentials = json_decode($provider['credentials'], true);
+                    $requiredFields = $credentials['required_fields'] ?? [];
+                        
+                    $responseData = [
+                        'domain' => $args,
+                        'currentUri' => $uri,
+                        'type' => 'register',
+                        'provider' => $provider['name'],
+                        'pricing' => [
+                            $tldKey => $pricingData[$tld]
+                        ],
+                        'required_fields' => $requiredFields
+                    ];
+
+                    $_SESSION['domains_to_create'] = [$args];
+                    $_SESSION['domains_to_register_price'] = [$responseData['pricing'][$tldKey]['register']['1']] ?? null;
+
+                    return view($response, 'admin/orders/register.twig', $responseData);
+                }
             }
 
-            if ($order) {
-                $service_data = json_decode($order['service_data'], true);
-                
-                $user_name = $db->selectValue(
-                    'SELECT username FROM users WHERE id = ?',
-                    [ $order['user_id'] ]
-                );
-
-                $responseData = [
-                    'order' => $order,
-                    'service_data' => $service_data,
-                    'user_name' => $user_name,
-                    'currentUri' => $uri
-                ];
-
-                return view($response, 'admin/orders/view.twig', $responseData);
-            } else {
-                // Order does not exist, redirect to the orders view
-                return $response->withHeader('Location', '/orders')->withStatus(302);
-            }
+            $this->container->get('flash')->addMessage('error', 'Invalid domain name requested');
+            return $response->withHeader('Location', '/orders')->withStatus(302);
         } else {
             // Redirect to the orders view
             return $response->withHeader('Location', '/orders')->withStatus(302);
@@ -203,44 +366,174 @@ var_dump($args);die();
 
     public function transferOrder(Request $request, Response $response, string $args): Response
     {
+        if ($request->getMethod() === 'POST') {
+            // Retrieve POST data
+            $data = $request->getParsedBody();
+            $db = $this->container->get('db');
+
+            $userId = $_SESSION['auth_user_id'];
+            $currency = $_SESSION['_currency'];
+            $domainName = $_SESSION['domains_to_transfer'][0];
+            $amount = $_SESSION['domains_to_transfer_price'][0];
+            
+            $authInfo = trim($data['authInfo'] ?? '');
+
+            if (empty($authInfo)) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo is required');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+            if (mb_strlen($authInfo) > 128) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo is too long');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+            if (!preg_match('/^[\p{L}\p{N}\p{P}\p{S} ]+$/u', $authInfo)) {
+                $this->container->get('flash')->addMessage('error', 'AuthInfo contains invalid characters');
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+
+            $domain = new uDomain($domainName);
+            $tld = '.' . strtolower($domain->getTLD());
+
+            try {
+                $db->beginTransaction();
+
+                // Get provider name
+                $providers = $db->select('SELECT name, pricing FROM providers WHERE status = ?', [ 'active' ]);
+
+                $providerName = null;
+
+                foreach ($providers as $provider) {
+                    $pricing = json_decode($provider['pricing'], true);
+                    if (isset($pricing[$tld])) {
+                        $providerName = $provider['name'];
+                        break; // stop at the first match
+                    }
+                }
+
+                // Get billing contact ID
+                $billingContactId = $db->selectValue(
+                    'SELECT id FROM users_contact WHERE user_id = ? AND type = ? LIMIT 1',
+                    [ $userId, 'billing' ]
+                );
+
+                // Insert into invoices
+                $db->insert('invoices', [
+                    'user_id' => $userId,
+                    'billing_contact_id' => $billingContactId,
+                    'issue_date' => date('Y-m-d H:i:s'),
+                    'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
+                    'total_amount' => $amount,
+                    'payment_status' => 'unpaid',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
+
+                $invoiceId = $db->getLastInsertId();
+
+                $db->update('invoices', [
+                    'invoice_number' => $invoiceId
+                ],
+                [
+                    'id' => $invoiceId
+                ]
+                );
+
+                // Build service_data
+                $serviceData = json_encode([
+                    'type' => 'domain_transfer',
+                    'domain' => $domainName,
+                    'provider' => $providerName,
+                    'authInfo' => $authInfo,
+                    'error_message' => null,
+                    'notes' => 'Customer requested domain transfer',
+                ]);
+
+                // Insert into orders
+                $db->insert('orders', [
+                    'user_id' => $userId,
+                    'service_type' => 'domain.transfer',
+                    'service_data' => $serviceData,
+                    'status' => 'pending',
+                    'amount_due' => $amount,
+                    'currency' => $currency,
+                    'invoice_id' => $invoiceId,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+           
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                $this->container->get('flash')->addMessage('error', 'Database failure during order creation: ' . $e->getMessage());
+                return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
+            }
+
+            unset($_SESSION['domains_to_transfer']);
+            unset($_SESSION['domains_to_transfer_price']);
+            $this->container->get('flash')->addMessage('success','Transfer order for domain ' . $domainName . ' has been created. Please proceed with payment to start the transfer.');
+            return $response->withHeader('Location', '/invoice/'.$invoiceId)->withStatus(302);
+        }
+
         $db = $this->container->get('db');
         $uri = $request->getUri()->getPath();
 
         if ($args) {
             $args = trim($args);
-var_dump($args);die();
-            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
-                $this->container->get('flash')->addMessage('error', 'Invalid order ID format');
+
+            $regex = '/^
+              (?: # 1st or 2nd label (e.g., example or example.co)
+                (?:xn--)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?
+                \.
+              ){1,2}
+              (?: # Final label (TLD)
+                (?:xn--)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])
+              )
+            $/ix';
+
+            if (!preg_match($regex, $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid domain name requested');
                 return $response->withHeader('Location', '/orders')->withStatus(302);
             }
 
-            $order = $db->selectRow('SELECT id, user_id, service_type, service_data, status, amount_due, currency, invoice_id, created_at, paid_at FROM orders WHERE id = ?',
-            [ $args ]);
+            $db = $this->container->get('db');
+            $providers = $db->select("SELECT id, name, type, api_endpoint, credentials, pricing FROM providers WHERE status = 'active'");
 
-            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
-                return $response->withHeader('Location', '/orders')->withStatus(302);
+            $domainName = strtolower(trim($args));
+            $asciiDomain = idn_to_ascii($domainName, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+
+            $domain = new uDomain($asciiDomain);
+            $tld = '.' . strtolower($domain->getTLD());
+
+            foreach ($providers as $provider) {
+                $pricingData = json_decode($provider['pricing'], true);
+
+                if (isset($pricingData[$tld])) {
+                    $tldKey = ltrim($tld, '.');
+                    $credentials = json_decode($provider['credentials'], true);
+                    $requiredFields = $credentials['required_fields'] ?? [];
+
+                    $responseData = [
+                        'domain' => $args,
+                        'currentUri' => $uri,
+                        'type' => 'transfer',
+                        'provider' => $provider['name'],
+                        'pricing' => [
+                            $tldKey => $pricingData[$tld]
+                        ],
+                        'required_fields' => $requiredFields
+                    ];
+
+                    $_SESSION['domains_to_transfer'] = [$args];
+                    $_SESSION['domains_to_transfer_price'] = [$responseData['pricing'][$tldKey]['transfer']['1']] ?? null;
+
+                    return view($response, 'admin/orders/transfer.twig', $responseData);
+                }
             }
 
-            if ($order) {
-                $service_data = json_decode($order['service_data'], true);
-                
-                $user_name = $db->selectValue(
-                    'SELECT username FROM users WHERE id = ?',
-                    [ $order['user_id'] ]
-                );
-
-                $responseData = [
-                    'order' => $order,
-                    'service_data' => $service_data,
-                    'user_name' => $user_name,
-                    'currentUri' => $uri
-                ];
-
-                return view($response, 'admin/orders/view.twig', $responseData);
-            } else {
-                // Order does not exist, redirect to the orders view
-                return $response->withHeader('Location', '/orders')->withStatus(302);
-            }
+            $this->container->get('flash')->addMessage('error', 'Invalid domain name requested');
+            return $response->withHeader('Location', '/orders')->withStatus(302);
         } else {
             // Redirect to the orders view
             return $response->withHeader('Location', '/orders')->withStatus(302);
