@@ -157,13 +157,94 @@ class OrdersController extends Controller
 
     public function registerOrder(Request $request, Response $response, string $args): Response
     {
-        var_dump ($args);die();
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+        $db = $this->container->get('db');
+        $uri = $request->getUri()->getPath();
+
+        if ($args) {
+            $args = trim($args);
+var_dump($args);die();
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid order ID format');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            $order = $db->selectRow('SELECT id, user_id, service_type, service_data, status, amount_due, currency, invoice_id, created_at, paid_at FROM orders WHERE id = ?',
+            [ $args ]);
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if ($order) {
+                $service_data = json_decode($order['service_data'], true);
+                
+                $user_name = $db->selectValue(
+                    'SELECT username FROM users WHERE id = ?',
+                    [ $order['user_id'] ]
+                );
+
+                $responseData = [
+                    'order' => $order,
+                    'service_data' => $service_data,
+                    'user_name' => $user_name,
+                    'currentUri' => $uri
+                ];
+
+                return view($response, 'admin/orders/view.twig', $responseData);
+            } else {
+                // Order does not exist, redirect to the orders view
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+        } else {
+            // Redirect to the orders view
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
     }
 
     public function transferOrder(Request $request, Response $response, string $args): Response
     {
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+        $db = $this->container->get('db');
+        $uri = $request->getUri()->getPath();
+
+        if ($args) {
+            $args = trim($args);
+var_dump($args);die();
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid order ID format');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            $order = $db->selectRow('SELECT id, user_id, service_type, service_data, status, amount_due, currency, invoice_id, created_at, paid_at FROM orders WHERE id = ?',
+            [ $args ]);
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if ($order) {
+                $service_data = json_decode($order['service_data'], true);
+                
+                $user_name = $db->selectValue(
+                    'SELECT username FROM users WHERE id = ?',
+                    [ $order['user_id'] ]
+                );
+
+                $responseData = [
+                    'order' => $order,
+                    'service_data' => $service_data,
+                    'user_name' => $user_name,
+                    'currentUri' => $uri
+                ];
+
+                return view($response, 'admin/orders/view.twig', $responseData);
+            } else {
+                // Order does not exist, redirect to the orders view
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+        } else {
+            // Redirect to the orders view
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
     }
 
     public function deleteOrder(Request $request, Response $response, string $args): Response
