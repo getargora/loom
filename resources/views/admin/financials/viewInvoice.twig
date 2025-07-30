@@ -104,24 +104,41 @@
                       <th class="text-end" style="width: 1%">{{ __('Amount') }}</th>
                     </tr>
                   </thead>
-                  {% if statement is not empty %}
-                      {% set totalAmount = 0 %}
-                      {% for item in statement %}
-                          <tr>
-                              <td class="text-center">{{ loop.index }}</td>
-                              <td>
-                                    <p class="strong mb-1">{{ item.category|capitalize }} — {{ item.description }}</p>
-                                  <small class="text-muted">{{ item.created_at }}</small>
-                              </td>
-                              <td class="text-end">{{ item.amount }} {{ item.currency }}</td>
-                          </tr>
-                          {% set totalAmount = totalAmount + item.amount %}
-                      {% endfor %}
-                  {% else %}
-                      <tr>
-                          <td colspan="3" class="text-center">{{ __('No items found.') }}</td>
-                      </tr>
-                  {% endif %}
+                {% if statement is not empty %}
+                    {% set totalAmount = 0 %}
+                    {% for item in statement %}
+                        {% set data = item.service_data %}
+
+                        <tr>
+                            <td class="text-center">{{ loop.index }}</td>
+                            <td>
+                                {% if data.type starts with 'domain' %}
+                                    <p class="strong mb-1">
+                                        Domain {{ data.type|replace({'domain_': ''})|capitalize }} — {{ data.domain }}
+                                    </p>
+                                    <small class="text-muted">
+                                        {% if data.type != 'domain_transfer' %}
+                                            {{ data.years }} year{{ data.years > 1 ? 's' : '' }} &middot; {{ data.tld }} &middot;
+                                        {% endif %}
+                                        {{ data.provider }}
+                                    </small>
+                                {% else %}
+                                    <p class="strong mb-1">{{ item.service_type|capitalize }}</p>
+                                    <small class="text-muted">{{ data.description ?? 'No details' }}</small>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ item.created_at }}</small>
+                            </td>
+                            <td class="text-end">{{ item.amount_formatted }}</td>
+                        </tr>
+
+                        {% set totalAmount = totalAmount + item.amount_due %}
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">{{ __('No items found.') }}</td>
+                    </tr>
+                {% endif %}
                   <tr>
                     <td colspan="2" class="strong text-end">{{ __('Subtotal') }}</td>
                     <td class="text-end">{{ netPrice }}</td>

@@ -84,12 +84,20 @@ class FinancialsController extends Controller
         $phone        = envi('COMPANY_PHONE');
         $email        = envi('COMPANY_EMAIL');
 
-        $issueDate = new \DateTime($invoice_details['issue_date']);
-        $firstDayPrevMonth = (clone $issueDate)->modify('first day of last month')->format('Y-m-d');
-        $lastDayPrevMonth = (clone $issueDate)->modify('last day of last month')->format('Y-m-d');
-        $statement = $db->select('SELECT * FROM transactions WHERE created_at BETWEEN ? AND ? AND user_id = ?',
-        [ $firstDayPrevMonth, $lastDayPrevMonth, $invoice_details['user_id'] ]
+        $orders = $db->select(
+            'SELECT service_type, amount_due, currency, service_data, created_at 
+             FROM orders 
+             WHERE invoice_id = ?', 
+            [ $invoice_details['id'] ]
         );
+
+        $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
+        $currencyFormatterStatement = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+
+        foreach ($orders as &$order) {
+            $order['service_data'] = json_decode($order['service_data'], true);
+            $order['amount_formatted'] = $currencyFormatterStatement->formatCurrency($order['amount_due'], $order['currency']);
+        }
 
         $vatCalculator = new VatCalculator();
         $vatCalculator->setBusinessCountryCode(strtoupper($cc));
@@ -105,8 +113,6 @@ class FinancialsController extends Controller
         $totalAmount = $grossPrice + $taxValue;
         $billing_country = $iso3166->alpha2($billing['cc']);
         $billing_country = $billing_country['name'];
-
-        $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
 
         // Initialize the number formatter for the locale
         $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
@@ -124,7 +130,7 @@ class FinancialsController extends Controller
             'billing' => $billing,
             'billing_company' => $nin,
             'billing_vat' => $billing_vat,
-            'statement' => $statement,
+            'statement' => $orders,
             'company_name' => $company_name,
             'address' => $address,
             'address2' => $address2,
