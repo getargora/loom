@@ -104,7 +104,17 @@
                       <th class="text-end" style="width: 1%">{{ __('Amount') }}</th>
                     </tr>
                   </thead>
-                {% if statement is not empty %}
+                    {% if deposit is defined and deposit is not empty %}
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>
+                                <p class="strong mb-1">{{ deposit.category|capitalize }}</p>
+                                <small class="text-muted">{{ deposit.description }}</small><br>
+                                <small class="text-muted">{{ deposit.created_at }}</small>
+                            </td>
+                            <td class="text-end">{{ deposit.amount }} {{ deposit.currency }}</td>
+                        </tr>
+                    {% elseif statement is not empty %}
                     {% set totalAmount = 0 %}
                     {% for item in statement %}
                         {% set data = item.service_data %}

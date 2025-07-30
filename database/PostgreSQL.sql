@@ -147,9 +147,12 @@ CREATE TABLE IF NOT EXISTS "ticket_responses" (
 );
 ALTER TABLE ticket_responses ADD FOREIGN KEY ("ticket_id") REFERENCES support_tickets(id);
 
+CREATE TYPE invoice_type_enum AS ENUM ('regular', 'deposit', 'credit', 'proforma');
+
 CREATE TABLE IF NOT EXISTS "invoices" (
      "id" SERIAL PRIMARY KEY,
      "user_id" INT,
+     "invoice_type" invoice_type_enum NOT NULL DEFAULT 'regular',
      "invoice_number" varchar(25) DEFAULT NULL,
      "billing_contact_id" INT,
      "issue_date" TIMESTAMP(3),

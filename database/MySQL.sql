@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS `ticket_responses` (
 CREATE TABLE IF NOT EXISTS `invoices` (
   `id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT(10) UNSIGNED,
+  `invoice_type` ENUM('regular', 'deposit', 'credit', 'proforma') NOT NULL DEFAULT 'regular',
   `invoice_number` varchar(25) default NULL,
   `billing_contact_id` INT(10) UNSIGNED,
   `issue_date` DATETIME(3),

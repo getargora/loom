@@ -152,6 +152,7 @@ CREATE TABLE "ticket_responses" (
 CREATE TABLE "invoices" (
     "id" INTEGER PRIMARY KEY AUTOINCREMENT,
     "user_id" INTEGER,
+    "invoice_type" TEXT NOT NULL DEFAULT 'regular' CHECK (invoice_type IN ('regular', 'deposit', 'credit', 'proforma')),
     "invoice_number" VARCHAR(25) DEFAULT NULL,
     "billing_contact_id" INTEGER,
     "issue_date" DATETIME,

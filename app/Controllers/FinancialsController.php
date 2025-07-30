@@ -84,19 +84,28 @@ class FinancialsController extends Controller
         $phone        = envi('COMPANY_PHONE');
         $email        = envi('COMPANY_EMAIL');
 
-        $orders = $db->select(
-            'SELECT service_type, amount_due, currency, service_data, created_at 
-             FROM orders 
-             WHERE invoice_id = ?', 
-            [ $invoice_details['id'] ]
-        );
+        if ($invoice_details['invoice_type'] === 'deposit') {
+            $deposit = $db->selectRow(
+                'SELECT category, description, amount, currency, created_at
+                 FROM transactions
+                 WHERE related_entity_id = ?',
+                [ $invoice_details['id'] ]
+            );
+        } else {
+            $orders = $db->select(
+                'SELECT service_type, amount_due, currency, service_data, created_at 
+                 FROM orders 
+                 WHERE invoice_id = ?', 
+                [ $invoice_details['id'] ]
+            );
 
-        $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
-        $currencyFormatterStatement = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
+            $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
+            $currencyFormatterStatement = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
 
-        foreach ($orders as &$order) {
-            $order['service_data'] = json_decode($order['service_data'], true);
-            $order['amount_formatted'] = $currencyFormatterStatement->formatCurrency($order['amount_due'], $order['currency']);
+            foreach ($orders as &$order) {
+                $order['service_data'] = json_decode($order['service_data'], true);
+                $order['amount_formatted'] = $currencyFormatterStatement->formatCurrency($order['amount_due'], $order['currency']);
+            }
         }
 
         $vatCalculator = new VatCalculator();
@@ -131,6 +140,7 @@ class FinancialsController extends Controller
             'billing_company' => $nin,
             'billing_vat' => $billing_vat,
             'statement' => $orders,
+            'deposit' => $deposit,
             'company_name' => $company_name,
             'address' => $address,
             'address2' => $address2,
@@ -275,12 +285,42 @@ class FinancialsController extends Controller
                 try {
                     $currentDateTime = new \DateTime();
                     $date = $currentDateTime->format('Y-m-d H:i:s.v');
+
+                    // Get billing contact ID
+                    $billingContactId = $db->selectValue(
+                        'SELECT id FROM users_contact WHERE user_id = ? AND type = ? LIMIT 1',
+                        [ $user_id, 'billing' ]
+                    );
+
+                    // Insert into invoices
+                    $db->insert('invoices', [
+                        'user_id' => $user_id,
+                        'invoice_type' => 'deposit',
+                        'billing_contact_id' => $billingContactId,
+                        'issue_date' => date('Y-m-d H:i:s'),
+                        'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
+                        'total_amount' => $amount,
+                        'payment_status' => 'paid',
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+
+                    $invoiceId = $db->getLastInsertId();
+
+                    $db->update('invoices', [
+                        'invoice_number' => $invoiceId
+                    ],
+                    [
+                        'id' => $invoiceId
+                    ]
+                    );
+
                     $db->insert(
                         'transactions',
                         [
                             'user_id' => $user_id,
-                            'related_entity_type' => $user_id,
-                            'related_entity_id' => $user_id,
+                            'related_entity_type' => 'invoice',
+                            'related_entity_id' => $invoiceId,
                             'type' => 'credit',
                             'category' => 'deposit',
                             'description' => $description,
@@ -298,7 +338,7 @@ class FinancialsController extends Controller
                             $user_id
                         ]
                     );
-                    
+
                     $db->commit();
                 } catch (Exception $e) {
                     $db->rollBack();
