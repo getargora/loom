@@ -27,17 +27,30 @@ class HomeController extends Controller
     public function dashboard(Request $request, Response $response)
     {
         $db = $this->container->get('db');
+        $isAdmin = $_SESSION["auth_roles"] == 0;
+        $userId = $_SESSION["auth_user_id"];
 
-        // Total counts
-        $userCount = $db->selectValue('SELECT COUNT(*) FROM users');
-        $orderCount = $db->selectValue('SELECT COUNT(*) FROM orders');
-        $invoiceCount = $db->selectValue('SELECT COUNT(*) FROM invoices');
-        $ticketCount = $db->selectValue('SELECT COUNT(*) FROM support_tickets');
+        if ($isAdmin) {
+            // Admin: total counts
+            $userCount = $db->selectValue('SELECT COUNT(*) FROM users');
+            $orderCount = $db->selectValue('SELECT COUNT(*) FROM orders');
+            $invoiceCount = $db->selectValue('SELECT COUNT(*) FROM invoices');
+            $ticketCount = $db->selectValue('SELECT COUNT(*) FROM support_tickets');
 
-        // Filtered counts
-        $pendingOrders = $db->selectValue('SELECT COUNT(*) FROM orders WHERE status = ?', ['pending']);
-        $unpaidInvoices = $db->selectValue('SELECT COUNT(*) FROM invoices WHERE payment_status = ?', ['unpaid']);
-        $openTickets = $db->selectValue('SELECT COUNT(*) FROM support_tickets WHERE status = ?', ['Open']);
+            $pendingOrders = $db->selectValue('SELECT COUNT(*) FROM orders WHERE status = ?', ['pending']);
+            $unpaidInvoices = $db->selectValue('SELECT COUNT(*) FROM invoices WHERE payment_status = ?', ['unpaid']);
+            $openTickets = $db->selectValue('SELECT COUNT(*) FROM support_tickets WHERE status = ?', ['Open']);
+        } else {
+            // Regular user: filtered by user_id
+            $userCount = null; // Don't send this to view for users
+            $orderCount = $db->selectValue('SELECT COUNT(*) FROM orders WHERE user_id = ?', [$userId]);
+            $invoiceCount = $db->selectValue('SELECT COUNT(*) FROM invoices WHERE user_id = ?', [$userId]);
+            $ticketCount = $db->selectValue('SELECT COUNT(*) FROM support_tickets WHERE user_id = ?', [$userId]);
+
+            $pendingOrders = $db->selectValue('SELECT COUNT(*) FROM orders WHERE user_id = ? AND status = ?', [$userId, 'pending']);
+            $unpaidInvoices = $db->selectValue('SELECT COUNT(*) FROM invoices WHERE user_id = ? AND payment_status = ?', [$userId, 'unpaid']);
+            $openTickets = $db->selectValue('SELECT COUNT(*) FROM support_tickets WHERE user_id = ? AND status = ?', [$userId, 'Open']);
+        }
 
         return view($response, 'admin/dashboard/index.twig', [
             'userCount' => $userCount,
