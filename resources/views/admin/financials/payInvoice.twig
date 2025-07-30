@@ -82,7 +82,7 @@
                     <div class="datagrid">
                       <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Invoice') }}</div>
-                        <div class="datagrid-content">{{ invoice_details.invoice_number }}</div>
+                        <div class="datagrid-content"><a href="/invoice/{{ invoice_details.invoice_number }}">{{ invoice_details.invoice_number }}</a></div>
                       </div>
                       <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Amount') }}</div>

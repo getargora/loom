@@ -53,6 +53,10 @@ class FinancialsController extends Controller
         [ $invoiceNumber ]
         );
 
+        if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $invoice_details["user_id"]) {
+            return $response->withHeader('Location', '/invoices')->withStatus(302);
+        }
+
         if (!$invoice_details) {
             $this->container->get('flash')->addMessage('error', 'Invoice not found');
             return $response->withHeader('Location', '/invoices')->withStatus(302);
@@ -157,7 +161,11 @@ class FinancialsController extends Controller
         $invoice_details = $db->selectRow('SELECT * FROM invoices WHERE invoice_number = ?',
         [ $invoiceNumber ]
         );
-        
+
+        if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $invoice_details["user_id"]) {
+            return $response->withHeader('Location', '/invoices')->withStatus(302);
+        }
+
         if (!$invoice_details) {
             $this->container->get('flash')->addMessage('error', 'Invoice not found');
             return $response->withHeader('Location', '/invoices')->withStatus(302);
