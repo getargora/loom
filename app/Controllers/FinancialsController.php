@@ -208,17 +208,21 @@ class FinancialsController extends Controller
         $taxValue = $vatCalculator->getTaxValue(); 
         $totalAmount = $grossPrice + $taxValue;
         $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
+        $stripe_key = envi('STRIPE_PUBLISHABLE_KEY');
 
         $currencyFormatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
         $formattedTotalAmount = $currencyFormatter->formatCurrency($totalAmount, $currency);
 
         $enabledGateways = array_map('trim', explode(',', envi('ENABLED_GATEWAYS')));
+        $_SESSION['pending_invoice_amount'] = $totalAmount;
+        $_SESSION['pending_invoice_id'] = $invoiceNumber;
 
         // Pass formatted values to Twig
         return view($response, 'admin/financials/payInvoice.twig', [
             'invoice_details' => $invoice_details,
             'total' => $formattedTotalAmount,
             'currentUri' => $uri,
+            'stripe_key' => $stripe_key,
             'enabledGateways' => $enabledGateways,
         ]);
 
@@ -344,9 +348,19 @@ class FinancialsController extends Controller
     {
         $postData = $request->getParsedBody();
         $amount = $postData['amount'] ?? null;
+
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            $paymentDescription = 'Invoice Payment #' . ($_SESSION['pending_invoice_id'] ?? '');
+            unset($_SESSION['pending_invoice_amount']);
+            unset($_SESSION['pending_invoice_id']);
+        } else {
+            $paymentDescription = 'Client Balance Deposit';
+        }
+
         $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        \Stripe\Stripe::setApiKey(envi('STRIPE_SECRET_KEY'));
         $amountInCents = (int) round($amount * 100);
+        \Stripe\Stripe::setApiKey(envi('STRIPE_SECRET_KEY'));
 
         // Create Stripe Checkout session
         $checkout_session = \Stripe\Checkout\Session::create([
@@ -355,7 +369,7 @@ class FinancialsController extends Controller
                 'price_data' => [
                     'currency' => $_SESSION['_currency'],
                     'product_data' => [
-                        'name' => 'Client Balance Deposit',
+                        'name' => $paymentDescription,
                     ],
                     'unit_amount' => $amountInCents,
                 ],
@@ -375,6 +389,13 @@ class FinancialsController extends Controller
     {
         $postData = $request->getParsedBody();
         $amount = $postData['amount'] ?? null;
+
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            unset($_SESSION['pending_invoice_amount']);
+            unset($_SESSION['pending_invoice_id']);
+        }
+
         $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $amountInCents = (int) round($amount * 100);
 
@@ -386,7 +407,7 @@ class FinancialsController extends Controller
         $merchantReference = bin2hex($combinedString);
 
         $client = new \Adyen\Client();
-        $client->setApplicationName('Foundry');
+        $client->setApplicationName('Loom');
         $client->setEnvironment(\Adyen\Environment::TEST);
         $client->setXApiKey(envi('ADYEN_API_KEY'));
         $service = new \Adyen\Service\Checkout($client);
@@ -411,6 +432,13 @@ class FinancialsController extends Controller
     {
         $postData = $request->getParsedBody();
         $amount = $postData['amount'] ?? null;
+
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            unset($_SESSION['pending_invoice_amount']);
+            unset($_SESSION['pending_invoice_id']);
+        }
+
         $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $amountWhole = (int) round($amount);
 
@@ -459,10 +487,20 @@ class FinancialsController extends Controller
     {
         $postData = $request->getParsedBody();
         $amount = $postData['amount'] ?? null;
+        $userId = $_SESSION["auth_user_id"];
+
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            $paymentDescription = 'Invoice Payment #' . ($_SESSION['pending_invoice_id'] ?? '');
+            unset($_SESSION['pending_invoice_amount']);
+            unset($_SESSION['pending_invoice_id']);
+        } else {
+            $paymentDescription = 'Client Balance Deposit (' . $userId .')';
+        }
+
         $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         $amountWhole = (int) round($amount);
 
-        $userId = $_SESSION["auth_user_id"];
         $invoiceReference = strtoupper(bin2hex(random_bytes(5)));
 
         // Map currency to Nicky's blockchainAssetId
@@ -478,7 +516,7 @@ class FinancialsController extends Controller
             'amountExpectedNative' => $amountWhole,
             'billDetails' => [
                 'invoiceReference' => $invoiceReference,
-                'description' => 'Deposit for registrar ' . $userId,
+                'description' => $paymentDescription,
             ],
             'requester' => [
                 'email' => $_SESSION['auth_email'],

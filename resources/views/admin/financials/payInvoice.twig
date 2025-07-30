@@ -101,18 +101,6 @@
                     <div class="mt-3 mb-3">
                         <label class="form-label">{{ __('Payment Method') }}</label>
                         <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                            <label class="form-selectgroup-item flex-fill">
-                                <input type="radio" name="paymentMethod" value="sepa" class="form-selectgroup-input" required>
-                                <div class="form-selectgroup-label d-flex align-items-center p-3">
-                                    <div class="me-3">
-                                        <span class="form-selectgroup-check"></span>
-                                    </div>
-                                    <div>
-                                        <span class="payment payment-provider-sepa-dark payment-xs me-2"></span>
-                                        SEPA
-                                    </div>
-                                </div>
-                            </label>
                             {% if 'stripe' in enabledGateways %}
                             <label class="form-selectgroup-item flex-fill">
                                 <input type="radio" name="paymentMethod" value="stripe" class="form-selectgroup-input" required>
@@ -196,15 +184,6 @@ document.getElementById('depositForm').addEventListener('submit', function (e) {
 
     const formData = new FormData(this);
     const paymentMethod = formData.get('paymentMethod');
-    const amount = document.getElementById('amount')?.value?.trim();
-    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: '{{ __("Invalid Amount") }}',
-            text: '{{ __("Please enter a valid deposit amount.") }}'
-        });
-        return;
-    }
 
     const handlers = {
         stripe: () => {
