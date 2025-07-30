@@ -1,2 +1,84 @@
-# loom
-Unified control panel for managing domains, DNS zones, servers, and resellers — designed for extensibility and ease of use.
+# Argora Loom
+
+[![StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
+
+[![SWUbanner](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md)
+
+**Argora Loom** is a powerful yet lightweight platform for managing domains, DNS zones, servers, resellers, and billing — all in one unified interface. It includes a built-in order and invoice system, allowing users to request services like domain registrations or server plans, which are then processed and provisioned via EPP or other APIs.
+
+While easy to use and modular by design, Argora Loom is also in active development to support the full feature set required by **ICANN-accredited registrars**, including escrow, RDAP, contact validation, and reporting tools.
+
+It’s ideal for self-hosted registrars, resellers, and service providers who want flexibility, control, and a clean starting point without the bloat.
+
+## Features
+
+- **Unified Dashboard** – Manage domains, DNS, servers, users, billing, and more from one clean UI.
+- **EPP Automation** – Built-in support for domain provisioning and updates via EPP.
+- **Lightweight Billing** – Users can place orders, receive invoices, and manage services like domains or hosting.
+- **ICANN-Ready Architecture** – Designed to support the needs of accredited registrars, with features like WDRP, Transfer Policy compliance, and abuse handling.
+- **DNS Management** – Full zone and record editor included.
+- **Reseller System** – Allow others to offer and manage services under their own accounts.
+- **Modular & Extensible** – Add your own modules or integrate third-party tools easily.
+- **Modern Stack** – Slim 4 Framework, Twig, Bootstrap 5, PHP 8+.
+- **API-Ready** – Structured for REST or GraphQL integration.
+- **Self-Hosted** – Your data, your control.
+
+## Get Involved
+
+Argora Loom is open source — and we’d love your help!
+
+Whether you're a developer, designer, registrar, or just exploring alternatives to commercial control panels, here's how you can contribute:
+
+- 🐞 [Report bugs or issues](https://github.com/argora/loom/issues)
+- 🌟 Suggest features and improvements
+- 🧩 Build and contribute new modules
+- 🌍 Help with language translations
+- 📄 Improve documentation or write guides
+
+> Planning to launch your own registrar? Argora Loom can grow with you — from simple reseller setups to full ICANN accreditation support.
+
+## Documentation
+
+### Installation
+
+**Minimum requirement:** a VPS running Ubuntu 22.04 or 24.04, with at least 1 CPU core, 2 GB RAM, and 10 GB hard drive space.
+
+To get started, copy the command below and paste it into your server terminal:
+
+```bash
+(TODO)
+```
+
+For detailed installation steps, see [install.md](docs/install.md)
+
+### Update
+
+(TODO)
+
+## Support
+
+Your feedback and inquiries are invaluable to Loom's evolutionary journey. If you need support, have questions, or want to contribute your thoughts:
+
+- **Email**: Feel free to reach out directly at [help@namingo.org](mailto:help@namingo.org).
+
+- **Discord**: Or chat with us on our [Discord](https://discord.gg/97R9VCrWgc) channel.
+  
+- **GitHub Issues**: For bug reports or feature requests, please use the [Issues](https://github.com/argora/loom/issues) section of our GitHub repository.
+
+## Acknowledgements
+
+**Argora Loom** is built on top of the **Argora Foundry** framework — a modular, extensible boilerplate designed for modern SaaS platforms, control panels, and admin tools.
+
+**Argora Foundry**, in turn, is based on the excellent [hezecom/slim-starter](https://github.com/omotsuebe/slim-starter) by [Hezekiah Omotsuebe](https://github.com/omotsuebe), which provided a solid and clean foundation using **Slim Framework 4**.
+
+## Support This Project
+
+💖 Love Argora Loom? Help support its development by **donating**. Every contribution helps us build better tools for the open-source community.
+
+- [Donate via Stripe](https://donate.stripe.com/7sI2aI4jV3Offn28ww)
+- BTC: `bc1q9jhxjlnzv0x4wzxfp8xzc6w289ewggtds54uqa`
+- ETH: `0x330c1b148368EE4B8756B176f1766d52132f0Ea8`
+
+## Licensing
+
+Argora Loom is licensed under the MIT License.
