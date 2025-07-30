@@ -172,7 +172,6 @@ class FinancialsController extends Controller
 
         $iso3166 = new ISO3166();
         $db = $this->container->get('db');
-        // Get the current URI
         $uri = $request->getUri()->getPath();
         $invoice_details = $db->selectRow('SELECT * FROM invoices WHERE invoice_number = ?',
         [ $invoiceNumber ]
@@ -202,49 +201,25 @@ class FinancialsController extends Controller
         }
 
         $currency = $userData['currency'] ?? null;
-        $nin = $userData['nin'] ?? null;
-        $billing_vat = $userData['vat_number'] ?? null;
-        $ninType = $userData['nin_type'] ?? null;
-
         $cc           = envi('COMPANY_COUNTRY_CODE');
-        $vat_number   = envi('COMPANY_VAT_NUMBER');
-
-        $issueDate = new \DateTime($invoice_details['issue_date']);
-        $firstDayPrevMonth = (clone $issueDate)->modify('first day of last month')->format('Y-m-d');
-        $lastDayPrevMonth = (clone $issueDate)->modify('last day of last month')->format('Y-m-d');
-
         $vatCalculator = new VatCalculator();
         $vatCalculator->setBusinessCountryCode(strtoupper($cc));
         $grossPrice = $vatCalculator->calculate($invoice_details['total_amount'], strtoupper($billing['cc']));
-        $taxRate = $vatCalculator->getTaxRate();
-        $netPrice = $vatCalculator->getNetPrice(); 
         $taxValue = $vatCalculator->getTaxValue(); 
-        if ($vatCalculator->shouldCollectVAT(strtoupper($billing['cc']))) {
-            $validVAT = $vatCalculator->isValidVatNumberFormat($vat_number);
-        } else {
-            $validVAT = null;
-        }
         $totalAmount = $grossPrice + $taxValue;
-        $billing_country = $iso3166->alpha2($billing['cc']);
-        $billing_country = $billing_country['name'];
-
         $locale = $_SESSION['_lang'] ?? 'en_US'; // Fallback to 'en_US' if no locale is set
 
-        // Initialize the number formatter for the locale
-        $numberFormatter = new \NumberFormatter($locale, \NumberFormatter::DECIMAL);
         $currencyFormatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
-
-        // Format values explicitly with the session currency
-        $formattedVatRate = $numberFormatter->format($taxRate * 100) . "%";
-        $formattedVatAmount = $currencyFormatter->formatCurrency($taxValue, $currency);
-        $formattedNetPrice = $currencyFormatter->formatCurrency($netPrice, $currency);
         $formattedTotalAmount = $currencyFormatter->formatCurrency($totalAmount, $currency);
+
+        $enabledGateways = array_map('trim', explode(',', envi('ENABLED_GATEWAYS')));
 
         // Pass formatted values to Twig
         return view($response, 'admin/financials/payInvoice.twig', [
             'invoice_details' => $invoice_details,
             'total' => $formattedTotalAmount,
             'currentUri' => $uri,
+            'enabledGateways' => $enabledGateways,
         ]);
 
     }
@@ -259,10 +234,13 @@ class FinancialsController extends Controller
             $currency = $_SESSION['_currency'];
             $stripe_key = envi('STRIPE_PUBLISHABLE_KEY');
 
+            $enabledGateways = array_map('trim', explode(',', envi('ENABLED_GATEWAYS')));
+
             return view($response,'admin/financials/deposit-user.twig', [
                 'balance' => $balance,
                 'currency' => $currency,
-                'stripe_key' => $stripe_key
+                'stripe_key' => $stripe_key,
+                'enabledGateways' => $enabledGateways,
             ]);
         }
 
@@ -365,13 +343,10 @@ class FinancialsController extends Controller
     public function createStripePayment(Request $request, Response $response)
     {
         $postData = $request->getParsedBody();
-        $amount = $postData['amount']; // Make sure to validate and sanitize this amount
-
-        // Set Stripe's secret key
+        $amount = $postData['amount'] ?? null;
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         \Stripe\Stripe::setApiKey(envi('STRIPE_SECRET_KEY'));
-
-        // Convert amount to cents (Stripe expects the amount in the smallest currency unit)
-        $amountInCents = $amount * 100;
+        $amountInCents = (int) round($amount * 100);
 
         // Create Stripe Checkout session
         $checkout_session = \Stripe\Checkout\Session::create([
@@ -399,17 +374,15 @@ class FinancialsController extends Controller
     public function createAdyenPayment(Request $request, Response $response)
     {
         $postData = $request->getParsedBody();
-        $amount = $postData['amount']; // Make sure to validate and sanitize this amount
+        $amount = $postData['amount'] ?? null;
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $amountInCents = (int) round($amount * 100);
 
-        // Convert amount to cents
-        $amountInCents = $amount * 100;
-        
-        // Your registrar ID and unique identifier
-        $registrarId = $_SESSION['auth_registrar_id'];
-        $uniqueIdentifier = Uuid::uuid4()->toString(); // Generates a unique UUID
+        $userId = $_SESSION["auth_user_id"];
+        $uniqueIdentifier = Uuid::uuid4()->toString();
 
         $delimiter = '|';
-        $combinedString = $registrarId . $delimiter . $uniqueIdentifier;
+        $combinedString = $userId . $delimiter . $uniqueIdentifier;
         $merchantReference = bin2hex($combinedString);
 
         $client = new \Adyen\Client();
@@ -437,17 +410,19 @@ class FinancialsController extends Controller
     public function createCryptoPayment(Request $request, Response $response)
     {
         $postData = $request->getParsedBody();
-        $amount = $postData['amount'];
+        $amount = $postData['amount'] ?? null;
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $amountWhole = (int) round($amount);
 
-        $registrarId = $_SESSION['auth_registrar_id'];
+        $userId = $_SESSION["auth_user_id"];
         $uniqueIdentifier = Uuid::uuid4()->toString();
 
         $delimiter = '|';
-        $combinedString = $registrarId . $delimiter . $uniqueIdentifier;
+        $combinedString = $userId . $delimiter . $uniqueIdentifier;
         $merchantReference = bin2hex($combinedString);
         
         $data = [
-            'price_amount' => $amount,
+            'price_amount' => $amountWhole,
             'price_currency' => $_SESSION['_currency'],
             'order_id' => $merchantReference,
             'success_url' => envi('APP_URL').'/payment-success-crypto',
@@ -483,13 +458,12 @@ class FinancialsController extends Controller
     public function createNickyPayment(Request $request, Response $response)
     {
         $postData = $request->getParsedBody();
-        $amount = $postData['amount']; // Make sure to validate and sanitize this amount
+        $amount = $postData['amount'] ?? null;
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        $amountWhole = (int) round($amount);
 
-        // Registrar ID and unique identifier
-        $registrarId = $_SESSION['auth_registrar_id'];
-
-        // Generate a 10-character alphanumeric random string for the invoice reference
-        $invoiceReference = strtoupper(bin2hex(random_bytes(5))); // 10 characters, all caps
+        $userId = $_SESSION["auth_user_id"];
+        $invoiceReference = strtoupper(bin2hex(random_bytes(5)));
 
         // Map currency to Nicky's blockchainAssetId
         $blockchainAssetId = match ($_SESSION['_currency']) {
@@ -501,10 +475,10 @@ class FinancialsController extends Controller
         // Prepare the payload for the API
         $data = [
             'blockchainAssetId' => $blockchainAssetId,
-            'amountExpectedNative' => $amount,
+            'amountExpectedNative' => $amountWhole,
             'billDetails' => [
                 'invoiceReference' => $invoiceReference,
-                'description' => 'Deposit for registrar ' . $registrarId,
+                'description' => 'Deposit for registrar ' . $userId,
             ],
             'requester' => [
                 'email' => $_SESSION['auth_email'],
@@ -533,11 +507,7 @@ class FinancialsController extends Controller
 
             if (isset($body['bill']['shortId'])) {
                 $paymentUrl = "https://pay.nicky.me/home?paymentId=" . $body['bill']['shortId'];
-
-                // Store the shortId in the session or database for future reference
                 $_SESSION['nicky_shortId'] = $body['bill']['shortId'];
-
-                // Return the payment URL as JSON
                 $response->getBody()->write(json_encode(['invoice_url' => $paymentUrl]));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
             } else {
@@ -824,7 +794,7 @@ class FinancialsController extends Controller
                 } elseif ($status === "Finished") {
                     // Record the successful transaction in the database
                     $db = $this->container->get('db');
-                    $registrarId = $_SESSION['auth_registrar_id'];
+                    $registrarId = $_SESSION["auth_user_id"];
 
                     $currentDateTime = new \DateTime();
                     $date = $currentDateTime->format('Y-m-d H:i:s.v');
