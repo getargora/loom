@@ -1,915 +1,915 @@
 msgid "Manage User"
-msgstr "Manage User"
+msgstr ""
 
 msgid "Impersonate"
-msgstr "Impersonate"
+msgstr ""
 
 msgid "No Data"
-msgstr "No Data"
+msgstr ""
 
 msgid "Email"
-msgstr "Email"
+msgstr ""
 
 msgid "User Name"
-msgstr "User Name"
+msgstr ""
 
 msgid "Roles"
-msgstr "Roles"
+msgstr ""
 
 msgid "Verified"
-msgstr "Verified"
+msgstr ""
 
 msgid "Status"
-msgstr "Status"
+msgstr ""
 
 msgid "Actions"
-msgstr "Actions"
+msgstr ""
 
 msgid "View Invoice"
-msgstr "View Invoice"
+msgstr ""
 
 msgid "Pay Invoice"
-msgstr "Pay Invoice"
+msgstr ""
 
 msgid "Number"
-msgstr "Number"
+msgstr ""
 
 msgid "User"
-msgstr "User"
+msgstr ""
 
 msgid "Date"
-msgstr "Date"
+msgstr ""
 
 msgid "Amount"
-msgstr "Amount"
+msgstr ""
 
 msgid "View Order"
-msgstr "View Order"
+msgstr ""
 
 msgid "Pay Now"
-msgstr "Pay Now"
+msgstr ""
 
 msgid "Cancel Order"
-msgstr "Cancel Order"
+msgstr ""
 
 msgid "Activate Service"
-msgstr "Activate Service"
+msgstr ""
 
 msgid "Retry Payment"
-msgstr "Retry Payment"
+msgstr ""
 
 msgid "Delete Order"
-msgstr "Delete Order"
+msgstr ""
 
 msgid "Order ID"
-msgstr "Order ID"
+msgstr ""
 
 msgid "Service"
-msgstr "Service"
+msgstr ""
 
 msgid "Edit Provider"
-msgstr "Edit Provider"
+msgstr ""
 
 msgid "Delete Provider"
-msgstr "Delete Provider"
+msgstr ""
 
 msgid "Provider"
-msgstr "Provider"
+msgstr ""
 
 msgid "Type"
-msgstr "Type"
+msgstr ""
 
 msgid "Endpoint"
-msgstr "Endpoint"
+msgstr ""
 
 msgid "Created"
-msgstr "Created"
+msgstr ""
 
 msgid "Are you sure you want to delete this provider?"
-msgstr "Are you sure you want to delete this provider?"
+msgstr ""
 
 msgid "Confirm"
-msgstr "Confirm"
+msgstr ""
 
 msgid "Manage Service"
-msgstr "Manage Service"
+msgstr ""
 
 msgid "Expiration"
-msgstr "Expiration"
+msgstr ""
 
 msgid "ID"
-msgstr "ID"
+msgstr ""
 
 msgid "Event"
-msgstr "Event"
+msgstr ""
 
 msgid "Actor"
-msgstr "Actor"
+msgstr ""
 
 msgid "No log data for user."
-msgstr "No log data for user."
+msgstr ""
 
 msgid "User Agent"
-msgstr "User Agent"
+msgstr ""
 
 msgid "IP"
-msgstr "IP"
+msgstr ""
 
 msgid "Location"
-msgstr "Location"
+msgstr ""
 
 msgid "Timestamp"
-msgstr "Timestamp"
+msgstr ""
 
 msgid "User Log"
-msgstr "User Log"
+msgstr ""
 
 msgid "View Ticket"
-msgstr "View Ticket"
+msgstr ""
 
 msgid "Open"
-msgstr "Open"
+msgstr ""
 
 msgid "In Progress"
-msgstr "In Progress"
+msgstr ""
 
 msgid "Resolved"
-msgstr "Resolved"
+msgstr ""
 
 msgid "Closed"
-msgstr "Closed"
+msgstr ""
 
 msgid "Low"
-msgstr "Low"
+msgstr ""
 
 msgid "Medium"
-msgstr "Medium"
+msgstr ""
 
 msgid "High"
-msgstr "High"
+msgstr ""
 
 msgid "Critical"
-msgstr "Critical"
+msgstr ""
 
 msgid "Subject"
-msgstr "Subject"
+msgstr ""
 
 msgid "Category"
-msgstr "Category"
+msgstr ""
 
 msgid "Priority"
-msgstr "Priority"
+msgstr ""
 
 msgid "Creation Date"
-msgstr "Creation Date"
+msgstr ""
 
 msgid "Enable dark mode"
-msgstr "Enable dark mode"
+msgstr ""
 
 msgid "Enable light mode"
-msgstr "Enable light mode"
+msgstr ""
 
 msgid "My Profile"
-msgstr "My Profile"
+msgstr ""
 
 msgid "Leave Impersonation"
-msgstr "Leave Impersonation"
+msgstr ""
 
 msgid "Logout"
-msgstr "Logout"
+msgstr ""
 
 msgid "Dashboard"
-msgstr "Dashboard"
+msgstr ""
 
 msgid "Orders"
-msgstr "Orders"
+msgstr ""
 
 msgid "List Orders"
-msgstr "List Orders"
+msgstr ""
 
 msgid "Create Order"
-msgstr "Create Order"
+msgstr ""
 
 msgid "Services"
-msgstr "Services"
+msgstr ""
 
 msgid "List Services"
-msgstr "List Services"
+msgstr ""
 
 msgid "Providers"
-msgstr "Providers"
+msgstr ""
 
 msgid "Service Logs"
-msgstr "Service Logs"
+msgstr ""
 
 msgid "Billing"
-msgstr "Billing"
+msgstr ""
 
 msgid "Transactions"
-msgstr "Transactions"
+msgstr ""
 
 msgid "Invoices"
-msgstr "Invoices"
+msgstr ""
 
 msgid "Add Deposit"
-msgstr "Add Deposit"
+msgstr ""
 
 msgid "Users"
-msgstr "Users"
+msgstr ""
 
 msgid "List Users"
-msgstr "List Users"
+msgstr ""
 
 msgid "Create User"
-msgstr "Create User"
+msgstr ""
 
 msgid "Support"
-msgstr "Support"
+msgstr ""
 
 msgid "Support Tickets"
-msgstr "Support Tickets"
+msgstr ""
 
 msgid "Create Ticket"
-msgstr "Create Ticket"
+msgstr ""
 
 msgid "Overview"
-msgstr "Overview"
+msgstr ""
 
 msgid "Balance"
-msgstr "Balance"
+msgstr ""
 
 msgid "Details"
-msgstr "Details"
+msgstr ""
 
 msgid "Security"
-msgstr "Security"
+msgstr ""
 
 msgid "Log"
-msgstr "Log"
+msgstr ""
 
 msgid "Role"
-msgstr "Role"
+msgstr ""
 
 msgid "ID Number"
-msgstr "ID Number"
+msgstr ""
 
 msgid "VAT Number"
-msgstr "VAT Number"
+msgstr ""
 
 msgid "Account Type"
-msgstr "Account Type"
+msgstr ""
 
 msgid "Business Account"
-msgstr "Business Account"
+msgstr ""
 
 msgid "Personal Account"
-msgstr "Personal Account"
+msgstr ""
 
 msgid "Validation Status"
-msgstr "Validation Status"
+msgstr ""
 
 msgid "Validated"
-msgstr "Validated"
+msgstr ""
 
 msgid "Not Validated"
-msgstr "Not Validated"
+msgstr ""
 
 msgid "Change Password"
-msgstr "Change Password"
+msgstr ""
 
 msgid "Old Password"
-msgstr "Old Password"
+msgstr ""
 
 msgid "Enter old password"
-msgstr "Enter old password"
+msgstr ""
 
 msgid "New Password"
-msgstr "New Password"
+msgstr ""
 
 msgid "Enter new password"
-msgstr "Enter new password"
+msgstr ""
 
 msgid "Update"
-msgstr "Update"
+msgstr ""
 
 msgid "Select Theme"
-msgstr "Select Theme"
+msgstr ""
 
 msgid "Select"
-msgstr "Select"
+msgstr ""
 
 msgid "User Contacts"
-msgstr "User Contacts"
+msgstr ""
 
 msgid "Owner"
-msgstr "Owner"
+msgstr ""
 
 msgid "Technical"
-msgstr "Technical"
+msgstr ""
 
 msgid "Abuse"
-msgstr "Abuse"
+msgstr ""
 
 msgid "Copy data to other contacts"
-msgstr "Copy data to other contacts"
+msgstr ""
 
 msgid "First Name"
-msgstr "First Name"
+msgstr ""
 
 msgid "Last Name"
-msgstr "Last Name"
+msgstr ""
 
 msgid "Organization"
-msgstr "Organization"
+msgstr ""
 
 msgid "Street Address"
-msgstr "Street Address"
+msgstr ""
 
 msgid "City"
-msgstr "City"
+msgstr ""
 
 msgid "State/Province"
-msgstr "State/Province"
+msgstr ""
 
 msgid "Postal Code"
-msgstr "Postal Code"
+msgstr ""
 
 msgid "Country"
-msgstr "Country"
+msgstr ""
 
 msgid "Phone"
-msgstr "Phone"
+msgstr ""
 
 msgid "Update Contacts"
-msgstr "Update Contacts"
+msgstr ""
 
 msgid "Two-Factor Authentication"
-msgstr "Two-Factor Authentication"
+msgstr ""
 
 msgid "Download Google Authenticator app"
-msgstr "Download Google Authenticator app"
+msgstr ""
 
 msgid "Scan the QR code with your authentication app"
-msgstr "Scan the QR code with your authentication app"
+msgstr ""
 
 msgid "Manual Entry Secret"
-msgstr "Manual Entry Secret"
+msgstr ""
 
 msgid "If you're unable to scan the QR code, enter this secret manually into your authentication app. The secret is case-sensitive and should be entered exactly as shown."
-msgstr "If you're unable to scan the QR code, enter this secret manually into your authentication app. The secret is case-sensitive and should be entered exactly as shown."
+msgstr ""
 
 msgid "Verification Code"
-msgstr "Verification Code"
+msgstr ""
 
 msgid "Enter code"
-msgstr "Enter code"
+msgstr ""
 
 msgid "Enter the code generated by your authentication app. This code verifies that your 2FA setup is working correctly. Once entered, click"
-msgstr "Enter the code generated by your authentication app. This code verifies that your 2FA setup is working correctly. Once entered, click"
+msgstr ""
 
 msgid "Save 2FA Settings"
-msgstr "Save 2FA Settings"
+msgstr ""
 
 msgid "to activate two-factor authentication for your account."
-msgstr "to activate two-factor authentication for your account."
+msgstr ""
 
 msgid "Your account is secured with an additional layer of protection."
-msgstr "Your account is secured with an additional layer of protection."
+msgstr ""
 
 msgid "2FA is currently"
-msgstr "2FA is currently"
+msgstr ""
 
 msgid "enabled"
-msgstr "enabled"
+msgstr ""
 
 msgid "for your account. If you encounter any issues or need to disable 2FA, please contact our support team for assistance."
-msgstr "for your account. If you encounter any issues or need to disable 2FA, please contact our support team for assistance."
+msgstr ""
 
 msgid "WebAuthn Authentication"
-msgstr "WebAuthn Authentication"
+msgstr ""
 
 msgid "WebAuthn is currently"
-msgstr "WebAuthn is currently"
+msgstr ""
 
 msgid "for your account. If you encounter any issues or need to disable WebAuthn, please contact our support team for assistance."
-msgstr "for your account. If you encounter any issues or need to disable WebAuthn, please contact our support team for assistance."
+msgstr ""
 
 msgid "Connect WebAuthn Device"
-msgstr "Connect WebAuthn Device"
+msgstr ""
 
 msgid "Device/Browser Info"
-msgstr "Device/Browser Info"
+msgstr ""
 
 msgid "Registration Date"
-msgstr "Registration Date"
+msgstr ""
 
 msgid "No devices found."
-msgstr "No devices found."
+msgstr ""
 
 msgid "Secure your account with WebAuthn. Click the button below to register your device for passwordless sign-in."
-msgstr "Secure your account with WebAuthn. Click the button below to register your device for passwordless sign-in."
+msgstr ""
 
 msgid "Disabled"
-msgstr "Disabled"
+msgstr ""
 
 msgid "WebAuthn is currently disabled for this installation. To enable WebAuthn authentication, please contact the system administrator."
-msgstr "WebAuthn is currently disabled for this installation. To enable WebAuthn authentication, please contact the system administrator."
+msgstr ""
 
 msgid "If you\’ve logged in on multiple devices or browsers and want to ensure your account remains secure, you can log out from all other sessions except this one. This will end access from any other logged-in devices."
-msgstr "If you\’ve logged in on multiple devices or browsers and want to ensure your account remains secure, you can log out from all other sessions except this one. This will end access from any other logged-in devices."
+msgstr ""
 
 msgid "Log Out from All Devices"
-msgstr "Log Out from All Devices"
+msgstr ""
 
 msgid "User Audit Log"
-msgstr "User Audit Log"
+msgstr ""
 
 msgid "Track and review all user activities in your account below. Monitor logins, profile changes, and other key actions to ensure security and transparency."
-msgstr "Track and review all user activities in your account below. Monitor logins, profile changes, and other key actions to ensure security and transparency."
+msgstr ""
 
 msgid "Search service logs"
-msgstr "Search service logs"
+msgstr ""
 
 msgid "Manage"
-msgstr "Manage"
+msgstr ""
 
 msgid "Domain"
-msgstr "Domain"
+msgstr ""
 
 msgid "Renew Domain"
-msgstr "Renew Domain"
+msgstr ""
 
 msgid "Update Domain"
-msgstr "Update Domain"
+msgstr ""
 
 msgid "Registered On"
-msgstr "Registered On"
+msgstr ""
 
 msgid "Last Updated"
-msgstr "Last Updated"
+msgstr ""
 
 msgid "Expiration Date"
-msgstr "Expiration Date"
+msgstr ""
 
 msgid "Registrant"
-msgstr "Registrant"
+msgstr ""
 
 msgid "Contact"
-msgstr "Contact"
+msgstr ""
 
 msgid "Auth Info"
-msgstr "Auth Info"
+msgstr ""
 
 msgid "Nameservers"
-msgstr "Nameservers"
+msgstr ""
 
 msgid "Nameserver"
-msgstr "Nameserver"
+msgstr ""
 
 msgid "DNSSEC Data"
-msgstr "DNSSEC Data"
+msgstr ""
 
 msgid "Create New Order"
-msgstr "Create New Order"
+msgstr ""
 
 msgid "Search services"
-msgstr "Search services"
+msgstr ""
 
 msgid "Find Your Perfect Domain"
-msgstr "Find Your Perfect Domain"
+msgstr ""
 
 msgid "Start your online journey by searching for an available domain."
-msgstr "Start your online journey by searching for an available domain."
+msgstr ""
 
 msgid "Check"
-msgstr "Check"
+msgstr ""
 
 msgid "Registration"
-msgstr "Registration"
+msgstr ""
 
 msgid "Renewal"
-msgstr "Renewal"
+msgstr ""
 
 msgid "Transfer"
-msgstr "Transfer"
+msgstr ""
 
 msgid "Configure Product"
-msgstr "Configure Product"
+msgstr ""
 
 msgid "Submit Order"
-msgstr "Submit Order"
+msgstr ""
 
 msgid "Order"
-msgstr "Order"
+msgstr ""
 
 msgid "Created At"
-msgstr "Created At"
+msgstr ""
 
 msgid "Paid At"
-msgstr "Paid At"
+msgstr ""
 
 msgid "Invoice"
-msgstr "Invoice"
+msgstr ""
 
 msgid "Domain Name"
-msgstr "Domain Name"
+msgstr ""
 
 msgid "Years"
-msgstr "Years"
+msgstr ""
 
 msgid "Transfer Domain"
-msgstr "Transfer Domain"
+msgstr ""
 
 msgid "This domain is being transferred to you"
-msgstr "This domain is being transferred to you"
+msgstr ""
 
 msgid "Transfer Code (AuthInfo)"
-msgstr "Transfer Code (AuthInfo)"
+msgstr ""
 
 msgid "You can request this code from your current registrar. It’s required to authorize the domain transfer."
-msgstr "You can request this code from your current registrar. It’s required to authorize the domain transfer."
+msgstr ""
 
 msgid "Transfer price"
-msgstr "Transfer price"
+msgstr ""
 
 msgid "1 year"
-msgstr "1 year"
+msgstr ""
 
 msgid "Request Transfer"
-msgstr "Request Transfer"
+msgstr ""
 
 msgid "Create Domain"
-msgstr "Create Domain"
+msgstr ""
 
 msgid "This domain will be yours in seconds"
-msgstr "This domain will be yours in seconds"
+msgstr ""
 
 msgid "Choose registration period"
-msgstr "Choose registration period"
+msgstr ""
 
 msgid "Domain Contacts"
-msgstr "Domain Contacts"
+msgstr ""
 
 msgid "Edit Contacts"
-msgstr "Edit Contacts"
+msgstr ""
 
 msgid "Use default owner contact for all roles"
-msgstr "Use default owner contact for all roles"
+msgstr ""
 
 msgid "Additional Information Required"
-msgstr "Additional Information Required"
+msgstr ""
 
 msgid "Add DNSSEC Data"
-msgstr "Add DNSSEC Data"
+msgstr ""
 
 msgid "DS Record"
-msgstr "DS Record"
+msgstr ""
 
 msgid "Key Tag"
-msgstr "Key Tag"
+msgstr ""
 
 msgid "Select Algorithm"
-msgstr "Select Algorithm"
+msgstr ""
 
 msgid "Select Digest Type"
-msgstr "Select Digest Type"
+msgstr ""
 
 msgid "Digest"
-msgstr "Digest"
+msgstr ""
 
 msgid "DNSKEY Record"
-msgstr "DNSKEY Record"
+msgstr ""
 
 msgid "Flags"
-msgstr "Flags"
+msgstr ""
 
 msgid "Protocol"
-msgstr "Protocol"
+msgstr ""
 
 msgid "Public Key"
-msgstr "Public Key"
+msgstr ""
 
 msgid "Search orders"
-msgstr "Search orders"
+msgstr ""
 
 msgid "Create New Ticket"
-msgstr "Create New Ticket"
+msgstr ""
 
 msgid "Search tickets"
-msgstr "Search tickets"
+msgstr ""
 
 msgid "New Support Ticket"
-msgstr "New Support Ticket"
+msgstr ""
 
 msgid "Select a category"
-msgstr "Select a category"
+msgstr ""
 
 msgid "Message"
-msgstr "Message"
+msgstr ""
 
 msgid "Ticket Overview"
-msgstr "Ticket Overview"
+msgstr ""
 
 msgid "DNS Records"
-msgstr "DNS Records"
+msgstr ""
 
 msgid "WHOIS Lookup"
-msgstr "WHOIS Lookup"
+msgstr ""
 
 msgid "Ticket"
-msgstr "Ticket"
+msgstr ""
 
 msgid "Close Ticket"
-msgstr "Close Ticket"
+msgstr ""
 
 msgid "Escalate Ticket"
-msgstr "Escalate Ticket"
+msgstr ""
 
 msgid "Reopen Ticket"
-msgstr "Reopen Ticket"
+msgstr ""
 
 msgid "Created On"
-msgstr "Created On"
+msgstr ""
 
 msgid "Date of Incident"
-msgstr "Date of Incident"
+msgstr ""
 
 msgid "Unknown Status"
-msgstr "Unknown Status"
+msgstr ""
 
 msgid "Unknown"
-msgstr "Unknown"
+msgstr ""
 
 msgid "Nature of Abuse"
-msgstr "Nature of Abuse"
+msgstr ""
 
 msgid "Evidence"
-msgstr "Evidence"
+msgstr ""
 
 msgid "Relevant URLs"
-msgstr "Relevant URLs"
+msgstr ""
 
 msgid "Your Response"
-msgstr "Your Response"
+msgstr ""
 
 msgid "Submit Response"
-msgstr "Submit Response"
+msgstr ""
 
 msgid "Update User"
-msgstr "Update User"
+msgstr ""
 
 msgid "Enter email"
-msgstr "Enter email"
+msgstr ""
 
 msgid "Username"
-msgstr "Username"
+msgstr ""
 
 msgid "Enter username"
-msgstr "Enter username"
+msgstr ""
 
 msgid "Password"
-msgstr "Password"
+msgstr ""
 
 msgid "Confirm Password"
-msgstr "Confirm Password"
+msgstr ""
 
 msgid "Active"
-msgstr "Active"
+msgstr ""
 
 msgid "Archived"
-msgstr "Archived"
+msgstr ""
 
 msgid "Banned"
-msgstr "Banned"
+msgstr ""
 
 msgid "Pending Review"
-msgstr "Pending Review"
+msgstr ""
 
 msgid "Suspended"
-msgstr "Suspended"
+msgstr ""
 
 msgid "Yes"
-msgstr "Yes"
+msgstr ""
 
 msgid "No"
-msgstr "No"
+msgstr ""
 
 msgid "Admin"
-msgstr "Admin"
+msgstr ""
 
 msgid "Client Administrator"
-msgstr "Client Administrator"
+msgstr ""
 
 msgid "Manage Roles"
-msgstr "Manage Roles"
+msgstr ""
 
 msgid "Accountant"
-msgstr "Accountant"
+msgstr ""
 
 msgid "Auditor"
-msgstr "Auditor"
+msgstr ""
 
 msgid "Sales"
-msgstr "Sales"
+msgstr ""
 
 msgid "Create New User"
-msgstr "Create New User"
+msgstr ""
 
 msgid "Search users"
-msgstr "Search users"
+msgstr ""
 
 msgid "Client"
-msgstr "Client"
+msgstr ""
 
 msgid "pending"
-msgstr "pending"
+msgstr ""
 
 msgid "unpaid"
-msgstr "unpaid"
+msgstr ""
 
 msgid "Tickets"
-msgstr "Tickets"
+msgstr ""
 
 msgid "unanswered"
-msgstr "unanswered"
+msgstr ""
 
 msgid "User Deposit"
-msgstr "User Deposit"
+msgstr ""
 
 msgid "Choose User..."
-msgstr "Choose User..."
+msgstr ""
 
 msgid "Current Balance for"
-msgstr "Current Balance for"
+msgstr ""
 
 msgid "Enter deposit amount"
-msgstr "Enter deposit amount"
+msgstr ""
 
 msgid "Description"
-msgstr "Description"
+msgstr ""
 
 msgid "Optional deposit description"
-msgstr "Optional deposit description"
+msgstr ""
 
 msgid "Nicky Payment Status"
-msgstr "Nicky Payment Status"
+msgstr ""
 
 msgid "Payment Status:"
-msgstr "Payment Status:"
+msgstr ""
 
 msgid "Payment Details Not Found"
-msgstr "Payment Details Not Found"
+msgstr ""
 
 msgid "It appears the payment details could not be found in your session. This may happen if the session has expired or if you accessed this page directly without completing the payment process."
-msgstr "It appears the payment details could not be found in your session. This may happen if the session has expired or if you accessed this page directly without completing the payment process."
+msgstr ""
 
 msgid "To proceed, please restart the payment process. If you have already completed a payment and believe this is an error, check your email for the payment confirmation details or contact our support team for assistance."
-msgstr "To proceed, please restart the payment process. If you have already completed a payment and believe this is an error, check your email for the payment confirmation details or contact our support team for assistance."
+msgstr ""
 
 msgid "We recommend initiating a new payment to ensure your transaction is properly credited."
-msgstr "We recommend initiating a new payment to ensure your transaction is properly credited."
+msgstr ""
 
 msgid "Restart Payment"
-msgstr "Restart Payment"
+msgstr ""
 
 msgid "Invoice Issued On"
-msgstr "Invoice Issued On"
+msgstr ""
 
 msgid "Due Date"
-msgstr "Due Date"
+msgstr ""
 
 msgid "Payment Method"
-msgstr "Payment Method"
+msgstr ""
 
 msgid "Stripe"
-msgstr "Stripe"
+msgstr ""
 
 msgid "Adyen"
-msgstr "Adyen"
+msgstr ""
 
 msgid "Crypto"
-msgstr "Crypto"
+msgstr ""
 
 msgid "Deposit Payment Unsuccessful"
-msgstr "Deposit Payment Unsuccessful"
+msgstr ""
 
 msgid "We've noticed that your deposit payment process was not completed. It appears that the payment was either cancelled or failed during the transaction. If this was an error, or if you have any questions, please don't hesitate to contact us. We're here to help ensure your transaction is smooth and secure."
-msgstr "We've noticed that your deposit payment process was not completed. It appears that the payment was either cancelled or failed during the transaction. If this was an error, or if you have any questions, please don't hesitate to contact us. We're here to help ensure your transaction is smooth and secure."
+msgstr ""
 
 msgid "Ready to try again? When you're set to proceed with your deposit, simply return to the"
-msgstr "Ready to try again? When you're set to proceed with your deposit, simply return to the"
+msgstr ""
 
 msgid "Deposit Page"
-msgstr "Deposit Page"
+msgstr ""
 
 msgid "to initiate a new payment. We value your partnership and are committed to assisting you every step of the way."
-msgstr "to initiate a new payment. We value your partnership and are committed to assisting you every step of the way."
+msgstr ""
 
 msgid "Search invoices"
-msgstr "Search invoices"
+msgstr ""
 
 msgid "Search transactions"
-msgstr "Search transactions"
+msgstr ""
 
 msgid "Print Invoice"
-msgstr "Print Invoice"
+msgstr ""
 
 msgid "Product"
-msgstr "Product"
+msgstr ""
 
 msgid "No items found."
-msgstr "No items found."
+msgstr ""
 
 msgid "Subtotal"
-msgstr "Subtotal"
+msgstr ""
 
 msgid "Vat Rate"
-msgstr "Vat Rate"
+msgstr ""
 
 msgid "Vat Due"
-msgstr "Vat Due"
+msgstr ""
 
 msgid "Total Due"
-msgstr "Total Due"
+msgstr ""
 
 msgid "Notes"
-msgstr "Notes"
+msgstr ""
 
 msgid "Thank you very much for doing business with us. We look forward to working with you again!"
-msgstr "Thank you very much for doing business with us. We look forward to working with you again!"
+msgstr ""
 
 msgid "Crypto Payment Status"
-msgstr "Crypto Payment Status"
+msgstr ""
 
 msgid "Payment Status Unavailable"
-msgstr "Payment Status Unavailable"
+msgstr ""
 
 msgid "It appears you've accessed this page directly without specifying a payment ID. To view the status of your payment and ensure it is credited once completed, please make sure to include the paymentId parameter in the URL, like so:"
-msgstr "It appears you've accessed this page directly without specifying a payment ID. To view the status of your payment and ensure it is credited once completed, please make sure to include the paymentId parameter in the URL, like so:"
+msgstr ""
 
 msgid "Replace"
-msgstr "Replace"
+msgstr ""
 
 msgid "with your actual payment ID."
-msgstr "with your actual payment ID."
+msgstr ""
 
 msgid "If you're unsure of your payment ID or if you've encountered this message after completing a payment, please check your email for the payment confirmation, which should include the necessary payment ID. Alternatively, you can contact our support team for assistance."
-msgstr "If you're unsure of your payment ID or if you've encountered this message after completing a payment, please check your email for the payment confirmation, which should include the necessary payment ID. Alternatively, you can contact our support team for assistance."
+msgstr ""
 
 msgid "Create Provider"
-msgstr "Create Provider"
+msgstr ""
 
 msgid "Provider Name"
-msgstr "Provider Name"
+msgstr ""
 
 msgid "Service Type"
-msgstr "Service Type"
+msgstr ""
 
 msgid "Select type"
-msgstr "Select type"
+msgstr ""
 
 msgid "Domain Registry"
-msgstr "Domain Registry"
+msgstr ""
 
 msgid "Hosting Provider"
-msgstr "Hosting Provider"
+msgstr ""
 
 msgid "Email Platform"
-msgstr "Email Platform"
+msgstr ""
 
 msgid "External API"
-msgstr "External API"
+msgstr ""
 
 msgid "Custom/Internal"
-msgstr "Custom/Internal"
+msgstr ""
 
 msgid "API Endpoint or Host:Port"
-msgstr "API Endpoint or Host:Port"
+msgstr ""
 
 msgid "Credentials / Configuration (JSON)"
-msgstr "Credentials / Configuration (JSON)"
+msgstr ""
 
 msgid "Include any connection details or configuration here as valid JSON."
-msgstr "Include any connection details or configuration here as valid JSON."
+msgstr ""
 
 msgid "Pricing / Product Definitions (JSON)"
-msgstr "Pricing / Product Definitions (JSON)"
+msgstr ""
 
 msgid "Define service types and their prices as valid JSON. For example: domain, hosting, etc."
-msgstr "Define service types and their prices as valid JSON. For example: domain, hosting, etc."
+msgstr ""
 
 msgid "Inactive"
-msgstr "Inactive"
+msgstr ""
 
 msgid "Testing"
-msgstr "Testing"
+msgstr ""
 
 msgid "Update Provider"
-msgstr "Update Provider"
+msgstr ""
 
 msgid "Create New Provider"
-msgstr "Create New Provider"
+msgstr ""
 
 msgid "Search providers"
-msgstr "Search providers"
+msgstr ""
 
