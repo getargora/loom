@@ -3,58 +3,121 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-    <div class="page page-center">
-      <div class="container container-tight py-4">
-        <div class="text-center mb-4">
-          <a href="." class="navbar-brand navbar-brand-autodark"><img src="{{ logoPath }}" height="36" alt="" class="navbar-brand-image"></a>
-          {% include 'partials/flash.twig' %}
-        </div>
-        <form class="card card-md" action="{{ route('register') }}" name="register" method="post" autocomplete="off" novalidate>
-        {{ csrf.field | raw }}
-          <div class="card-body">
-            <h2 class="card-title text-center mb-4">Create new account</h2>
+<div class="page page-center">
+  <div class="container py-4">
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <img src="{{ logoPath }}" height="36" alt="Argora" class="navbar-brand-image">
+      </a>
+      {% include 'partials/flash.twig' %}
+    </div>
+
+    <form class="card" action="{{ route('register') }}" method="post" name="register" autocomplete="off" novalidate>
+      {{ csrf.field | raw }}
+
+      <div class="card-body p-4">
+        <h2 class="card-title text-center mb-4">Create Your Account</h2>
+
+        <div class="row">
+          <!-- Account Info -->
+          <div class="col-lg-6 border-end">
+            <h4 class="mb-3">Account Credentials</h4>
+
             <div class="mb-3">
-              <label class="form-label">User Name</label>
-              <input type="text" name="username" value="{{ old.username }}" class="form-control{{ errors.name ? ' is-invalid' : '' }}" placeholder="Enter name">
-        {% if errors.username %}
-              <small class="form-hint">{{ errors.username | first }}</small>
-        {% endif %}
+              <label class="form-label">Username</label>
+              <input type="text" name="username" value="{{ old.username }}" class="form-control{{ errors.username ? ' is-invalid' : '' }}" placeholder="help@argora.org">
             </div>
+
             <div class="mb-3">
-              <label class="form-label">Email address</label>
-              <input type="email" name="email" value="{{ old.email }}" class="form-control{{ errors.email ? ' is-invalid' : '' }}" placeholder="Enter email">
-        {% if errors.email %}
-              <small class="form-hint">{{ errors.email | first }}</small>
-        {% endif %}
+              <label class="form-label">Email Address</label>
+              <input type="email" name="email" value="{{ old.email }}" class="form-control{{ errors.email ? ' is-invalid' : '' }}" placeholder="your@email.com">
             </div>
+
             <div class="mb-3">
               <label class="form-label">Password</label>
               <div class="input-group input-group-flat">
-                <input type="password" name="password" class="form-control{{ errors.password ? ' is-invalid' : '' }}"  placeholder="Password"  autocomplete="off">
+                <input type="password" name="password" class="form-control{{ errors.password ? ' is-invalid' : '' }}" placeholder="Password">
                 <span class="input-group-text">
-                  <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip"><!-- Download SVG icon from http://tabler-icons.io/i/eye -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2" /><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" /></svg>
+                  <a href="#" class="link-secondary" title="Show password">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor">
+                      <circle cx="12" cy="12" r="2" />
+                      <path d="M22 12c-2.67 4.67-6 7-10 7s-7.33-2.33-10-7c2.67-4.67 6-7 10-7s7.33 2.33 10 7" />
+                    </svg>
                   </a>
                 </span>
-        {% if errors.password %}
-            <small class="form-hint">{{ errors.password | first }}</small>
-        {% endif %}
               </div>
             </div>
-            <div class="mb-3">
-              <label class="form-check">
-                <input type="checkbox" value="" id="flexCheckChecked" class="form-check-input"/>
-                <span class="form-check-label">Agree the <a href="./terms-of-service.html" tabindex="-1">terms and policy</a>.</span>
-              </label>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="col-lg-6 ps-lg-4 mt-4 mt-lg-0">
+            <h4 class="mb-3">Contact Information</h4>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" value="{{ old.first_name }}" class="form-control" placeholder="Oleh">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" value="{{ old.last_name }}" class="form-control" placeholder="Shevchenko">
+              </div>
             </div>
-            <div class="form-footer">
-              <button type="submit" class="btn btn-primary w-100">Create new account</button>
+
+            <div class="mb-3 mt-2">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" name="phone" value="{{ old.phone }}" class="form-control" placeholder="+380.671234567">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Organization (optional)</label>
+              <input type="text" name="org" value="{{ old.org }}" class="form-control" placeholder="Digital Cookie LLC">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Street Address</label>
+              <input type="text" name="street" value="{{ old.street }}" class="form-control" placeholder="vul. Volodymyrska 12">
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label">City</label>
+                <input type="text" name="city" value="{{ old.city }}" class="form-control" placeholder="Kyiv">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Postal Code</label>
+                <input type="text" name="postal_code" value="{{ old.postal_code }}" class="form-control" placeholder="01001">
+              </div>
+            </div>
+
+            <div class="mt-2">
+              <label class="form-label">Country</label>
+              <select name="country" class="form-select">
+                <option value="">Select country</option>
+                <option value="UA"{{ old.country == 'UA' ? ' selected' : '' }}>Ukraine</option>
+                <option value="PL"{{ old.country == 'PL' ? ' selected' : '' }}>Poland</option>
+                <option value="DE"{{ old.country == 'DE' ? ' selected' : '' }}>Germany</option>
+              </select>
             </div>
           </div>
-        </form>
-        <div class="text-center text-muted mt-3">
-          Already have account? <a href="{{ route('login') }}" tabindex="-1">Sign in</a>
+        </div>
+
+        <div class="mt-4">
+          <label class="form-check">
+            <input type="checkbox" name="terms" class="form-check-input" required>
+            <span class="form-check-label">I agree to the <a href="/terms-of-service.html">terms and policy</a>.</span>
+          </label>
+        </div>
+
+        <div class="form-footer mt-4">
+          <button type="submit" class="btn btn-primary w-100">Register Now</button>
         </div>
       </div>
+    </form>
+
+    <div class="text-center text-muted mt-3">
+      Already have an account? <a href="{{ route('login') }}">Sign in</a>
     </div>
+  </div>
+</div>
 {% endblock %}
