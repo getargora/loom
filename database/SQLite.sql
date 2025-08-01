@@ -210,6 +210,7 @@ CREATE TABLE "providers" (
     "credentials" TEXT,
     "pricing" TEXT,
     "status" TEXT NOT NULL DEFAULT 'active',
+    "tld" TEXT UNIQUE,
     "created_at" TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -221,6 +222,7 @@ CREATE TABLE "services" (
     "type" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'active',
     "config" TEXT DEFAULT NULL,
+    "service_name" TEXT UNIQUE,
     "registered_at" TEXT,
     "expires_at" TEXT,
     "updated_at" TEXT DEFAULT CURRENT_TIMESTAMP,

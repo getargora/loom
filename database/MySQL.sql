@@ -212,9 +212,11 @@ CREATE TABLE IF NOT EXISTS `providers` (
   `credentials` JSON DEFAULT NULL,                      -- e.g. API keys, tokens
   `pricing` JSON DEFAULT NULL,
   `status` ENUM('active', 'inactive', 'testing') NOT NULL DEFAULT 'active',
+  `tld` VARCHAR(64) DEFAULT NULL,
   `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_name` (`name`)
+  UNIQUE KEY `uniq_name` (`name`),
+  UNIQUE KEY `unique_tld` (`tld`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `services` (
@@ -225,11 +227,13 @@ CREATE TABLE IF NOT EXISTS `services` (
   `type` VARCHAR(32) NOT NULL,                          -- e.g. 'domain', 'vps', 'ssl', 'mail'
   `status` ENUM('active', 'suspended', 'terminated', 'expired', 'pending') NOT NULL DEFAULT 'active',
   `config` JSON DEFAULT NULL,                           -- full config: e.g. domain contacts, NS, VPS specs
+  `service_name` VARCHAR(128) DEFAULT NULL,
   `registered_at` DATETIME(3) DEFAULT NULL,             -- when the resource was created
   `expires_at` DATETIME(3) DEFAULT NULL,                -- when it ends
   `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_service_name` (`service_name`),
   INDEX (`user_id`, `type`, `status`),
   CONSTRAINT `services_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `services_provider_fk` FOREIGN KEY (`provider_id`) REFERENCES `providers` (`id`) ON DELETE SET NULL,

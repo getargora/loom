@@ -210,6 +210,7 @@ CREATE TABLE IF NOT EXISTS "providers" (
      "credentials" JSONB,
      "pricing" JSONB,
      "status" VARCHAR(16) NOT NULL DEFAULT 'active',
+     "tld" VARCHAR(64) UNIQUE,
      "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -221,6 +222,7 @@ CREATE TABLE IF NOT EXISTS "services" (
      "type" VARCHAR(32) NOT NULL,
      "status" VARCHAR(16) NOT NULL DEFAULT 'active',
      "config" JSONB DEFAULT NULL,
+     "service_name" VARCHAR(128) UNIQUE,
      "registered_at" TIMESTAMP(3),
      "expires_at" TIMESTAMP(3),
      "updated_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
