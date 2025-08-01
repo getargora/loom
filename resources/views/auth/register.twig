@@ -7,7 +7,7 @@
   <div class="container py-4">
     <div class="text-center mb-4">
       <a href="." class="navbar-brand navbar-brand-autodark">
-        <img src="{{ logoPath }}" height="36" alt="Argora" class="navbar-brand-image">
+        <img src="{{ logoPath }}" height="36" alt="Loom" class="navbar-brand-image">
       </a>
       {% include 'partials/flash.twig' %}
     </div>
@@ -25,12 +25,12 @@
 
             <div class="mb-3">
               <label class="form-label">Username</label>
-              <input type="text" name="username" value="{{ old.username }}" class="form-control{{ errors.username ? ' is-invalid' : '' }}" placeholder="help@argora.org">
+              <input type="text" name="username" value="{{ old.username }}" class="form-control{{ errors.username ? ' is-invalid' : '' }}" placeholder="your_username">
             </div>
 
             <div class="mb-3">
               <label class="form-label">Email Address</label>
-              <input type="email" name="email" value="{{ old.email }}" class="form-control{{ errors.email ? ' is-invalid' : '' }}" placeholder="your@email.com">
+              <input type="email" name="email" value="{{ old.email }}" class="form-control{{ errors.email ? ' is-invalid' : '' }}" placeholder="your@email.com" autocapitalize="none">
             </div>
 
             <div class="mb-3">
