@@ -616,15 +616,15 @@ class FinancialsController extends Controller
                 }
 
                 if ($isPositiveNumberWithTwoDecimals) {
+                    $userId = $_SESSION["auth_user_id"] ?? $userId;
                     $db->beginTransaction();
 
                     try {
                         $currentDateTime = new \DateTime();
                         $date = $currentDateTime->format('Y-m-d H:i:s.v');
-                        $userId = $_SESSION["auth_user_id"];
 
                         $relatedType = $paymentType === 'invoice' ? 'invoice' : 'deposit';
-                        $relatedId   = $paymentType === 'invoice' ? $invoiceId : null;
+                        $relatedId = $paymentType === 'invoice' ? $invoiceId : 0;
                         $category    = $paymentType === 'invoice' ? 'invoice' : 'deposit';
                         $description = $paymentType === 'invoice'
                             ? "Payment for Invoice #{$invoiceId}"
@@ -643,17 +643,19 @@ class FinancialsController extends Controller
                             'created_at'          => $date
                         ]);
 
-                        $db->update(
-                            'invoices',
-                            [
-                                'payment_status' => 'paid',
-                                'updated_at' => date('Y-m-d H:i:s.v')
-                            ],
-                            [
-                                'id' => $invoiceId,
-                                'user_id' => $userId
-                            ]
-                        );
+                        if ($paymentType === 'invoice' && $invoiceId) {
+                            $db->update(
+                                'invoices',
+                                [
+                                    'payment_status' => 'paid',
+                                    'updated_at' => date('Y-m-d H:i:s.v')
+                                ],
+                                [
+                                    'id' => $invoiceId,
+                                    'user_id' => $userId
+                                ]
+                            );
+                        }
 
                         if ($paymentType === 'deposit') {
                             $db->exec(
