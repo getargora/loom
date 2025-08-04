@@ -21,7 +21,32 @@ class HomeController extends Controller
 {
     public function index(Request $request, Response $response)
     {
-        return view($response,'index.twig');
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'index.custom.twig') 
+                    ? 'index.custom.twig' 
+                    : 'index.twig';
+
+        return view($response, $template);
+    }
+
+    public function terms(Request $request, Response $response)
+    {
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'terms.custom.twig') 
+                    ? 'terms.custom.twig' 
+                    : 'terms.twig';
+
+        return view($response, $template);
+    }
+
+    public function privacy(Request $request, Response $response)
+    {
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'privacy.custom.twig') 
+                    ? 'privacy.custom.twig' 
+                    : 'privacy.twig';
+
+        return view($response, $template);
     }
 
     public function dashboard(Request $request, Response $response)

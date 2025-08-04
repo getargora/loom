@@ -102,8 +102,12 @@
 
         <div class="mt-4">
           <label class="form-check">
-            <input type="checkbox" name="terms" class="form-check-input" required>
-            <span class="form-check-label">I agree to the <a href="/terms-of-service.html">terms and policy</a>.</span>
+            <input type="checkbox" name="terms" class="form-check-input" required="required">
+            <span class="form-check-label">
+              I agree to the 
+              <a href="{{ route('terms') }}" target="_blank">Terms & Conditions</a> and 
+              <a href="{{ route('privacy') }}" target="_blank">Privacy Policy</a>.
+            </span>
           </label>
         </div>
 

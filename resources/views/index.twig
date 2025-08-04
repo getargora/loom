@@ -6,7 +6,7 @@
     <meta name="description" content="A skeleton for a PHP application built on Slim Framework 4.">
     <meta name="author" content="Taras Kondratyuk">
     <meta name="theme-color" content="#066fd1">
-    <title>Home | Foundry</title>
+    <title>Home | Loom</title>
     {% include 'partials/css.twig' %}
     <style>
       @import url('/assets/fonts/inter/inter.css');
@@ -61,7 +61,7 @@
             <!-- Welcome Section -->
             <div class="p-5 mb-4 bg-light rounded-3">
               <div class="container-fluid py-5 text-center">
-                <h1 class="display-5 fw-bold">Welcome to Foundry</h1>
+                <h1 class="display-5 fw-bold">Welcome to Loom</h1>
                 <p class="col-lg-8 mx-auto fs-5 text-muted">
                   A powerful PHP boilerplate for building SaaS platforms, admin panels, and custom control systems — fast, flexible, and production-ready.
                 </p>
@@ -107,19 +107,31 @@
 
             <!-- Footer CTA -->
             <div class="text-center mt-5">
-              <p class="text-muted small">
-                To edit this page, open <code>resources/views/index.twig</code> and replace the content.
-              </p>
+                <div class="alert alert-info alert-dismissible mt-4" role="alert">
+                    <div class="alert-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />
+                        </svg>
+                    </div>
+                    <h4 class="alert-title">To customize this page, copy <code>index.twig</code> from <code>resources/views</code> to <code>index.custom.twig</code> and edit the file as required.</h4>
+                    <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                </div>
             </div>
 
         </div>
     </main>
 
-    <footer class="footer bg-white border-top shadow-sm py-3">
-        <div class="container">
-            <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
-        </div>
-    </footer>
+  <footer class="footer bg-white border-top shadow-sm py-3 mt-auto">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+      <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
+      <div class="mt-2 mt-md-0">
+        <a href="{{ route('terms') }}" class="text-muted me-3">Terms & Conditions</a>
+        <a href="{{ route('privacy') }}" class="text-muted">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+
     {% include 'partials/js.twig' %}
 </body>
 </html>
