@@ -84,6 +84,9 @@ class FinancialsController extends Controller
         $phone        = envi('COMPANY_PHONE');
         $email        = envi('COMPANY_EMAIL');
 
+        $orders = null;
+        $deposit = null;
+
         if ($invoice_details['invoice_type'] === 'deposit') {
             $deposit = $db->selectRow(
                 'SELECT category, description, amount, currency, created_at
