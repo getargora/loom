@@ -355,6 +355,7 @@ class FinancialsController extends Controller
         if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
             $amount = $_SESSION['pending_invoice_amount'];
             $paymentDescription = 'Invoice Payment #' . ($_SESSION['pending_invoice_id'] ?? '');
+            $invoiceId = $_SESSION['pending_invoice_id'] ?? '';
             unset($_SESSION['pending_invoice_amount']);
             unset($_SESSION['pending_invoice_id']);
         } else {
@@ -381,6 +382,11 @@ class FinancialsController extends Controller
             'mode' => 'payment',
             'success_url' => envi('APP_URL').'/payment-success?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => envi('APP_URL').'/payment-cancel',
+            'metadata' => [
+                'invoice_id' => $invoiceId ?? null,
+                'user_id' => $_SESSION['auth_user_id'] ?? null,
+                'payment_type' => $paymentDescription,
+            ]
         ]);
 
         // Return session ID to the frontend
@@ -582,7 +588,32 @@ class FinancialsController extends Controller
                 $amountPaidFormatted = number_format($amount, 2, '.', '');
                 $paymentIntentId = $session->payment_intent;
 
+                $invoiceId        = $session->metadata->invoice_id   ?? null;
+                $userId           = $session->metadata->user_id      ?? null;
+                $paymentTypeLabel = $session->metadata->payment_type ?? '';
+
+                if ((!$invoiceId || !$paymentTypeLabel || !$userId) && $paymentIntentId) {
+                    $pi = \Stripe\PaymentIntent::retrieve($paymentIntentId);
+                    $invoiceId        = $invoiceId        ?: ($pi->metadata->invoice_id   ?? null);
+                    $userId           = $userId           ?: ($pi->metadata->user_id      ?? null);
+                    $paymentTypeLabel = $paymentTypeLabel ?: ($pi->metadata->payment_type ?? '');
+                }
+
+                $paymentType = 'unknown';
+                if (stripos($paymentTypeLabel, 'invoice') !== false) {
+                    $paymentType = 'invoice';
+                } elseif (stripos($paymentTypeLabel, 'deposit') !== false) {
+                    $paymentType = 'deposit';
+                }
+
+                $link = $paymentType === 'invoice' && $invoiceId ? "/invoice/{$invoiceId}" : '/deposit';
+
                 $isPositiveNumberWithTwoDecimals = filter_var($amount, FILTER_VALIDATE_FLOAT) !== false && preg_match('/^\d+(\.\d{1,2})?$/', $amount);
+
+                if (($session->payment_status ?? null) !== 'paid') {
+                    $this->container->get('flash')->addMessage('error', 'Payment was not completed. If you believe this is a mistake, please try again or contact support.');
+                    return $response->withHeader('Location', $link)->withStatus(302);
+                }
 
                 if ($isPositiveNumberWithTwoDecimals) {
                     $db->beginTransaction();
@@ -590,57 +621,75 @@ class FinancialsController extends Controller
                     try {
                         $currentDateTime = new \DateTime();
                         $date = $currentDateTime->format('Y-m-d H:i:s.v');
-                        $db->insert(
-                            'statement',
+                        $userId = $_SESSION["auth_user_id"];
+
+                        $relatedType = $paymentType === 'invoice' ? 'invoice' : 'deposit';
+                        $relatedId   = $paymentType === 'invoice' ? $invoiceId : null;
+                        $category    = $paymentType === 'invoice' ? 'invoice' : 'deposit';
+                        $description = $paymentType === 'invoice'
+                            ? "Payment for Invoice #{$invoiceId}"
+                            : "Account balance deposit";
+
+                        $db->insert('transactions', [
+                            'user_id'             => $userId,
+                            'related_entity_type' => $relatedType,
+                            'related_entity_id'   => $relatedId,
+                            'type'                => 'debit',
+                            'category'            => $category,
+                            'description'         => $description,
+                            'amount'              => $amount,
+                            'currency'            => $_SESSION['_currency'],
+                            'status'              => 'completed',
+                            'created_at'          => $date
+                        ]);
+
+                        $db->update(
+                            'invoices',
                             [
-                                'registrar_id' => $_SESSION['auth_registrar_id'],
-                                'date' => $date,
-                                'command' => 'create',
-                                'domain_name' => 'deposit',
-                                'length_in_months' => 0,
-                                'fromS' => $date,
-                                'toS' => $date,
-                                'amount' => $amount
+                                'payment_status' => 'paid',
+                                'updated_at' => date('Y-m-d H:i:s.v')
+                            ],
+                            [
+                                'id' => $invoiceId,
+                                'user_id' => $userId
                             ]
                         );
 
-                        $db->insert(
-                            'payment_history',
-                            [
-                                'registrar_id' => $_SESSION['auth_registrar_id'],
-                                'date' => $date,
-                                'description' => 'registrar balance deposit via Stripe ('.$paymentIntentId.')',
-                                'amount' => $amount
-                            ]
-                        );
-                        
-                        $db->exec(
-                            'UPDATE registrar SET accountBalance = (accountBalance + ?) WHERE id = ?',
-                            [
-                                $amount,
-                                $_SESSION['auth_registrar_id'],
-                            ]
-                        );
-                        
+                        if ($paymentType === 'deposit') {
+                            $db->exec(
+                                'UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?',
+                                [
+                                    $amount,
+                                    $userId
+                                ]
+                            );
+                        }
+
                         $db->commit();
                     } catch (Exception $e) {
                         $this->container->get('flash')->addMessage('error', 'Failure: '.$e->getMessage());
-                        return $response->withHeader('Location', '/deposit')->withStatus(302);
+                        return $response->withHeader('Location', $link)->withStatus(302);
                     }
                     
-                    $this->container->get('flash')->addMessage('success', 'Deposit successfully added. The registrar\'s account balance has been updated.');
-                    return $response->withHeader('Location', '/deposit')->withStatus(302);
+                    $message = $paymentType === 'invoice'
+                        ? "Invoice payment received successfully. Your service will be processed shortly."
+                        : "Deposit added successfully. Your account balance has been updated.";
+
+                    // TODO: Call provisioning module, process order and make it as active. Create service.
+
+                    $this->container->get('flash')->addMessage('success', $message);
+                    return $response->withHeader('Location', $link)->withStatus(302);
                 } else {
-                    $this->container->get('flash')->addMessage('error', 'Invalid entry: Deposit amount must be positive. Please enter a valid amount.');
-                    return $response->withHeader('Location', '/deposit')->withStatus(302);
+                    $this->container->get('flash')->addMessage('error', 'Invalid entry: Amount must be positive. Please enter a valid amount.');
+                    return $response->withHeader('Location', $link)->withStatus(302);
                 }
             } catch (\Exception $e) {
                 $this->container->get('flash')->addMessage('error', 'We encountered an issue while processing your payment. Please check your payment details and try again.');
-                return $response->withHeader('Location', '/deposit')->withStatus(302);
+                return $response->withHeader('Location', $link)->withStatus(302);
             }
         }
     }
-    
+
     public function successAdyen(Request $request, Response $response)
     {
         $sessionId = $request->getQueryParams()['sessionId'] ?? null;
