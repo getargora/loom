@@ -61,7 +61,7 @@ class Auth
                 // send message
                 Mail::send($subject, $message, $from, $to);
             });
-            //$auth->admin()->addRoleForUserById($userId, Role::ADMIN);
+            $auth->admin()->addRoleForUserById($userId, \Pinga\Auth\Role::COLLABORATOR);
             return $userId;
         }
         catch (InvalidEmailException $e) {
@@ -71,7 +71,7 @@ class Auth
             redirect()->route('register')->with('error','Invalid password');
         }
         catch (UserAlreadyExistsException $e) {
-            redirect()->route('register')->with('error','User already exists test');
+            redirect()->route('register')->with('error','User already exists');
         }
         catch (TooManyRequestsException $e) {
             redirect()->route('register')->with('error','Too many requests, try again later');

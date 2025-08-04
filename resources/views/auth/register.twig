@@ -7,11 +7,10 @@
   <div class="container py-4">
     <div class="text-center mb-4">
       <a href="." class="navbar-brand navbar-brand-autodark">
-        <img src="{{ logoPath }}" height="36" alt="Loom" class="navbar-brand-image">
+        <img src="{{ logoPath }}" height="36" alt="" class="navbar-brand-image">
       </a>
-      {% include 'partials/flash.twig' %}
     </div>
-
+    {% include 'partials/flash.twig' %}
     <form class="card" action="{{ route('register') }}" method="post" name="register" autocomplete="off" novalidate>
       {{ csrf.field | raw }}
 
@@ -39,10 +38,7 @@
                 <input type="password" name="password" class="form-control{{ errors.password ? ' is-invalid' : '' }}" placeholder="Password">
                 <span class="input-group-text">
                   <a href="#" class="link-secondary" title="Show password">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle cx="12" cy="12" r="2" />
-                      <path d="M22 12c-2.67 4.67-6 7-10 7s-7.33-2.33-10-7c2.67-4.67 6-7 10-7s7.33 2.33 10 7" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2" /><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" /></svg>
                   </a>
                 </span>
               </div>
@@ -56,47 +52,49 @@
             <div class="row g-2">
               <div class="col-md-6">
                 <label class="form-label">First Name</label>
-                <input type="text" name="first_name" value="{{ old.first_name }}" class="form-control" placeholder="Oleh">
+                <input type="text" name="first_name" value="{{ old.first_name }}" class="form-control{{ errors.first_name ? ' is-invalid' : '' }}" placeholder="Oleh">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Last Name</label>
-                <input type="text" name="last_name" value="{{ old.last_name }}" class="form-control" placeholder="Shevchenko">
+                <input type="text" name="last_name" value="{{ old.last_name }}" class="form-control{{ errors.last_name ? ' is-invalid' : '' }}" placeholder="Shevchenko">
               </div>
             </div>
 
             <div class="mb-3 mt-2">
               <label class="form-label">Phone Number</label>
-              <input type="tel" name="phone" value="{{ old.phone }}" class="form-control" placeholder="+380.671234567">
+              <input type="tel" name="phone" value="{{ old.phone }}" class="form-control{{ errors.phone ? ' is-invalid' : '' }}" placeholder="+380.671234567">
             </div>
 
             <div class="mb-3">
               <label class="form-label">Organization (optional)</label>
-              <input type="text" name="org" value="{{ old.org }}" class="form-control" placeholder="Digital Cookie LLC">
+              <input type="text" name="org" value="{{ old.org }}" class="form-control{{ errors.org ? ' is-invalid' : '' }}" placeholder="Digital Cookie LLC">
             </div>
 
             <div class="mb-3">
               <label class="form-label">Street Address</label>
-              <input type="text" name="street" value="{{ old.street }}" class="form-control" placeholder="vul. Volodymyrska 12">
+              <input type="text" name="street" value="{{ old.street }}" class="form-control{{ errors.street ? ' is-invalid' : '' }}" placeholder="vul. Volodymyrska 12">
             </div>
 
             <div class="row g-2">
               <div class="col-md-6">
                 <label class="form-label">City</label>
-                <input type="text" name="city" value="{{ old.city }}" class="form-control" placeholder="Kyiv">
+                <input type="text" name="city" value="{{ old.city }}" class="form-control{{ errors.city ? ' is-invalid' : '' }}" placeholder="Kyiv">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Postal Code</label>
-                <input type="text" name="postal_code" value="{{ old.postal_code }}" class="form-control" placeholder="01001">
+                <input type="text" name="postal_code" value="{{ old.postal_code }}" class="form-control{{ errors.postal_code ? ' is-invalid' : '' }}" placeholder="01001">
               </div>
             </div>
 
             <div class="mt-2">
               <label class="form-label">Country</label>
-              <select name="country" class="form-select">
+              <select name="country" class="form-select{{ errors.country ? ' is-invalid' : '' }}">
                 <option value="">Select country</option>
-                <option value="UA"{{ old.country == 'UA' ? ' selected' : '' }}>Ukraine</option>
-                <option value="PL"{{ old.country == 'PL' ? ' selected' : '' }}>Poland</option>
-                <option value="DE"{{ old.country == 'DE' ? ' selected' : '' }}>Germany</option>
+                {% for country in countries %}
+                  <option value="{{ country.alpha2 }}"{{ old.country == country.alpha2 ? ' selected' : '' }}>
+                    {{ country.name }}
+                  </option>
+                {% endfor %}
               </select>
             </div>
           </div>
@@ -120,4 +118,28 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.querySelector('input[name="password"]');
+    const togglePasswordBtn = document.querySelector('.input-group-text a');
+
+    togglePasswordBtn.addEventListener('click', function() {
+      event.preventDefault();
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      const svg = togglePasswordBtn.querySelector('svg');
+      const title = togglePasswordBtn.getAttribute('title');
+      
+      if (type === 'text') {
+        svg.innerHTML = '<path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 3l18 18"></path><path d="M10.584 10.587a2 2 0 0 0 2.828 2.83"></path><path d="M9.363 5.365a9.466 9.466 0 0 1 2.637 -.365c4 0 7.333 2.333 10 7c-.778 1.361 -1.612 2.524 -2.503 3.488m-2.14 1.861c-1.631 1.1 -3.415 1.651 -5.357 1.651c-4 0 -7.333 -2.333 -10 -7c1.369 -2.395 2.913 -4.175 4.632 -5.341"></path>';
+        togglePasswordBtn.setAttribute('title', 'Hide password');
+      } else {
+        svg.innerHTML = '<path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"></path>';
+        togglePasswordBtn.setAttribute('title', 'Show password');
+      }
+    });
+
+});
+</script>
 {% endblock %}

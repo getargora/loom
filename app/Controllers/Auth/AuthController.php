@@ -19,6 +19,7 @@ use Respect\Validation\Validator as v;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Pinga\Session;
+use League\ISO3166\ISO3166;
 
 class AuthController extends Controller
 {
@@ -38,7 +39,10 @@ class AuthController extends Controller
      * @throws \DI\NotFoundException
      */
     public function createRegister(Request $request, Response $response){
-        return view($response,'auth/register.twig');
+        $iso3166 = new ISO3166();
+        $countries = $iso3166->all();
+
+        return view($response,'auth/register.twig', ['countries' => $countries]);
     }
 
     /**
@@ -50,24 +54,37 @@ class AuthController extends Controller
      * @throws \Pinga\Auth\AuthError
      */
     public function register(Request $request, Response $response){
+        global $container;
+        $validator = $container->get('validator');
+        $db = $container->get('db');
 
-        $validation = $this->validator->validate($request, [
+        $validation = $validator->validate($request, [
             'email' => v::noWhitespace()->notEmpty()->email(),
-            'username' => v::noWhitespace()->notEmpty()->alnum(),
-            'password' => v::notEmpty()->stringType()->length(8),
+            'username' => v::noWhitespace()->notEmpty()->regex('/^[a-zA-Z0-9_]+$/'),
+            'password' => v::notEmpty()->stringType()->length(8, 32),
+
+            'first_name' => v::stringType()->length(2, 50)->notEmpty(),
+            'last_name' => v::stringType()->length(2, 50)->notEmpty(),
+            'phone' => v::notEmpty()->regex('/^\+[1-9]\d{0,2}\.\d{4,14}$/'),
+            'org' => v::optional(v::stringType()->length(2, 100)),
+
+            'street' => v::notEmpty()->stringType()->length(2, 100),
+            'city' => v::notEmpty()->stringType()->length(2, 100),
+            'postal_code' => v::notEmpty()->regex('/^[A-Z0-9 ]{2,10}$/i'),
+            'country' => v::notEmpty()->alpha()->length(2, 2),
+
+            'terms' => v::equals('on')->setName('Terms and Conditions')
         ]);
 
         if ($validation->failed()) {
             redirect()->route('register');
-            //or
-            //return $response->withHeader('Location', route('register'));
         }
         $data = $request->getParsedBody();
-        $auth =Auth::create($data['email'],$data['password'],$data['username']);
+        $auth = Auth::create($data['email'],$data['password'],$data['username']);
         if($auth) {
             $msg = '<a href="'.route('verify.email.resend',[],['email'=>$data['email']]).'">Resend email</a>';
-            flash('success', 'We have send you a verification link to '.$data['email'].' <br>'.$msg);
-            return $response->withHeader('Location', route('login'));
+            $container->get('flash')->addMessage('success', 'We have send you a verification link to '.$data['email'].' <br>'.$msg);
+            return $response->withHeader('Location', '/login')->withStatus(302);
         }
 
     }
