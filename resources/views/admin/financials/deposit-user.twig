@@ -133,7 +133,7 @@
                             {% endif %}
                             {% if 'now' in enabledGateways %}
                             <label class="form-selectgroup-item flex-fill">
-                                <input type="radio" name="paymentMethod" value="crypto" class="form-selectgroup-input">
+                                <input type="radio" name="paymentMethod" value="now" class="form-selectgroup-input">
                                 <div class="form-selectgroup-label d-flex align-items-center p-3">
                                     <div class="me-3">
                                         <span class="form-selectgroup-check"></span>
@@ -194,7 +194,7 @@ document.getElementById('depositForm').addEventListener('submit', function (e) {
                 window.location.href = data.url;
             });
         },
-        crypto: () => {
+        now: () => {
             sendPayment('/create-crypto-payment', formData, (data) => {
                 window.location.href = data.invoice_url;
             });
