@@ -27,6 +27,14 @@ class ServicesController extends Controller
 
     public function editService(Request $request, Response $response, string $args): Response
     {
+        if ($request->getMethod() === 'POST') {
+            // Retrieve POST data
+            $data = $request->getParsedBody();
+            $db = $this->container->get('db');
+            $user_id = $data['user'];
+            var_dump($data);die();
+        }
+
         $db = $this->container->get('db');
         $uri = $request->getUri()->getPath();
 

@@ -82,18 +82,18 @@
                       <div class="datagrid-content"><strong>{{ config.contacts.registrant.registry_id }}</strong></div>
                     </div>
                     {% for role in ['admin', 'tech', 'billing'] %}
-                        {% set contact = attribute(config.contacts, role) %}
-                        {% if contact.registry_id is defined and contact.registry_id is not null %}
+                      {% set contact = attribute(config.contacts, role) %}
+                      {% if contact.registry_id is defined and contact.registry_id is not null %}
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ role|capitalize }} {{ __('Contact') }}</div>
                       <div class="datagrid-content"><strong>{{ contact.registry_id }}</strong></div>
                     </div>
-                        {% endif %}
+                      {% endif %}
                     {% endfor %}
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ __('Auth Info') }}</div>
-                      <div class="datagrid-content blur" id="authInfo" onclick="toggleBlur()">
-                        {{ config.authcode }}
+                      <div class="datagrid-content">
+                        <input type="text" name="authInfo" class="form-control" value="{{ config.authcode }}" />
                       </div>
                     </div>
                   </div>
@@ -109,7 +109,9 @@
                           {% for ns in config.nameservers %}
                             <div class="datagrid-item">
                               <div class="datagrid-title">{{ __('Nameserver') }} {{ loop.index }}</div>
-                              <div class="datagrid-content"><strong>{{ ns }}</strong></div>
+                              <div class="datagrid-content">
+                                <input type="text" name="ns{{ loop.index }}" class="form-control" value="{{ ns }}" />
+                              </div>
                             </div>
                           {% endfor %}
                         </div>
@@ -194,20 +196,4 @@
         </div>
         {% include 'partials/footer.twig' %}
       </div>
-<style>
-.blur {
-  filter: blur(5px);
-  cursor: pointer;
-}
-
-.blur:hover {
-  filter: blur(2px);
-}
-</style>
-<script>
-function toggleBlur() {
-  const authInfo = document.getElementById("authInfo");
-  authInfo.classList.toggle("blur");
-}
-</script>
 {% endblock %}
