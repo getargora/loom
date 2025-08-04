@@ -59,20 +59,23 @@ class AuthController extends Controller
         $db = $container->get('db');
 
         $validation = $validator->validate($request, [
-            'email' => v::noWhitespace()->notEmpty()->email(),
-            'username' => v::noWhitespace()->notEmpty()->regex('/^[a-zA-Z0-9_]+$/'),
-            'password' => v::notEmpty()->stringType()->length(8, 32),
+            // Core credentials
+            'email' => v::email()->notEmpty()->noWhitespace()->setName('Email'),
+            'username' => v::regex('/^[a-zA-Z0-9_]+$/')->noWhitespace()->notEmpty()->length(3, 30)->setName('Username'),
+            'password' => v::stringType()->length(8, 32)->notEmpty()->setName('Password'),
 
-            'first_name' => v::stringType()->length(2, 50)->notEmpty(),
-            'last_name' => v::stringType()->length(2, 50)->notEmpty(),
-            'phone' => v::notEmpty()->regex('/^\+[1-9]\d{0,2}\.\d{4,14}$/'),
-            'org' => v::optional(v::stringType()->length(2, 100)),
+            // Contact details
+            'first_name' => v::stringType()->length(2, 50)->regex('/^[\p{L} \-\'\.]+$/u')->notEmpty()->setName('First Name'),
+            'last_name' => v::stringType()->length(2, 50)->regex('/^[\p{L} \-\'\.]+$/u')->notEmpty()->setName('Last Name'),
+            'phone' => v::regex('/^\+[1-9]\d{0,2}\.\d{4,14}$/')->notEmpty()->setName('Phone'),
+            'org' => v::optional(v::stringType()->length(2, 100)->setName('Organization')),
 
-            'street' => v::notEmpty()->stringType()->length(2, 100),
-            'city' => v::notEmpty()->stringType()->length(2, 100),
-            'postal_code' => v::notEmpty()->regex('/^[A-Z0-9 ]{2,10}$/i'),
-            'country' => v::notEmpty()->alpha()->length(2, 2),
+            'street' => v::stringType()->length(2, 100)->notEmpty()->setName('Street'),
+            'city' => v::stringType()->length(2, 100)->notEmpty()->setName('City'),
+            'postal_code' => v::regex('/^[A-Z0-9 \-]{2,10}$/i')->notEmpty()->setName('Postal Code'),
+            'country' => v::alpha()->length(2, 2)->notEmpty()->setName('Country'),
 
+            // Legal agreement
             'terms' => v::equals('on')->setName('Terms and Conditions')
         ]);
 
@@ -80,8 +83,38 @@ class AuthController extends Controller
             redirect()->route('register');
         }
         $data = $request->getParsedBody();
+
         $auth = Auth::create($data['email'],$data['password'],$data['username']);
+
         if($auth) {
+            try {
+                $db->beginTransaction();
+
+                $types = ['owner', 'billing', 'tech', 'abuse'];
+
+                foreach ($types as $type) {
+                    $db->insert('users_contact', [
+                        'user_id' => $auth,
+                        'type' => $type,
+                        'first_name' => $data['first_name'],
+                        'last_name' => $data['last_name'],
+                        'org' => $data['org'] ?? null,
+                        'street1' => $data['street'],
+                        'city' => $data['city'],
+                        'pc' => $data['postal_code'],
+                        'cc' => $data['country'],
+                        'voice' => $data['phone'],
+                        'email' => $data['email'],
+                    ]);
+                }
+
+                $db->commit();
+            } catch (\Throwable $e) {
+                $db->rollBack();
+                $container->get('flash')->addMessage('error', "Failed to save contact information: " . $e->getMessage());
+                return $response->withHeader('Location', '/login')->withStatus(302);
+            }
+
             $msg = '<a href="'.route('verify.email.resend',[],['email'=>$data['email']]).'">Resend email</a>';
             $container->get('flash')->addMessage('success', 'We have send you a verification link to '.$data['email'].' <br>'.$msg);
             return $response->withHeader('Location', '/login')->withStatus(302);

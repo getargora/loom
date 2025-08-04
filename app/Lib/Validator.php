@@ -18,26 +18,27 @@ use Respect\Validation\Exceptions\NestedValidationException;
 
 class Validator
 {
-	protected $errors;
+    protected $errors;
 
-	public function validate($request, array $rules)
-	{
-		$data = $request->getParsedBody();
+    public function validate($request, array $rules)
+    {
+        $data = $request->getParsedBody();
 
-		foreach ($rules as $field => $rule) {
-		    $fieldName = str_replace('_',' ',$field);
-			try {
-				$rule->setName(ucfirst($fieldName))->assert($data[$field]);
-			} catch (NestedValidationException $e) {
-				$this->errors[$field] = $e->getMessages();
-			}
-		}
-		$_SESSION['errors'] = $this->errors;
-		return $this;
-	}
+        foreach ($rules as $field => $rule) {
+            $fieldName = str_replace('_',' ',$field);
+            try {
+                $value = $data[$field] ?? null;
+                $rule->setName(ucfirst($fieldName))->assert($value);
+            } catch (NestedValidationException $e) {
+                $this->errors[$field] = $e->getMessages();
+            }
+        }
+        $_SESSION['errors'] = $this->errors;
+        return $this;
+    }
 
-	public function failed()
-	{
-		return !empty($this->errors);
-	}
+    public function failed()
+    {
+        return !empty($this->errors);
+    }
 }

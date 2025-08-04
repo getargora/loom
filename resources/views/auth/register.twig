@@ -102,7 +102,8 @@
 
         <div class="mt-4">
           <label class="form-check">
-            <input type="checkbox" name="terms" class="form-check-input" required="required">
+            <input type="checkbox" name="terms" class="form-check-input{{ errors.terms ? ' is-invalid' : '' }}" required
+            {{ old.terms is defined ? 'checked' : '' }}>
             <span class="form-check-label">
               I agree to the 
               <a href="{{ route('terms') }}" target="_blank">Terms & Conditions</a> and 
