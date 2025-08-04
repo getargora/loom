@@ -23,6 +23,26 @@ It’s ideal for self-hosted registrars, resellers, and service providers who wa
 - **API-Ready** – Structured for REST or GraphQL integration.
 - **Self-Hosted** – Your data, your control.
 
+## Supported Providers
+
+Argora Loom works with a variety of external services through its modular architecture.
+
+### Domain Registries
+
+- **Namingo Registry** – ✅
+- **.fi** – *coming soon*
+
+### Cloud Infrastructure
+
+- **Hetzner** – *coming soon*
+- **Vultr** – *coming soon*
+
+### DNS hosting
+
+- **ClouDNS** – *coming soon*
+- **deSEC** – *coming soon*
+- **Vultr** – *coming soon*
+
 ## Get Involved
 
 Argora Loom is open source — and we’d love your help!
