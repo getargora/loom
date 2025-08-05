@@ -3,6 +3,7 @@
 {% block title %}{{ __('View Order') }} {{ order.id }}{% endblock %}
 
 {% block content %}
+<link href="/assets/modules/css/sweetalert2.min.css" rel="stylesheet">
       <div class="page-wrapper">
         <!-- Page header -->
         <div class="page-header d-print-none">
@@ -38,11 +39,11 @@
                   <a href="/invoice/{{ order.invoice_id }}/pay" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Pay Now') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
                   </a>
-                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-none d-sm-inline-block">
+                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-none d-sm-inline-block cancel-order-btn" data-id="{{ order.id }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
                     {{ __('Cancel Order') }}
                   </a>
-                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-sm-none btn-icon" aria-label="{{ __('Cancel Order') }}">
+                  <a href="/orders/{{ order.id }}/cancel" class="btn btn-outline-warning d-sm-none btn-icon cancel-order-btn" data-id="{{ order.id }}" aria-label="{{ __('Cancel Order') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
                   </a>
                   {% elseif order.status == 'inactive' %}
@@ -157,4 +158,27 @@
         </div>
         {% include 'partials/footer.twig' %}
       </div>
+<script src="/assets/modules/js/sweetalert2.min.js" defer></script>
+<script>
+document.querySelectorAll('.cancel-order-btn').forEach(function(button) {
+    button.addEventListener('click', function(event) {
+        event.preventDefault();
+        const orderId = button.getAttribute('data-id');
+
+        Swal.fire({
+            title: "{{ __('Are you sure?') }}",
+            text: "{{ __('This will cancel the order permanently.') }}",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: "{{ __('Yes, cancel it') }}",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/orders/${orderId}/cancel`;
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

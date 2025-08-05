@@ -1,4 +1,5 @@
 <script src="/assets/modules/js/tabulator.min.js" defer></script>
+<script src="/assets/modules/js/sweetalert2.min.js" defer></script>
 <script src="/assets/js/tabler.min.js" defer></script>
 <script src="/assets/modules/js/jspdf.umd.min.js" defer></script>
 <script src="/assets/modules/js/jspdf.plugin.autotable.min.js" defer></script>
@@ -23,7 +24,7 @@
 
         if (status === 'pending') {
             buttons += `
-             <a class="btn btn-outline-success btn-icon" href="/invoice/${invoice_id}/pay" title="{{ __('Pay Now') }}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg></a> <a class="btn btn-outline-warning btn-icon" href="/orders/${id}/cancel" title="{{ __('Cancel Order') }}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg></a>`;
+             <a class="btn btn-outline-success btn-icon" href="/invoice/${invoice_id}/pay" title="{{ __('Pay Now') }}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg></a> <a class="btn btn-outline-warning btn-icon cancel-btn" title="{{ __('Cancel Order') }}" id="cancel-btn" href="javascript:void(0);" data-cancel-url="/orders/${id}/cancel" "><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg></a>`;
         } else if (status === 'inactive') {
             buttons += `
              <a class="btn btn-outline-info btn-icon" href="/orders/${id}/activate" title="{{ __('Activate Service') }}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /></svg></a>`;
@@ -142,8 +143,26 @@
                     symbol: (cell.getRow().getData().currency || "$") + " ", // Ensures space after currency symbol
                     negativeSign: true
                 };
+            }},        
+            {title: "{{ __('Actions') }}", formatter: actionsFormatter, minWidth:200, responsive:0, resizable:false, headerSort:false, download:false, hozAlign: "center", cellClick: function(e, cell){
+                if (e.target.closest('.cancel-btn')) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: "{{ __('Are you sure?') }}",
+                        text: "{{ __('This will cancel the order permanently.') }}",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: "{{ __('Yes, cancel it') }}",
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        let cancelUrl = e.target.closest('.cancel-btn').getAttribute('data-cancel-url');
+                        window.location.href = cancelUrl;
+                      }
+                    });
+                }
             }},
-            {title: "{{ __('Actions') }}", formatter: actionsFormatter, minWidth:200, responsive:0, headerSort: false, download:false, hozAlign: "center", cellClick:function(e, cell){ e.stopPropagation(); }},
         ]
     });
     var searchInput = document.getElementById("search-input");

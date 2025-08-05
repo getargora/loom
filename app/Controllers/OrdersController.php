@@ -140,10 +140,45 @@ class OrdersController extends Controller
     {
         return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
     }
-    
+
     public function cancelOrder(Request $request, Response $response, string $args): Response
     {
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+        $db = $this->container->get('db');
+        $uri = $request->getUri()->getPath();
+
+        if ($args) {
+            $args = trim($args);
+
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid order ID format');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            $order = $db->selectRow('SELECT id, user_id FROM orders WHERE id = ?',
+            [ $args ]);
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if ($order) {
+                $db->update('orders', [
+                    'status'     => 'cancelled',
+                    'paid_at'    => null,
+                ], [
+                    'id' => $order['id'],
+                ]);
+
+                $this->container->get('flash')->addMessage('success','Order ' . $order['id'] . ' has been cancelled.');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            } else {
+                // Order does not exist, redirect to the orders view
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+        } else {
+            // Redirect to the orders view
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
     }
     
     public function retryOrder(Request $request, Response $response, string $args): Response
@@ -180,7 +215,6 @@ class OrdersController extends Controller
                 $this->container->get('flash')->addMessage('error', 'AuthInfo contains invalid characters');
                 return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
             }
-
 
             $domain = new uDomain($domainName);
             $tld = '.' . strtolower($domain->getTLD());
