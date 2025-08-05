@@ -17,6 +17,7 @@ use App\Models\Services;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Container\ContainerInterface;
+use Utopia\Domains\Domain as uDomain;
 
 class ServicesController extends Controller
 {
@@ -88,96 +89,192 @@ class ServicesController extends Controller
             // Retrieve POST data
             $data = $request->getParsedBody();
             $db = $this->container->get('db');
-            $user_id = $data['user'];var_dump($args);
-            var_dump($data);die();
-        } else {
-            $db = $this->container->get('db');
-            $uri = $request->getUri()->getPath();
+            
+            $args = trim($args);
 
-            if ($args) {
-                $args = trim($args);
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid service ID format');
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
 
-                if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
-                    $this->container->get('flash')->addMessage('error', 'Invalid service ID format');
-                    return $response->withHeader('Location', '/services')->withStatus(302);
-                }
+            $userId = $_SESSION['auth_user_id'];
+            $currency = $_SESSION['_currency'];
+            $domainName = $_SESSION['domains_to_renew'][0];
+            $amount = $_SESSION['domains_to_renew_price'][0];
+            $years = (int) ($data['renewalYears'] ?? 1);
 
-                $service = $db->selectRow('SELECT id, user_id, provider_id, order_id, type, status, config, registered_at, expires_at, updated_at FROM services WHERE id = ?',
-                [ $args ]);
+            $domain = new uDomain($domainName);
+            $tld = '.' . strtolower($domain->getTLD());
 
-                if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $service["user_id"]) {
-                    return $response->withHeader('Location', '/services')->withStatus(302);
-                }
+            try {
+                $db->beginTransaction();
 
-                if ($service) {
-                    $config = json_decode($service['config'], true);
+                // Get provider name
+                $providers = $db->select('SELECT name, pricing FROM providers WHERE status = ?', [ 'active' ]);
 
-                    $provider = $db->selectRow(
-                        'SELECT name, pricing FROM providers WHERE id = ?',
-                        [ $service['provider_id'] ]
-                    );
+                $providerName = null;
+
+                foreach ($providers as $provider) {
                     $pricing = json_decode($provider['pricing'], true);
+                    if (isset($pricing[$tld])) {
+                        $providerName = $provider['name'];
+                        break; // stop at the first match
+                    }
+                }
 
-                    $parts = explode('.', $config['domain']);
-                    $tld = '.' . strtolower(end($parts));
+                // Get billing contact ID
+                $billingContactId = $db->selectValue(
+                    'SELECT id FROM users_contact WHERE user_id = ? AND type = ? LIMIT 1',
+                    [ $userId, 'billing' ]
+                );
 
-                    $renewOptions = $pricing[$tld]['renew'] ?? [];
+                // Insert into invoices
+                $db->insert('invoices', [
+                    'user_id' => $userId,
+                    'billing_contact_id' => $billingContactId,
+                    'issue_date' => date('Y-m-d H:i:s'),
+                    'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
+                    'total_amount' => $amount,
+                    'payment_status' => 'unpaid',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]);
 
-                    if (empty($renewOptions)) {
-                        $maxYears = 0;
-                    } else {
+                $invoiceId = $db->getLastInsertId();
+
+                $db->update('invoices', [
+                    'invoice_number' => $invoiceId
+                ],
+                [
+                    'id' => $invoiceId
+                ]
+                );
+
+                // Build service_data
+                $serviceData = json_encode([
+                    'type' => 'domain_renew',
+                    'domain' => $domainName,
+                    'years' => $years,
+                    'tld' => $tld,
+                    'provider' => $providerName,
+                    'error_message' => null,
+                    'notes' => 'Customer requested domain renewal'
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+
+                // Insert into orders
+                $db->insert('orders', [
+                    'user_id' => $userId,
+                    'service_type' => 'domain.renew',
+                    'service_data' => $serviceData,
+                    'status' => 'pending',
+                    'amount_due' => $amount,
+                    'currency' => $currency,
+                    'invoice_id' => $invoiceId,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+           
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                $this->container->get('flash')->addMessage('error', 'Database failure during order creation: ' . $e->getMessage());
+                return $response->withHeader('Location', '/services/'.$args.'/edit')->withStatus(302);
+            }
+
+            unset($_SESSION['domains_to_renew']);
+            unset($_SESSION['domains_to_renew_price']);
+            $this->container->get('flash')->addMessage('success','Renewal order for domain ' . $domainName . ' has been created. Please proceed with payment to complete the order.');
+            return $response->withHeader('Location', '/invoice/'.$invoiceId)->withStatus(302);
+        }
+
+        $db = $this->container->get('db');
+        $uri = $request->getUri()->getPath();
+
+        if ($args) {
+            $args = trim($args);
+
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid service ID format');
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            $service = $db->selectRow('SELECT id, user_id, provider_id, order_id, type, status, config, registered_at, expires_at, updated_at FROM services WHERE id = ?',
+            [ $args ]);
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $service["user_id"]) {
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            if ($service) {
+                $config = json_decode($service['config'], true);
+
+                $provider = $db->selectRow(
+                    'SELECT name, pricing FROM providers WHERE id = ?',
+                    [ $service['provider_id'] ]
+                );
+                $pricing = json_decode($provider['pricing'], true);
+
+                $parts = explode('.', $config['domain']);
+                $tld = '.' . strtolower(end($parts));
+
+                $renewOptions = $pricing[$tld]['renew'] ?? [];
+
+                if (empty($renewOptions)) {
+                    $maxYears = 0;
+                } else {
+                    $availableYears = array_keys($renewOptions);
+                    rsort($availableYears, SORT_NUMERIC);
+
+                    $now = new \DateTimeImmutable();
+                    $expires = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.u', $service['expires_at']);
+                    if (!$expires) {
+                        $expires = new \DateTimeImmutable($service['expires_at']);
+                    }
+
+                    $interval = $now->diff($expires);
+                    $daysRegistered = (int)$interval->format('%a');
+                    $yearsRegistered = ceil($daysRegistered / 365.25);
+
+                    $maxAllowed = 10 - $yearsRegistered;
+
+                    $maxYears = 0;
+
+                    if ($maxAllowed > 0 && !empty($renewOptions)) {
                         $availableYears = array_keys($renewOptions);
                         rsort($availableYears, SORT_NUMERIC);
 
-                        $now = new \DateTimeImmutable();
-                        $expires = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.u', $service['expires_at']);
-                        if (!$expires) {
-                            $expires = new \DateTimeImmutable($service['expires_at']);
-                        }
-
-                        $interval = $now->diff($expires);
-                        $daysRegistered = (int)$interval->format('%a');
-                        $yearsRegistered = ceil($daysRegistered / 365.25);
-
-                        $maxAllowed = 10 - $yearsRegistered;
-
-                        $maxYears = 0;
-
-                        if ($maxAllowed > 0 && !empty($renewOptions)) {
-                            $availableYears = array_keys($renewOptions);
-                            rsort($availableYears, SORT_NUMERIC);
-
-                            foreach ($availableYears as $y) {
-                                if ((int)$y <= $maxAllowed) {
-                                    $maxYears = (int)$y;
-                                    break;
-                                }
-                            }
-
-                            if ($maxYears < $maxAllowed) {
-                                $maxYears = max(0, $maxYears - $yearsRegistered);
+                        foreach ($availableYears as $y) {
+                            if ((int)$y <= $maxAllowed) {
+                                $maxYears = (int)$y;
+                                break;
                             }
                         }
 
+                        if ($maxYears < $maxAllowed) {
+                            $maxYears = max(0, $maxYears - $yearsRegistered);
+                        }
                     }
 
-                    $responseData = [
-                        'service' => $service,
-                        'provider' => $provider,
-                        'config' => $config,
-                        'currentUri' => $uri,
-                        'maxYears' => $maxYears,
-                    ];
-
-                    return view($response, 'admin/services/renew.twig', $responseData);
-                } else {
-                    // Service does not exist, redirect to the services view
-                    return $response->withHeader('Location', '/services')->withStatus(302);
                 }
+
+                $responseData = [
+                    'service' => $service,
+                    'provider' => $provider,
+                    'config' => $config,
+                    'currentUri' => $uri,
+                    'maxYears' => $maxYears,
+                ];
+
+                $_SESSION['domains_to_renew'] = [$config['domain']];
+                $_SESSION['domains_to_renew_price'] = [$pricing[$tld]['renew']['1']] ?? null;
+
+                return view($response, 'admin/services/renew.twig', $responseData);
             } else {
-                // Redirect to the services view
+                // Service does not exist, redirect to the services view
                 return $response->withHeader('Location', '/services')->withStatus(302);
             }
+        } else {
+            // Redirect to the services view
+            return $response->withHeader('Location', '/services')->withStatus(302);
         }
     }
 

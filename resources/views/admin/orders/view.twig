@@ -108,6 +108,17 @@
                       <div class="datagrid-title">{{ __('User') }}</div>
                       <div class="datagrid-content">{{ user_name }}</div>
                     </div>
+                    {% set typeLabels = {
+                      'domain_transfer': 'Domain Transfer',
+                      'domain_renew': 'Domain Renew',
+                      'domain_create': 'Domain Registration'
+                    } %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Type') }}</div>
+                      <div class="datagrid-content">
+                        <span class="status status-azure">{{ __(typeLabels[service_data.type] ?? 'Other') }}</span>
+                      </div>
+                    </div>
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ __('Created At') }}</div>
                       <div class="datagrid-content">{{ order.created_at }}</div>
@@ -140,6 +151,11 @@
                       </div>
                     </div>
                     {% elseif service_data.type == 'domain_transfer' %}
+                    <div class="datagrid-item">
+                      <div class="datagrid-title">{{ __('Domain Name') }}</div>
+                      <div class="datagrid-content"><strong>{{ service_data.domain }}</strong></div>
+                    </div>
+                    {% elseif service_data.type == 'domain_renew' %}
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ __('Domain Name') }}</div>
                       <div class="datagrid-content"><strong>{{ service_data.domain }}</strong></div>
