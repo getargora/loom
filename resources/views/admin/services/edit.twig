@@ -3,6 +3,8 @@
 {% block title %}{{ __('Manage') }} {% if service.type == 'domain' %}{{ __('Domain') }} {{ config.domain }}{% endif %}{% endblock %}
 
 {% block content %}
+    <form action="/services/{{ service.id }}/update" method="post">
+    {{ csrf.field | raw }}
       <div class="page-wrapper">
         <!-- Page header -->
         <div class="page-header d-print-none">
@@ -30,20 +32,20 @@
               <div class="col-auto ms-auto d-print-none">
                 <div class="btn-list">
                   {% if service.type == 'domain' %}
-                  <a href="/contact/history/#" class="btn btn-outline-success d-none d-sm-inline-block">
+                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-success d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                     {{ __('Renew Domain') }}
                   </a>
-                  <a href="/contact/history/#" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Renew Domain') }}">
+                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Renew Domain') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                   </a>
-                  <a href="/contact/update/#" class="btn btn-primary d-none d-sm-inline-block">
+                  <button class="btn btn-primary d-none d-sm-inline-block" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                     {{ __('Update Domain') }}
-                  </a>
-                  <a href="/contact/update/#" class="btn btn-primary d-sm-none btn-icon" aria-label="{{ __('Update Domain') }}">
+                  </button>
+                  <button class="btn btn-primary d-sm-none btn-icon" aria-label="{{ __('Update Domain') }}" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                  </a>
+                  </button>
                   {% endif %}
                 </div>
               </div>
@@ -196,4 +198,5 @@
         </div>
         {% include 'partials/footer.twig' %}
       </div>
+    </form>
 {% endblock %}
