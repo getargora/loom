@@ -1,6 +1,6 @@
 {% extends "layouts/app.twig" %}
 
-{% block title %}{{ __('Deposit Payment Unsuccessful') }}{% endblock %}
+{% block title %}{{ __('Payment Unsuccessful') }}{% endblock %}
 
 {% block content %}
       <div class="page-wrapper">
@@ -14,7 +14,7 @@
                   {{ __('Overview') }}
                 </div>
                 <h2 class="page-title">
-                  {{ __('Deposit Payment Unsuccessful') }}
+                  {{ __('Payment Unsuccessful') }}
                 </h2>
               </div>
             </div>
@@ -24,10 +24,18 @@
         <div class="page-body">
           <div class="container-xl">
             <div class="col-12">
-              <div class="card bg-orange-lt">
+              <div class="card bg-orange">
                 <div class="card-body">
-                  <p class="text-secondary">{{ __('We\'ve noticed that your deposit payment process was not completed. It appears that the payment was either cancelled or failed during the transaction. If this was an error, or if you have any questions, please don\'t hesitate to contact us. We\'re here to help ensure your transaction is smooth and secure.') }}</p>
-                  <p class="text-secondary">{{ __('Ready to try again? When you\'re set to proceed with your deposit, simply return to the') }} <a href="{{route('deposit')}}">{{ __('Deposit Page') }}</a> {{ __('to initiate a new payment. We value your partnership and are committed to assisting you every step of the way.') }}</p>
+                  <p class="text-white">
+                    {{ __("We\'ve noticed that your " ~ type ~ " payment process was not completed. It appears that the payment was either cancelled or failed during the transaction.") }}
+                    {{ __("If this was an error, or if you have any questions, please don\'t hesitate to contact us.") }}
+                  </p>
+                  <p class="text-white">
+                    {{ __("Ready to try again?") }}
+                    {{ __("Simply return to the") }}
+                    <a href="{{ route(redirectRoute) }}" class="text-white text-decoration-underline">{{ __(name|capitalize ~ " Page") }}</a>
+                    {{ __("to initiate a new payment.") }}
+                  </p>
                 </div>
               </div>
             </div>

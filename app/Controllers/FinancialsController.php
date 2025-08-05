@@ -1073,9 +1073,27 @@ class FinancialsController extends Controller
         $response->getBody()->write(json_encode(['failure' => true]));
         return $response;
     }
-    
+
     public function cancel(Request $request, Response $response)
     {
-        return view($response,'admin/financials/cancel.twig');
+        $type = $request->getQueryParams()['type'] ?? '';
+        $redirectRoute = match ($type) {
+            'deposit' => 'deposit',
+            'invoice' => 'invoices',
+            'order' => 'orders',
+            default => 'home',
+        };
+        $name = match ($type) {
+            'deposit' => 'deposit',
+            'invoice' => 'invoices',
+            'order' => 'orders',
+            default => 'home',
+        };
+
+        return view($response, 'admin/financials/cancel.twig', [
+            'type' => $type,
+            'redirectRoute' => $redirectRoute,
+            'name' => $name,
+        ]);
     }
 }
