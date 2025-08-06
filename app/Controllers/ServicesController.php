@@ -147,6 +147,7 @@ class ServicesController extends Controller
 
                                 if (array_key_exists('error', $domainUpdateAuthinfo)) {
                                     $messages[] = 'AuthInfo update failed: ' . $domainUpdateAuthinfo['error'];
+                                    $db->insert('service_logs', ['service_id' => $args, 'event' => 'authinfo_update_failed', 'actor_type' => 'system', 'actor_id' => $_SESSION["auth_user_id"], 'details' => $config['domain'] . '|' . $domainUpdateAuthinfo['error']]);
                                 } else {
                                     $messages[] = 'AuthInfo update successful.';
                                     $config['authcode'] = $params['authInfo'];
@@ -166,6 +167,7 @@ class ServicesController extends Controller
 
                                 if (array_key_exists('error', $domainUpdateNS)) {
                                     $messages[] = 'Nameserver update failed: ' . $domainUpdateNS['error'];
+                                    $db->insert('service_logs', ['service_id' => $args, 'event' => 'nameserver_update_failed', 'actor_type' => 'system', 'actor_id' => $_SESSION["auth_user_id"], 'details' => $config['domain'] . '|' . $domainUpdateNS['error']]);
                                 } else {
                                     $messages[] = 'Nameserver update successful.';
                                     $config['nameservers'] = [];
@@ -198,6 +200,7 @@ class ServicesController extends Controller
 
                                 if (array_key_exists('error', $domainUpdateDNSSEC)) {
                                     $messages[] = 'DNSSEC update failed: ' . $domainUpdateDNSSEC['error'];
+                                    $db->insert('service_logs', ['service_id' => $args, 'event' => 'dnssec_update_failed', 'actor_type' => 'system', 'actor_id' => $_SESSION["auth_user_id"], 'details' => $config['domain'] . '|' . $domainUpdateDNSSEC['error']]);
                                 } else {
                                     $messages[] = 'DNSSEC update successful.';
 
