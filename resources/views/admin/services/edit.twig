@@ -95,7 +95,12 @@
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ __('Auth Info') }}</div>
                       <div class="datagrid-content">
-                        <input type="text" name="authInfo" class="form-control" value="{{ config.authcode }}" />
+                        <div class="input-group">
+                          <input type="text" name="authInfo" class="form-control" id="authInfoInput" value="{{ config.authcode }}" readonly disabled style="filter: blur(5px); transition: filter 0.3s;" />
+                          <span class="input-group-text">
+                            <input class="form-check-input" type="checkbox" id="toggle-authinfo" onchange="toggleAuthinfo()" data-bs-toggle="tooltip" data-bs-placement="right" title="{{ __('Update Authinfo') }}" />
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -105,19 +110,23 @@
                 <div class="col-md-12">
                   <div class="card h-100">
                     <div class="card-body">
-                      <h5 class="card-title">{{ __('Nameservers') }}</h5>
-                      {% if config.nameservers is not empty %}
-                        <div class="datagrid">
-                          {% for ns in config.nameservers %}
-                            <div class="datagrid-item">
-                              <div class="datagrid-title">{{ __('Nameserver') }} {{ loop.index }}</div>
-                              <div class="datagrid-content">
-                                <input type="text" name="ns{{ loop.index }}" class="form-control" value="{{ ns }}" />
-                              </div>
-                            </div>
-                          {% endfor %}
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ __('Nameservers') }}</h5>
+                        <div>
+                          <button type="button" class="btn btn-sm btn-outline-green" onclick="addNameserver()">+</button>
+                          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeNameserver()">−</button>
                         </div>
-                      {% endif %}
+                      </div>
+                      <div id="nameserver-container" class="datagrid">
+                        {% for ns in config.nameservers %}
+                          <div class="datagrid-item">
+                            <div class="datagrid-title">{{ __('Nameserver') }} {{ loop.index }}</div>
+                            <div class="datagrid-content">
+                              <input type="text" name="ns{{ loop.index }}" class="form-control" value="{{ ns }}" />
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -199,4 +208,49 @@
         {% include 'partials/footer.twig' %}
       </div>
     </form>
+<script>
+  const nsContainer = document.getElementById('nameserver-container');
+
+  function getNameserverCount() {
+    return nsContainer.querySelectorAll('.datagrid-item').length;
+  }
+
+  function addNameserver() {
+    let count = getNameserverCount();
+    if (count >= 13) return;
+
+    const index = count + 1;
+    const item = document.createElement('div');
+    item.className = 'datagrid-item';
+    item.innerHTML = `
+      <div class="datagrid-title">Nameserver ${index}</div>
+      <div class="datagrid-content">
+        <input type="text" name="ns${index}" class="form-control" value="" />
+      </div>
+    `;
+    nsContainer.appendChild(item);
+  }
+
+  function removeNameserver() {
+    let count = getNameserverCount();
+    if (count <= 2) return;
+
+    nsContainer.removeChild(nsContainer.lastElementChild);
+  }
+
+  function toggleAuthinfo() {
+    const checkbox = document.getElementById('toggle-authinfo');
+    const input = document.getElementById('authInfoInput');
+
+    if (checkbox.checked) {
+      input.removeAttribute('readonly');
+      input.removeAttribute('disabled');
+      input.style.filter = 'none';
+    } else {
+      input.setAttribute('readonly', true);
+      input.setAttribute('disabled', true);
+      input.style.filter = 'blur(5px)';
+    }
+  }
+</script>
 {% endblock %}
