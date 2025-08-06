@@ -154,7 +154,7 @@ class OrdersController extends Controller
                 return $response->withHeader('Location', '/orders')->withStatus(302);
             }
 
-            $order = $db->selectRow('SELECT id, user_id FROM orders WHERE id = ?',
+            $order = $db->selectRow('SELECT id, user_id, invoice_id FROM orders WHERE id = ?',
             [ $args ]);
 
             if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order["user_id"]) {
@@ -162,12 +162,33 @@ class OrdersController extends Controller
             }
 
             if ($order) {
-                $db->update('orders', [
-                    'status'     => 'cancelled',
-                    'paid_at'    => null,
-                ], [
-                    'id' => $order['id'],
-                ]);
+                try {
+                    $db->beginTransaction();
+
+                    $currentDateTime = new \DateTime();
+                    $update = $currentDateTime->format('Y-m-d H:i:s.v');
+
+                    $db->update('orders', [
+                        'status'     => 'cancelled',
+                        'paid_at'    => null,
+                    ], [
+                        'id' => $order['id'],
+                    ]);
+
+                    $db->update('invoices', [
+                        'payment_status'     => 'cancelled',
+                        'updated_at'     => $update,
+                        'due_date'    => null,
+                    ], [
+                        'id' => $order['invoice_id'],
+                    ]);
+
+                   $db->commit();
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    $this->container->get('flash')->addMessage('error', 'Database failure: ' . $e->getMessage());
+                    return $response->withHeader('Location', '/orders')->withStatus(302);
+                }
 
                 $this->container->get('flash')->addMessage('success','Order ' . $order['id'] . ' has been cancelled.');
                 return $response->withHeader('Location', '/orders')->withStatus(302);
