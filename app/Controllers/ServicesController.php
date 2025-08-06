@@ -77,9 +77,143 @@ class ServicesController extends Controller
         if ($request->getMethod() === 'POST') {
             // Retrieve POST data
             $data = $request->getParsedBody();
-            $db = $this->container->get('db');
-            $user_id = $data['user'];var_dump($args);
-            var_dump($data);die();
+            $db = $this->container->get('db');   
+
+            if ($args) {
+                $args = trim($args);
+
+                if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                    $this->container->get('flash')->addMessage('error', 'Invalid service ID format');
+                    return $response->withHeader('Location', '/services')->withStatus(302);
+                }
+
+                $service = $db->selectRow('SELECT id, user_id, type, config FROM services WHERE id = ?',
+                [ $args ]);
+
+                if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $service["user_id"]) {
+                    return $response->withHeader('Location', '/services')->withStatus(302);
+                }
+
+                if ($service) {
+                    if ($service['type'] === 'domain') {
+                        $config = json_decode($service['config'], true);
+                        $domains = [$config['domain']];
+                        $domainData = getDomainConfig($domains, $db);
+
+                        if (empty($domainData) || !isset($domainData[0]['tld'])) {
+                            $this->container->get('flash')->addMessage('error', 'Error checking domain');
+                            return $response->withHeader('Location', '/services/'.$args.'/edit')->withStatus(302);
+                        }
+
+                        $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
+
+                        try {
+                            $epp = connectToEpp(
+                                $registryType,
+                                $domainData[0]['host'],
+                                $domainData[0]['port'],
+                                $domainData[0]['cafile'] ?? '',
+                                $domainData[0]['cert_file'],
+                                $domainData[0]['key_file'],
+                                $domainData[0]['passphrase'] ?? '',
+                                $domainData[0]['username'],
+                                $domainData[0]['password']
+                            );
+
+                            if (!$epp) {
+                                $this->container->get('flash')->addMessage('error', 'Failed to connect to EPP server');
+                                return $response->withHeader('Location', '/services/'.$args.'/edit')->withStatus(302);
+                            }
+
+                            $params = [
+                                'domainname' => $config['domain'],
+                            ];
+
+                            if (!empty($data['authInfo'])) {
+                                $params['authInfo'] = $data['authInfo'];
+                            }
+
+                            for ($i = 1; $i <= 13; $i++) {
+                                $key = 'ns' . $i;
+                                if (!empty($data[$key])) {
+                                    $params[$key] = $data[$key];
+                                }
+                            }
+
+                            $messages = [];
+
+                            if (!empty($params['authInfo'])) {
+                                $domainUpdateAuthinfo = $epp->domainUpdateAuthinfo($params);
+
+                                if (array_key_exists('error', $domainUpdateAuthinfo)) {
+                                    $messages[] = 'AuthInfo update failed: ' . $domainUpdateAuthinfo['error'];
+                                } else {
+                                    $messages[] = 'AuthInfo update successful.';
+                                    $config['authcode'] = $params['authInfo'];
+                                }
+                            }
+
+                            $hasNs = false;
+                            for ($i = 1; $i <= 13; $i++) {
+                                if (!empty($params['ns' . $i])) {
+                                    $hasNs = true;
+                                    break;
+                                }
+                            }
+
+                            if ($hasNs) {
+                                $domainUpdateNS = $epp->domainUpdateNS($params);
+
+                                if (array_key_exists('error', $domainUpdateNS)) {
+                                    $messages[] = 'Nameserver update failed: ' . $domainUpdateNS['error'];
+                                } else {
+                                    $messages[] = 'Nameserver update successful.';
+                                    $config['nameservers'] = [];
+
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        $key = 'ns' . $i;
+                                        if (!empty($params[$key])) {
+                                            $config['nameservers'][] = $params[$key];
+                                        }
+                                    }
+                                }
+                            }
+
+                            $db->update(
+                                'services',
+                                ['config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)],
+                                ['id' => $args]
+                            );
+
+                            $type = 'success';
+                            foreach ($messages as $m) {
+                                if (str_contains($m, 'failed')) {
+                                    $type = 'error';
+                                    break;
+                                }
+                            }
+
+                            $epp->logout();
+
+                            // Flash all messages joined
+                            $this->container->get('flash')->addMessage($type, implode(' ', $messages));
+                            return $response->withHeader('Location', '/services/' . $args . '/edit')->withStatus(302);
+                        } catch (\Throwable $e) {
+                            $this->container->get('flash')->addMessage('error', 'EPP error: ' . $e->getMessage());
+                            return $response->withHeader('Location', '/services/' . $args . '/edit')->withStatus(302);
+                        }
+                    } else {
+                        $this->container->get('flash')->addMessage('error', 'Service type not yet implemented');
+                        return $response->withHeader('Location', '/services/' . $args . '/edit')->withStatus(302);
+                    }
+                } else {
+                    // Service does not exist, redirect to the services view
+                    return $response->withHeader('Location', '/services')->withStatus(302);
+                }
+            } else {
+                // Redirect to the services view
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
         }
     }
     
