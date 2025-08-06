@@ -272,7 +272,7 @@ class OrdersController extends Controller
                     );
 
                     $contacts[$role] = [
-                        'name' => $first_name . $last_name ?? '',
+                        'name' => $row['first_name'] . $row['last_name'] ?? '',
                         'org' => $row['org'] ?? '',
                         'street1' => $row['street1'] ?? '',
                         'street2' => $row['street2'] ?? '',
