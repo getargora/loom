@@ -396,7 +396,7 @@ class ServicesController extends Controller
                     rsort($availableYears, SORT_NUMERIC);
 
                     $now = new \DateTimeImmutable();
-                    $expires = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.u', $service['expires_at']);
+                    $expires = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s.v', $service['expires_at']);
                     if (!$expires) {
                         $expires = new \DateTimeImmutable($service['expires_at']);
                     }
