@@ -242,9 +242,7 @@ CREATE TABLE IF NOT EXISTS "service_logs" (
      "actor_type" VARCHAR(16) NOT NULL DEFAULT 'system',
      "actor_id" INTEGER,
      "details" TEXT,
-     "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+     "created_at" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_service_logs_service_event ON service_logs(service_id, event);

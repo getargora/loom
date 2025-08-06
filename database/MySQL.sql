@@ -249,6 +249,5 @@ CREATE TABLE IF NOT EXISTS `service_logs` (
   `details` TEXT DEFAULT NULL,                          -- optional JSON string or free text
   `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (`id`),
-  INDEX (`service_id`, `event`),
-  CONSTRAINT `service_logs_service_fk` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
+  INDEX (`service_id`, `event`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
