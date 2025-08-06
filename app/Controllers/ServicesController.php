@@ -128,7 +128,7 @@ class ServicesController extends Controller
                             $params = [
                                 'domainname' => $config['domain'],
                             ];
-
+                            
                             if (!empty($data['authInfo'])) {
                                 $params['authInfo'] = $data['authInfo'];
                             }
@@ -176,6 +176,40 @@ class ServicesController extends Controller
                                             $config['nameservers'][] = $params[$key];
                                         }
                                     }
+                                }
+                            }
+
+                            if (
+                                !empty($data['ds_keytag']) &&
+                                !empty($data['ds_alg']) &&
+                                !empty($data['ds_digesttype']) &&
+                                !empty($data['ds_digest'])
+                            ) {
+                                $dnssecParams = [
+                                    'domainname' => $config['domain'],
+                                    'command' => 'add',
+                                    'keyTag_1' => $data['ds_keytag'],
+                                    'alg_1' => $data['ds_alg'],
+                                    'digestType_1' => $data['ds_digesttype'],
+                                    'digest_1' => $data['ds_digest'],
+                                ];
+
+                                $domainUpdateDNSSEC = $epp->domainUpdateDNSSEC($dnssecParams);
+
+                                if (array_key_exists('error', $domainUpdateDNSSEC)) {
+                                    $messages[] = 'DNSSEC update failed: ' . $domainUpdateDNSSEC['error'];
+                                } else {
+                                    $messages[] = 'DNSSEC update successful.';
+
+                                    $config['dnssec'] = [
+                                        'enabled' => true,
+                                        'ds_records' => [[
+                                            'keytag' => $data['ds_keytag'],
+                                            'alg' => $data['ds_alg'],
+                                            'digesttype' => $data['ds_digesttype'],
+                                            'digest' => $data['ds_digest'],
+                                        ]]
+                                    ];
                                 }
                             }
 

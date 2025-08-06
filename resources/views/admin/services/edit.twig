@@ -136,51 +136,54 @@
                 <div class="col-md-12">
                   <div class="card h-100">
                     <div class="card-body">
-                      <h5 class="card-title">{{ __('DNSSEC Data') }}</h5>
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">
+                          {{ __('DNSSEC') }}
+                          <span class="status {% if config.dnssec.enabled %}status-success{% else %}status-secondary{% endif %}">
+                            {% if config.dnssec.enabled %}
+                              {{ __('Active') }}
+                            {% else %}
+                              {{ __('Inactive') }}
+                            {% endif %}
+                          </span>
+                        </h5>
+                      </div>
 
                       {% if config.dnssec.enabled %}
-                          {% set domainSecdns = config.dnssec.ds_records %}
-                          {% if domainSecdns|length > 0 %}
+                        {% set domainSecdns = config.dnssec.ds_records %}
+                        {% if domainSecdns|length > 0 %}
                           <div id="dnssecTable" class="mb-3">
                             <div class="table-responsive">
-                              <table class="table table-vcenter card-table table-striped">
+                                <table class="table table-vcenter card-table table-striped">
                                 <thead>
                                   <tr>
-                                    {% set dsDataExists = false %}
                                     {% set keyDataExists = false %}
 
                                     {% for row in domainSecdns %}
-                                        {% if row.interface == 'dsData' %}
-                                        {% set dsDataExists = true %}
-                                      {% elseif row.interface == 'keyData' %}
+                                      {% if row.interface == 'keyData' %}
                                         {% set keyDataExists = true %}
                                       {% endif %}
                                     {% endfor %}
-
-                                    {% if dsDataExists %}
-                                      <th>Keytag</th>
-                                      <th>Algorithm</th>
-                                      <th>Digest Type</th>
-                                      <th>Digest</th>
-                                    {% endif %}
-
+                                      <th>{{ __('Keytag') }}</th>
+                                      <th>{{ __('Algorithm') }}</th>
+                                      <th>{{ __('Digest Type') }}</th>
+                                      <th>{{ __('Digest') }}</th>
                                     {% if keyDataExists %}
-                                      <th>Flags</th>
-                                      <th>Protocol</th>
-                                      <th>Keydata Algorithm</th>
-                                      <th>Public Key</th>
+                                      <th>{{ __('Flags') }}</th>
+                                      <th>{{ __('Protocol') }}</th>
+                                      <th>{{ __('Keydata Algorithm') }}</th>
+                                      <th>{{ __('Public Key') }}</th>
                                     {% endif %}
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {% for row in domainSecdns %}
                                     <tr>
-                                      {% if row.interface == 'dsData' %}
                                         <td>{{ row.keytag }}</td>
                                         <td>{{ row.alg }}</td>
                                         <td>{{ row.digesttype }}</td>
                                         <td>{{ row.digest }}</td>
-                                      {% elseif row.interface == 'keyData' %}
+                                      {% if row.interface == 'keyData' %}
                                         <td>{{ row.flags }}</td>
                                         <td>{{ row.protocol }}</td>
                                         <td>{{ row.keydata_alg }}</td>
@@ -192,11 +195,38 @@
                               </table>
                             </div>
                           </div>
-                          {% else %}
-                            <p class="text-muted">DNSSEC is active but no records are present.</p>
-                          {% endif %}
+                          <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                              <input type="text" name="ds_keytag" class="form-control" placeholder="Keytag" />
+                            </div>
+                            <div class="col-md-3">
+                              <input type="text" name="ds_alg" class="form-control" placeholder="Algorithm" />
+                            </div>
+                            <div class="col-md-3">
+                              <input type="text" name="ds_digesttype" class="form-control" placeholder="Digest Type" />
+                            </div>
+                            <div class="col-md-3">
+                              <input type="text" name="ds_digest" class="form-control" placeholder="Digest" />
+                            </div>
+                          </div>
+                          <p class="text-muted">{{ __('Provide DS record to be submitted to the registry.') }}</p>
+                        {% endif %}
                       {% else %}
-                          <p class="text-muted">DNSSEC is not active for this domain.</p>
+                        <div class="row g-2 mb-2">
+                          <div class="col-md-3">
+                            <input type="text" name="ds_keytag" class="form-control" placeholder="Keytag" />
+                          </div>
+                          <div class="col-md-3">
+                            <input type="text" name="ds_alg" class="form-control" placeholder="Algorithm" />
+                          </div>
+                          <div class="col-md-3">
+                            <input type="text" name="ds_digesttype" class="form-control" placeholder="Digest Type" />
+                          </div>
+                          <div class="col-md-3">
+                            <input type="text" name="ds_digest" class="form-control" placeholder="Digest" />
+                          </div>
+                        </div>
+                        <p class="text-muted">{{ __('Provide DS record to be submitted to the registry.') }}</p>
                       {% endif %}
                     </div>
                   </div>
