@@ -677,7 +677,8 @@ function getDomainConfig($domains, \Pinga\Db\PdoDatabase $db): array
             'passphrase' => $credentials['passphrase'] ?? null,
             'username' => $credentials['auth']['username'],
             'password' => $credentials['auth']['password'],
-            'client_id' => $credentials['client_id'] ?? null
+            'client_id' => $credentials['client_id'] ?? null,
+            'provider_id' => $matchedProvider['id']
         ];
     }
 
@@ -717,4 +718,202 @@ function getRegistryExtensionByTld(string $tld): string
     $tld = strtolower(ltrim($tld, '.'));
 
     return $tldMap[$tld] ?? 'generic';
+}
+
+function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorId): void {
+    try {
+        $db->beginTransaction();
+
+        $order = $db->selectRow('SELECT id, user_id, service_type, service_data FROM orders WHERE invoice_id = ? AND status = ?', [$invoiceId, 'pending']);
+
+        $serviceData = json_decode($order['service_data'], true);
+        $serviceName = $serviceData['domain'] ?? $serviceData['server'] ?? 'unnamed-service';
+        $service_type = strtok($order['service_type'], '.');
+        $service_action = strtok('.');
+        $years = isset($serviceData['years']) && $serviceData['years'] ? (int)$serviceData['years'] : 1;
+
+        if ($service_type === 'domain') {
+            if ($service_action === 'register') {
+                $domains = [$serviceName] ?? [];
+
+                $domainData = getDomainConfig($domains, $db);
+
+                if (empty($domainData) || !isset($domainData[0]['tld'])) {
+                    throw new \Exception('Error checking domain');
+                }
+
+                $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
+
+                $epp = connectToEpp(
+                    $registryType,
+                    $domainData[0]['host'],
+                    $domainData[0]['port'],
+                    $domainData[0]['cafile'] ?? '',
+                    $domainData[0]['cert_file'],
+                    $domainData[0]['key_file'],
+                    $domainData[0]['passphrase'] ?? '',
+                    $domainData[0]['username'],
+                    $domainData[0]['password']
+                );
+
+                if (!$epp) {
+                    throw new \Exception('Failed to connect to EPP server.');
+                }
+
+                $contactId = 'ct' . substr(md5(uniqid('', true)), 0, 8);
+
+                $registrant = $serviceData['contacts']['registrant'] ?? [];
+                $fullName = $registrant['name'] ?? 'John Doe';
+                $nameParts = preg_split('/\s+/', trim($fullName));
+
+                if (count($nameParts) === 1) {
+                    $firstname = $nameParts[0];
+                    $lastname = 'Doe';
+                }
+                elseif (count($nameParts) === 2) {
+                    $firstname = $nameParts[0];
+                    $lastname = $nameParts[1];
+                }
+                else {
+                    // Split on the middle word (e.g., "Jean Paul Gotty" → "Jean Paul", "Gotty")
+                    $middle = intdiv(count($nameParts), 2);
+                    $firstname = implode(' ', array_slice($nameParts, 0, $middle));
+                    $lastname = implode(' ', array_slice($nameParts, $middle));
+                }
+
+                $contactParams = [
+                    'id' => $contactId,
+                    'type' => 'int',
+                    'firstname' => $firstname ?? 'John',
+                    'lastname' => $lastname ?? 'Doe',
+                    'companyname' => $registrant['org'] ?? 'Unknown Company',
+                    'address1' => $registrant['street1'] ?? 'Unknown Street',
+                    'address2' => $registrant['street2'] ?? '',
+                    'city' => $registrant['city'] ?? 'Unknown City',
+                    'state' => $registrant['sp'] ?? '',
+                    'postcode' => $registrant['pc'] ?? '00000',
+                    'country' => strtoupper($registrant['cc'] ?? 'XX'),
+                    'fullphonenumber' => $registrant['voice'] ?? '+000.0000000',
+                    'email' => $registrant['email'] ?? 'test@example.com',
+                    'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
+                ];
+
+                $contactCreate = $epp->contactCreate($contactParams);
+                if (isset($contactCreate['error'])) {
+                    throw new \Exception('ContactCreate Error: ' . $contactCreate['error']);
+                }
+                $contactId = $contactCreate['id'];
+
+                $domainParams = [
+                    'domainname' => $serviceData['domain'] ?? 'example.invalid',
+                    'period' => $serviceData['years'] ?? 1,
+                    'nss' => $serviceData['nameservers'] ?? ['ns1.default.com', 'ns2.default.com'],
+                    'registrant' => $contactId,
+                    'contacts' => [
+                        'admin' => $contactId,
+                        'tech' => $contactId,
+                        'billing' => $contactId,
+                    ],
+                    'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
+                ];
+
+                $domainCreate = $epp->domainCreate($domainParams);
+                if (isset($domainCreate['error'])) {
+                    throw new \Exception('DomainCreate Error: ' . $domainCreate['error']);
+                }
+
+                $epp->logout();
+
+                $db->update('orders', ['status' => 'active'], ['id' => $order['id']]);
+
+				$serviceData['authcode'] = $serviceData['authInfo'] ?? 'AutoGenAuth123!';
+				$serviceData['status'] = $serviceData['status'] ?? ['ok'];
+
+				foreach (['registrant', 'admin', 'tech', 'billing'] as $role) {
+					if (isset($serviceData['contacts'][$role])) {
+						$serviceData['contacts'][$role]['registry_id'] = $contactId;
+					}
+				}
+
+				$order['service_data'] = json_encode($serviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+                $db->insert('services', [
+                    'user_id' => $order['user_id'],
+                    'provider_id' => $domainData[0]['provider_id'],
+                    'order_id' => $order['id'],
+                    'type' => $service_type,
+                    'status' => 'active',
+                    'config' => $order['service_data'],
+                    'service_name' => $serviceName,
+                    'registered_at' => date('Y-m-d H:i:s.v'),
+                    'expires_at' => isset($domainCreate['exDate']) ? date('Y-m-d H:i:s.v', strtotime($domainCreate['exDate'])) : date('Y-m-d H:i:s.v', strtotime("+$years year")),
+                    'updated_at' => date('Y-m-d H:i:s.v'),
+                    'created_at' => isset($domainCreate['crDate']) ? date('Y-m-d H:i:s.v', strtotime($domainCreate['crDate'])) : date('Y-m-d H:i:s.v'),
+                ]);
+
+                $service_id = $db->getLastInsertId();
+                $db->commit();
+            }
+            elseif ($service_action === 'renew') {
+                $domains = [$serviceName] ?? [];
+
+                $domainData = getDomainConfig($domains, $db);
+
+                if (empty($domainData) || !isset($domainData[0]['tld'])) {
+                    throw new \Exception('Error checking domain for renewal');
+                }
+
+                $registryType = getRegistryExtensionByTld('.' . $domainData[0]['tld']);
+
+                $epp = connectToEpp(
+                    $registryType,
+                    $domainData[0]['host'],
+                    $domainData[0]['port'],
+                    $domainData[0]['cafile'] ?? '',
+                    $domainData[0]['cert_file'],
+                    $domainData[0]['key_file'],
+                    $domainData[0]['passphrase'] ?? '',
+                    $domainData[0]['username'],
+                    $domainData[0]['password']
+                );
+
+                if (!$epp) {
+                    throw new \Exception('Failed to connect to EPP server.');
+                }
+
+                $domainRenew = $epp->domainRenew([
+                    'domainname' => $serviceData['domain'] ?? throw new \Exception('Domain name missing'),
+                    'regperiod' => $serviceData['years'] ?? 1
+                ]);
+
+                if (isset($domainRenew['error'])) {
+                    throw new \Exception('DomainRenew Error: ' . $domainRenew['error']);
+                }
+
+                $epp->logout();
+
+                $db->update('orders', ['status' => 'active'], ['id' => $order['id']]);
+                $db->commit();
+            }
+            else {
+                // Handle transfer or others
+            }
+        }
+        elseif ($service_type === 'server') {
+            // Handle server actions
+        }
+
+    }
+    catch (Exception $e) {
+        $db->rollBack();
+        $db->insert('service_logs', [
+            'service_id' => $service_id ?? 0,
+            'event' => 'order_activation_failed',
+            'actor_type' => 'system',
+            'actor_id' => $actorId,
+            'details' => $e->getMessage(),
+            'created_at' => date('Y-m-d H:i:s.v')
+        ]);
+        throw $e;
+    }
 }

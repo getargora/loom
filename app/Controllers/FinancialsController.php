@@ -617,9 +617,9 @@ class FinancialsController extends Controller
 
                 if ($isPositiveNumberWithTwoDecimals) {
                     $userId = $_SESSION["auth_user_id"] ?? $userId;
-                    $db->beginTransaction();
 
                     try {
+                        $db->beginTransaction();
                         $currentDateTime = new \DateTime();
                         $date = $currentDateTime->format('Y-m-d H:i:s.v');
 
@@ -669,6 +669,8 @@ class FinancialsController extends Controller
 
                         $db->commit();
                     } catch (Exception $e) {
+                        $db->rollBack();
+
                         $this->container->get('flash')->addMessage('error', 'Failure: '.$e->getMessage());
                         return $response->withHeader('Location', $link)->withStatus(302);
                     }
@@ -677,7 +679,12 @@ class FinancialsController extends Controller
                         ? "Invoice payment received successfully. Your service will be processed shortly."
                         : "Deposit added successfully. Your account balance has been updated.";
 
-                    // TODO: Call provisioning module, process order and make it as active. Create service.
+                    try {
+                        provisionService($db, $invoiceId, $_SESSION["auth_user_id"]);
+                    } catch (Exception $e) {
+                        $this->container->get('flash')->addMessage('error', 'Failure: '.$e->getMessage());
+                        return $response->withHeader('Location', $link)->withStatus(302);
+                    }
 
                     $this->container->get('flash')->addMessage('success', $message);
                     return $response->withHeader('Location', $link)->withStatus(302);
@@ -686,7 +693,16 @@ class FinancialsController extends Controller
                     return $response->withHeader('Location', $link)->withStatus(302);
                 }
             } catch (\Exception $e) {
-                $this->container->get('flash')->addMessage('error', 'We encountered an issue while processing your payment. Please check your payment details and try again.');
+                $db->insert('service_logs', [
+                    'service_id' => 0,
+                    'event' => 'payment_failed',
+                    'actor_type' => 'system',
+                    'actor_id' => $_SESSION["auth_user_id"],
+                    'details' => 'invoice ' . $invoiceId . '|' . $e->getMessage(),
+                    'created_at' => date('Y-m-d H:i:s.v')
+                ]);
+
+                $this->container->get('flash')->addMessage('error', 'We encountered an issue while processing your order. Please contact our support team');
                 return $response->withHeader('Location', $link)->withStatus(302);
             }
         }
@@ -1044,6 +1060,8 @@ class FinancialsController extends Controller
                                 
                                 $db->commit();
                             } catch (Exception $e) {
+                                $db->rollBack();
+
                                 $response = $response->withStatus(500)->withHeader('Content-Type', 'application/json');
                                 $response->getBody()->write(json_encode(['failure' => true]));
                                 return $response;
