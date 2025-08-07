@@ -826,16 +826,16 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
 
                 $db->update('orders', ['status' => 'active'], ['id' => $order['id']]);
 
-				$serviceData['authcode'] = $serviceData['authInfo'] ?? 'AutoGenAuth123!';
-				$serviceData['status'] = $serviceData['status'] ?? ['ok'];
+                $serviceData['authcode'] = $serviceData['authInfo'] ?? 'AutoGenAuth123!';
+                $serviceData['status'] = $serviceData['status'] ?? ['ok'];
 
-				foreach (['registrant', 'admin', 'tech', 'billing'] as $role) {
-					if (isset($serviceData['contacts'][$role])) {
-						$serviceData['contacts'][$role]['registry_id'] = $contactId;
-					}
-				}
+                foreach (['registrant', 'admin', 'tech', 'billing'] as $role) {
+                    if (isset($serviceData['contacts'][$role])) {
+                        $serviceData['contacts'][$role]['registry_id'] = $contactId;
+                    }
+                }
 
-				$order['service_data'] = json_encode($serviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $order['service_data'] = json_encode($serviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 $db->insert('services', [
                     'user_id' => $order['user_id'],
@@ -893,6 +893,16 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                 $epp->logout();
 
                 $db->update('orders', ['status' => 'active'], ['id' => $order['id']]);
+
+                $db->update('services', [
+                    'updated_at' => date('Y-m-d H:i:s.v'),
+                    'expires_at' => isset($domainRenew['exDate'])
+                        ? date('Y-m-d H:i:s.v', strtotime($domainRenew['exDate']))
+                        : date('Y-m-d H:i:s.v', strtotime("+" . $serviceData['years'] . " year"))
+                ], [
+                    'service_name' => $serviceName
+                ]);
+
                 $db->commit();
             }
             else {
