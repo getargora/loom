@@ -30,7 +30,7 @@ Argora Loom works with a variety of external services through its modular archit
 ### Domain Registries
 
 - **Namingo Registry** – ✅
-- **.fi** – *coming soon*
+- **.fi** – ✅
 
 ### Cloud Infrastructure
 
