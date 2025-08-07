@@ -263,15 +263,18 @@ class OrdersController extends Controller
                 );
 
                 // Insert into invoices
+                $currentDateTime = new \DateTime();
+                $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                 $db->insert('invoices', [
                     'user_id' => $userId,
                     'billing_contact_id' => $billingContactId,
-                    'issue_date' => date('Y-m-d H:i:s'),
+                    'issue_date' => $createdAt,
                     'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
                     'total_amount' => $amount,
                     'payment_status' => 'unpaid',
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s'),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
 
                 $invoiceId = $db->getLastInsertId();
@@ -307,6 +310,37 @@ class OrdersController extends Controller
                     ];
                 }
 
+                $dnssec = [
+                    'enabled' => false,
+                    'ds_records' => []
+                ];
+
+                if (
+                    isset($data['addDnssec']) && $data['addDnssec'] === 'on' &&
+                    !empty($data['dsKeyTag']) &&
+                    !empty($data['dsAlg']) &&
+                    !empty($data['dsDigestType']) &&
+                    !empty($data['dsDigest'])
+                ) {
+                    $dnssec = [
+                        'enabled' => true,
+                        'ds_records' => [[
+                            'keytag' => $data['dsKeyTag'],
+                            'alg' => $data['dsAlg'],
+                            'digesttype' => $data['dsDigestType'],
+                            'digest' => $data['dsDigest']
+                        ]]
+                    ];
+                }
+
+                $custom = [];
+
+                foreach ($data as $key => $value) {
+                    if (strpos($key, 'c_') === 0) {
+                        $custom[substr($key, 2)] = $value;
+                    }
+                }
+
                 // Build service_data
                 $serviceData = json_encode([
                     'type' => 'domain_register',
@@ -319,13 +353,14 @@ class OrdersController extends Controller
                     'notes' => 'Customer requested domain registration',
                     'contacts' => $contacts,
                     'nameservers' => array_values($nameservers),
-                    'dnssec' => [
-                        'enabled' => false,
-                        'ds_records' => []
-                    ]
+                    'dnssec' => $dnssec,
+                    'custom' => $custom
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
                 // Insert into orders
+                $currentDateTime = new \DateTime();
+                $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                 $db->insert('orders', [
                     'user_id' => $userId,
                     'service_type' => 'domain.register',
@@ -334,7 +369,7 @@ class OrdersController extends Controller
                     'amount_due' => $amount,
                     'currency' => $currency,
                     'invoice_id' => $invoiceId,
-                    'created_at' => date('Y-m-d H:i:s'),
+                    'created_at' => $createdAt,
                 ]);
            
                 $db->commit();
@@ -470,15 +505,18 @@ class OrdersController extends Controller
                 );
 
                 // Insert into invoices
+                $currentDateTime = new \DateTime();
+                $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                 $db->insert('invoices', [
                     'user_id' => $userId,
                     'billing_contact_id' => $billingContactId,
-                    'issue_date' => date('Y-m-d H:i:s'),
+                    'issue_date' => $createdAt,
                     'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
                     'total_amount' => $amount,
                     'payment_status' => 'unpaid',
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s'),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
 
                 $invoiceId = $db->getLastInsertId();
@@ -502,6 +540,9 @@ class OrdersController extends Controller
                 ]);
 
                 // Insert into orders
+                $currentDateTime = new \DateTime();
+                $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                 $db->insert('orders', [
                     'user_id' => $userId,
                     'service_type' => 'domain.transfer',
@@ -510,7 +551,7 @@ class OrdersController extends Controller
                     'amount_due' => $amount,
                     'currency' => $currency,
                     'invoice_id' => $invoiceId,
-                    'created_at' => date('Y-m-d H:i:s'),
+                    'created_at' => $createdAt,
                 ]);
            
                 $db->commit();

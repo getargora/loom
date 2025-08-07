@@ -216,9 +216,15 @@ class ServicesController extends Controller
                                 }
                             }
 
+                            $currentDateTime = new \DateTime();
+                            $updatedAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                             $db->update(
                                 'services',
-                                ['config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)],
+                                [
+                                    'config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+                                    'updated_at' => $updatedAt
+                                ],
                                 ['id' => $args]
                             );
 

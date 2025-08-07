@@ -278,16 +278,19 @@ class FinancialsController extends Controller
                     );
 
                     // Insert into invoices
+                    $currentDateTime = new \DateTime();
+                    $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                     $db->insert('invoices', [
                         'user_id' => $user_id,
                         'invoice_type' => 'deposit',
                         'billing_contact_id' => $billingContactId,
-                        'issue_date' => date('Y-m-d H:i:s'),
+                        'issue_date' => $createdAt,
                         'due_date' => date('Y-m-d H:i:s', strtotime('+24 hours')),
                         'total_amount' => $amount,
                         'payment_status' => 'paid',
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s'),
+                        'created_at' => $createdAt,
+                        'updated_at' => $createdAt,
                     ]);
 
                     $invoiceId = $db->getLastInsertId();
@@ -644,11 +647,14 @@ class FinancialsController extends Controller
                         ]);
 
                         if ($paymentType === 'invoice' && $invoiceId) {
+                            $currentDateTime = new \DateTime();
+                            $updatedAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                             $db->update(
                                 'invoices',
                                 [
                                     'payment_status' => 'paid',
-                                    'updated_at' => date('Y-m-d H:i:s.v')
+                                    'updated_at' => $updatedAt
                                 ],
                                 [
                                     'id' => $invoiceId,
@@ -693,13 +699,16 @@ class FinancialsController extends Controller
                     return $response->withHeader('Location', $link)->withStatus(302);
                 }
             } catch (\Exception $e) {
+                $currentDateTime = new \DateTime();
+                $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
                 $db->insert('service_logs', [
                     'service_id' => 0,
                     'event' => 'payment_failed',
                     'actor_type' => 'system',
                     'actor_id' => $_SESSION["auth_user_id"],
                     'details' => 'invoice ' . $invoiceId . '|' . $e->getMessage(),
-                    'created_at' => date('Y-m-d H:i:s.v')
+                    'created_at' => $createdAt
                 ]);
 
                 $this->container->get('flash')->addMessage('error', 'We encountered an issue while processing your order. Please contact our support team');

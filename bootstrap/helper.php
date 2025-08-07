@@ -837,6 +837,15 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
 
                 $order['service_data'] = json_encode($serviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
+                $registeredAt = (new \DateTime())->format('Y-m-d H:i:s.v');
+                $expiresAt = isset($domainCreate['exDate'])
+                    ? (new \DateTime($domainCreate['exDate']))->format('Y-m-d H:i:s.v')
+                    : (new \DateTime("+$years year"))->format('Y-m-d H:i:s.v');
+                $updatedAt = (new \DateTime())->format('Y-m-d H:i:s.v');
+                $createdAtFinal = isset($domainCreate['crDate'])
+                    ? (new \DateTime($domainCreate['crDate']))->format('Y-m-d H:i:s.v')
+                    : (new \DateTime())->format('Y-m-d H:i:s.v');
+
                 $db->insert('services', [
                     'user_id' => $order['user_id'],
                     'provider_id' => $domainData[0]['provider_id'],
@@ -845,10 +854,10 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     'status' => 'active',
                     'config' => $order['service_data'],
                     'service_name' => $serviceName,
-                    'registered_at' => date('Y-m-d H:i:s.v'),
-                    'expires_at' => isset($domainCreate['exDate']) ? date('Y-m-d H:i:s.v', strtotime($domainCreate['exDate'])) : date('Y-m-d H:i:s.v', strtotime("+$years year")),
-                    'updated_at' => date('Y-m-d H:i:s.v'),
-                    'created_at' => isset($domainCreate['crDate']) ? date('Y-m-d H:i:s.v', strtotime($domainCreate['crDate'])) : date('Y-m-d H:i:s.v'),
+                    'registered_at' => $registeredAt,
+                    'expires_at' => $expiresAt,
+                    'updated_at' => $updatedAt,
+                    'created_at' => $createdAtFinal,
                 ]);
 
                 $service_id = $db->getLastInsertId();
@@ -895,10 +904,10 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                 $db->update('orders', ['status' => 'active'], ['id' => $order['id']]);
 
                 $db->update('services', [
-                    'updated_at' => date('Y-m-d H:i:s.v'),
+                    'updated_at' => (new \DateTime())->format('Y-m-d H:i:s.v'),
                     'expires_at' => isset($domainRenew['exDate'])
-                        ? date('Y-m-d H:i:s.v', strtotime($domainRenew['exDate']))
-                        : date('Y-m-d H:i:s.v', strtotime("+" . $serviceData['years'] . " year"))
+                        ? (new \DateTime($domainRenew['exDate']))->format('Y-m-d H:i:s.v')
+                        : (new \DateTime("+" . $serviceData['years'] . " year"))->format('Y-m-d H:i:s.v')
                 ], [
                     'service_name' => $serviceName
                 ]);
@@ -916,13 +925,15 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
     }
     catch (Exception $e) {
         $db->rollBack();
+        $currentDateTime = new \DateTime();
+        $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
         $db->insert('service_logs', [
             'service_id' => $service_id ?? 0,
             'event' => 'order_activation_failed',
             'actor_type' => 'system',
             'actor_id' => $actorId,
             'details' => $e->getMessage(),
-            'created_at' => date('Y-m-d H:i:s.v')
+            'created_at' => $createdAt
         ]);
         throw $e;
     }
