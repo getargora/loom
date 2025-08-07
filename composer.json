@@ -62,7 +62,7 @@
         "stripe/stripe-php": "^17.5.0",
         "adyen/php-api-library": "^28.1",
         "argora/tabler-assets": "^1.4",
-        "pinga/tembo": "^1.1.0-beta4",
+        "pinga/tembo": "^1.1.0-beta5",
         "utopia-php/domains": "^0.8.0"
     },
     "autoload": {
