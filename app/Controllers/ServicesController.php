@@ -163,6 +163,16 @@ class ServicesController extends Controller
                             }
 
                             if ($hasNs) {
+                                if (!isset($params['nss'])) {
+                                    $params['nss'] = [];
+
+                                    foreach ($params as $key => $value) {
+                                        if (preg_match('/^ns\d+$/', $key)) {
+                                            $params['nss'][] = ['hostName' => $value];
+                                        }
+                                    }
+                                }
+
                                 $domainUpdateNS = $epp->domainUpdateNS($params);
 
                                 if (array_key_exists('error', $domainUpdateNS)) {
