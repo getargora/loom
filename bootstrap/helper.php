@@ -798,6 +798,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
                 ];
 
+                $contactParams = extendParamsForRegistry('contact', $contactParams, $registryType, $serviceData);
                 $contactCreate = $epp->contactCreate($contactParams);
                 if (isset($contactCreate['error'])) {
                     throw new \Exception('ContactCreate Error: ' . $contactCreate['error']);
@@ -937,4 +938,47 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
         ]);
         throw $e;
     }
+}
+
+function extendParamsForRegistry(string $objectType, array $params, string $registryType, array $serviceData): array
+{
+    $registryType = strtolower($registryType);
+    $objectType = strtolower($objectType);
+
+    switch ($registryType) {
+        case 'FI':
+            if ($objectType === 'contact') {
+                $params['isfinnish'] = strtoupper($params['country'] ?? '') === 'FI' ? 1 : 0;
+                $params['role'] = 5;
+
+                if (!empty($serviceData['custom']['org_name'])) {
+                    $params['type'] = 1;
+                    $params['registernumber'] = $serviceData['custom']['id_number'] ?? '';
+                } else {
+                    $params['type'] = 0;
+                    $params['identity'] = $serviceData['custom']['id_number'] ?? '';
+                    $params['birthDate'] = $serviceData['custom']['birthDate'] ?? '';
+                }
+
+            } elseif ($objectType === 'domain') {
+                $params['fi_extension'] = $serviceData['custom']['fi_extra'] ?? '';
+            }
+            break;
+
+        case 'jp':
+            if ($objectType === 'contact') {
+                $params['japanSpecificField'] = $serviceData['custom']['jp_field'] ?? '';
+            } elseif ($objectType === 'host') {
+                $params['jp_dns_hosting'] = $serviceData['custom']['jp_dns'] ?? false;
+            }
+            break;
+
+        // Add more registryType + objectType rules here...
+
+        default:
+            // No extension needed
+            break;
+    }
+
+    return $params;
 }

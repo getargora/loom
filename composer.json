@@ -56,13 +56,13 @@
         "bacon/bacon-qr-code": "^3.0.1",
         "utopia-php/messaging": "^0.18.1",
         "filips123/monolog-phpmailer": "^2.0",
-        "mpociot/vat-calculator": "^3.22.0",
+        "mpociot/vat-calculator": "^3.23.0",
         "guzzlehttp/guzzle": "^7.9.3",
         "league/iso3166": "^4.3.3",
-        "stripe/stripe-php": "^17.4.0",
+        "stripe/stripe-php": "^17.5.0",
         "adyen/php-api-library": "^28.1",
         "argora/tabler-assets": "^1.4",
-        "pinga/tembo": "^1.1.0-beta3",
+        "pinga/tembo": "^1.1.0-beta4",
         "utopia-php/domains": "^0.8.0"
     },
     "autoload": {
