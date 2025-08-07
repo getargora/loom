@@ -194,7 +194,7 @@ class FinancialsController extends Controller
             [ $invoice_details['billing_contact_id'] ]
         );
         $userData = $db->selectRow(
-            'SELECT currency, nin, vat_number, nin_type FROM users WHERE id = ?',
+            'SELECT currency, nin, vat_number, nin_type, account_balance, credit_limit FROM users WHERE id = ?',
             [ $invoice_details['user_id'] ]
         );
 
@@ -220,6 +220,12 @@ class FinancialsController extends Controller
         $_SESSION['pending_invoice_amount'] = $totalAmount;
         $_SESSION['pending_invoice_id'] = $invoiceNumber;
 
+        $canPayWithBalance = false;
+        if (isset($userData['account_balance'], $userData['credit_limit'])) {
+            $availableFunds = $userData['account_balance'] + $userData['credit_limit'];
+            $canPayWithBalance = $availableFunds >= $totalAmount;
+        }
+
         // Pass formatted values to Twig
         return view($response, 'admin/financials/payInvoice.twig', [
             'invoice_details' => $invoice_details,
@@ -227,6 +233,7 @@ class FinancialsController extends Controller
             'currentUri' => $uri,
             'stripe_key' => $stripe_key,
             'enabledGateways' => $enabledGateways,
+            'canPayWithBalance' => $canPayWithBalance,
         ]);
 
     }
