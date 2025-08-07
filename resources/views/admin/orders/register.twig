@@ -59,7 +59,7 @@
                             <div class="mb-3">
                                 <label for="reg-years" class="form-label">{{ __('Choose registration period') }}</label>
                                 <select name="reg-years" id="reg-years" class="form-select">
-                                  {% for years, price in pricing.nam.register %}
+                                  {% for years, price in pricing[tldKey].register %}
                                     <option value="{{ years }}">
                                       {{ years }} year{% if years != '1' %}s{% endif %} – {{ price }} {{ currency }}
                                     </option>

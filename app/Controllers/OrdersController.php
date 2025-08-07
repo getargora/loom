@@ -422,7 +422,7 @@ class OrdersController extends Controller
                     $tldKey = ltrim($tld, '.');
                     $credentials = json_decode($provider['credentials'], true);
                     $requiredFields = $credentials['required_fields'] ?? [];
-                        
+
                     $responseData = [
                         'domain' => $args,
                         'currentUri' => $uri,
@@ -431,7 +431,8 @@ class OrdersController extends Controller
                         'pricing' => [
                             $tldKey => $pricingData[$tld]
                         ],
-                        'required_fields' => $requiredFields
+                        'required_fields' => $requiredFields,
+                        'tldKey' => $tldKey
                     ];
 
                     $_SESSION['domains_to_create'] = [$args];
