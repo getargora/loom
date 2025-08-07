@@ -793,7 +793,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     'state' => $registrant['sp'] ?? '',
                     'postcode' => $registrant['pc'] ?? '00000',
                     'country' => strtoupper($registrant['cc'] ?? 'XX'),
-                    'fullphonenumber' => $registrant['voice'] ?? '+000.0000000',
+                    'fullphonenumber' => $registrant['voice'] ?? '+380.1234567',
                     'email' => $registrant['email'] ?? 'test@example.com',
                     'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
                 ];
@@ -818,6 +818,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
                 ];
 
+                $domainParams = extendParamsForRegistry('domain', $domainParams, $registryType, $serviceData);
                 $domainCreate = $epp->domainCreate($domainParams);
                 if (isset($domainCreate['error'])) {
                     throw new \Exception('DomainCreate Error: ' . $domainCreate['error']);
@@ -946,7 +947,7 @@ function extendParamsForRegistry(string $objectType, array $params, string $regi
     $objectType = strtolower($objectType);
 
     switch ($registryType) {
-        case 'FI':
+        case 'fi':
             if ($objectType === 'contact') {
                 $params['isfinnish'] = strtoupper($params['country'] ?? '') === 'FI' ? 1 : 0;
                 $params['role'] = 5;
@@ -961,7 +962,13 @@ function extendParamsForRegistry(string $objectType, array $params, string $regi
                 }
 
             } elseif ($objectType === 'domain') {
-                $params['fi_extension'] = $serviceData['custom']['fi_extra'] ?? '';
+                if (!empty($params['nss']) && is_array($params['nss'])) {
+                    $params['nss'] = array_map(function ($host) {
+                        return ['hostName' => $host];
+                    }, $params['nss']);
+                }
+
+                unset($params['contacts']);
             }
             break;
 
