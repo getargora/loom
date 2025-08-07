@@ -29,8 +29,19 @@ Argora Loom works with a variety of external services through its modular archit
 
 ### Domain Registries
 
-- **Namingo Registry** – ✅
+- **Namingo** – ✅
 - **.fi** – ✅
+- **CentralNic** – ✅🧪
+- **CoCCA** – ✅🧪
+- **CORE** – ✅🧪
+- **DNS.Business** – ✅🧪
+- **GoDaddy Registry** – ✅🧪
+- **Google** – ✅🧪
+- **Hello Registry** – ✅🧪
+- **Identity Digital** – ✅🧪
+- **it.com** – ✅🧪
+- **RyCE** – ✅🧪
+- **Tucows Registry** – ✅🧪
 
 ### Cloud Infrastructure
 
