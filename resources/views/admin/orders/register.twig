@@ -103,10 +103,14 @@
                                 </div>
                             </div>
 
+                            <!-- AuthInfo -->
+                            <div class="mb-3">
+                                <label for="authInfo" class="form-label required">{{ __('Auth Info') }}</label>
+                                <input type="text" class="form-control" id="authInfo" name="authInfo" required>
+                            </div>
+                            
                             {% if required_fields %}
                             <div class="mb-3">
-                              <h4 class="mb-3">{{ __('Additional Information Required') }}</h4>
-
                               {% for field, config in required_fields %}
                                 <div class="mb-3">
                                   <label class="form-label" for="{{ field }}">
@@ -117,18 +121,12 @@
                                   </label>
                                   <input type="{{ config.type }}" name="{{ field }}" id="{{ field }}" class="form-control" {% if config.required %}required{% endif %}>
                                   {% if config.hint %}
-                                    <div class="form-text">{{ config.hint }}</div>
+                                    <small class="form-hint">{{ config.hint }}</small>
                                   {% endif %}
                                 </div>
                               {% endfor %}
                             </div>
                             {% endif %}
-
-                            <!-- AuthInfo -->
-                            <div class="mb-3">
-                                <label for="authInfo" class="form-label required">{{ __('Auth Info') }}</label>
-                                <input type="text" class="form-control" id="authInfo" name="authInfo" required>
-                            </div>
 
                           </div>
                           <div class="col-md-6">
@@ -165,61 +163,42 @@
                           </div>
                         </div>
 
-                            <!-- DNSSEC Data with checkbox -->
+                        <div class="row">
+                          <div class="col-md-12">
                             <div class="mb-3 mt-2 form-check">
-                                <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
-                                <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC Data') }}</label>
+                              <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
+                              <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC') }}</label>
                             </div>
-                            <div id="dnssecData" style="display: none;">
-                                <div class="row mb-3">
-                                  <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
-                                  <div class="col-sm-4 col-md-4">
-                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
-                                  </div>
-                                  <div class="col-sm-4 col-md-4">
-                                    <select class="form-select mb-2" name="dsAlg">
-                                      <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
-                                      <option value="8">RSA/SHA-256</option>
-                                      <option value="13">ECDSA Curve P-256 with SHA-256</option>
-                                      <option value="14">ECDSA Curve P-384 with SHA-384</option>
-                                      <option value="15">Ed25519</option>
-                                      <option value="16">Ed448</option>
-                                    </select>
-                                  </div>
-                                  <div class="col-sm-4 col-md-4">
-                                    <select class="form-select mb-2" name="dsDigestType">
-                                      <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
-                                      <option value="2">SHA-256</option>
-                                      <option value="4">SHA-384</option>
-                                    </select>
-                                  </div>
-                                  <div class="col-sm-12 col-md-12">
-                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Digest') }}" name="dsDigest">
-                                  </div>
-                                </div>
-                                <div class="row mb-3">
-                                  <label for="dnskeyFlags" class="form-label">{{ __('DNSKEY Record') }}</label>
-                                  <div class="col-sm-4 col-md-4">
-                                    <input type="number" class="form-control mb-2" placeholder="{{ __('Flags') }}" name="dnskeyFlags" id="dnskeyFlags">
-                                  </div>
-                                  <div class="col-sm-4 col-md-4">
-                                    <input type="number" class="form-control mb-2" placeholder="{{ __('Protocol') }}" name="dnskeyProtocol" value="3" readonly>
-                                  </div>
-                                  <div class="col-sm-4 col-md-4">
-                                    <select class="form-select mb-2" name="dnskeyAlg">
-                                      <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
-                                      <option value="8">RSA/SHA-256</option>
-                                      <option value="13">ECDSA Curve P-256 with SHA-256</option>
-                                      <option value="14">ECDSA Curve P-384 with SHA-384</option>
-                                      <option value="15">Ed25519</option>
-                                      <option value="16">Ed448</option>
-                                    </select>
-                                  </div>
-                                  <div class="col-sm-12 col-md-12">
-                                    <input type="text" class="form-control mb-2" placeholder="{{ __('Public Key') }}" name="dnskeyPubKey">
-                                  </div>
-                                </div>
+                          </div>
+                          <div id="dnssecData" style="display: none;">
+                            <div class="row mb-3">
+                              <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
+                              <div class="col-sm-4 col-md-4">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsAlg">
+                                  <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
+                                  <option value="8">RSA/SHA-256</option>
+                                  <option value="13">ECDSA Curve P-256 with SHA-256</option>
+                                  <option value="14">ECDSA Curve P-384 with SHA-384</option>
+                                  <option value="15">Ed25519</option>
+                                  <option value="16">Ed448</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsDigestType">
+                                  <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
+                                  <option value="2">SHA-256</option>
+                                  <option value="4">SHA-384</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-12 col-md-12">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Digest') }}" name="dsDigest">
+                              </div>
                             </div>
+                          </div>
+                        </div>
 
                     </div>
                 <div class="card-footer">

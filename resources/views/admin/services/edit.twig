@@ -112,11 +112,7 @@
                   <div class="card h-100">
                     <div class="card-body">
                       <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">{{ __('Nameservers') }}</h5>
-                        <div>
-                          <button type="button" class="btn btn-sm btn-outline-green" onclick="addNameserver()">+</button>
-                          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeNameserver()">−</button>
-                        </div>
+                        <h5 class="card-title mb-0">{{ __('Nameservers') }}&nbsp;<button type="button" class="btn btn-sm btn-green" onclick="addNameserver()">+</button> <button type="button" class="btn btn-sm btn-danger" onclick="removeNameserver()">−</button></h5>
                       </div>
                       <div id="nameserver-container" class="datagrid">
                         {% for ns in config.nameservers %}
@@ -195,38 +191,80 @@
                               </table>
                             </div>
                           </div>
-                          <div class="row g-2 mb-2">
-                            <div class="col-md-3">
-                              <input type="text" name="ds_keytag" class="form-control" placeholder="Keytag" />
-                            </div>
-                            <div class="col-md-3">
-                              <input type="text" name="ds_alg" class="form-control" placeholder="Algorithm" />
-                            </div>
-                            <div class="col-md-3">
-                              <input type="text" name="ds_digesttype" class="form-control" placeholder="Digest Type" />
-                            </div>
-                            <div class="col-md-3">
-                              <input type="text" name="ds_digest" class="form-control" placeholder="Digest" />
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="mb-3 mt-2 form-check">
+                              <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
+                              <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC') }}</label>
                             </div>
                           </div>
-                          <p class="text-muted">{{ __('Provide DS record to be submitted to the registry.') }}</p>
-                        {% endif %}
-                      {% else %}
-                        <div class="row g-2 mb-2">
-                          <div class="col-md-3">
-                            <input type="text" name="ds_keytag" class="form-control" placeholder="Keytag" />
-                          </div>
-                          <div class="col-md-3">
-                            <input type="text" name="ds_alg" class="form-control" placeholder="Algorithm" />
-                          </div>
-                          <div class="col-md-3">
-                            <input type="text" name="ds_digesttype" class="form-control" placeholder="Digest Type" />
-                          </div>
-                          <div class="col-md-3">
-                            <input type="text" name="ds_digest" class="form-control" placeholder="Digest" />
+                          <div id="dnssecData" style="display: none;">
+                            <div class="row mb-3">
+                              <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
+                              <div class="col-sm-4 col-md-4">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsAlg">
+                                  <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
+                                  <option value="8">RSA/SHA-256</option>
+                                  <option value="13">ECDSA Curve P-256 with SHA-256</option>
+                                  <option value="14">ECDSA Curve P-384 with SHA-384</option>
+                                  <option value="15">Ed25519</option>
+                                  <option value="16">Ed448</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsDigestType">
+                                  <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
+                                  <option value="2">SHA-256</option>
+                                  <option value="4">SHA-384</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-12 col-md-12">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Digest') }}" name="dsDigest">
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <p class="text-muted">{{ __('Provide DS record to be submitted to the registry.') }}</p>
+                        {% endif %}
+                      {% else %}
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="mb-3 mt-2 form-check">
+                              <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
+                              <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC') }}</label>
+                            </div>
+                          </div>
+                          <div id="dnssecData" style="display: none;">
+                            <div class="row mb-3">
+                              <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
+                              <div class="col-sm-4 col-md-4">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsAlg">
+                                  <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
+                                  <option value="8">RSA/SHA-256</option>
+                                  <option value="13">ECDSA Curve P-256 with SHA-256</option>
+                                  <option value="14">ECDSA Curve P-384 with SHA-384</option>
+                                  <option value="15">Ed25519</option>
+                                  <option value="16">Ed448</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-4 col-md-4">
+                                <select class="form-select mb-2" name="dsDigestType">
+                                  <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
+                                  <option value="2">SHA-256</option>
+                                  <option value="4">SHA-384</option>
+                                </select>
+                              </div>
+                              <div class="col-sm-12 col-md-12">
+                                <input type="text" class="form-control mb-2" placeholder="{{ __('Digest') }}" name="dsDigest">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       {% endif %}
                     </div>
                   </div>
@@ -283,5 +321,15 @@
       input.style.filter = 'blur(5px)';
     }
   }
+  
+  // Display DNSSEC data when the checkbox is ticked
+  document.getElementById('addDnssec').addEventListener('change', function() {
+      const dnssecData = document.getElementById('dnssecData');
+      if (this.checked) {
+          dnssecData.style.display = 'block';
+      } else {
+          dnssecData.style.display = 'none';
+      }
+  });
 </script>
 {% endblock %}
