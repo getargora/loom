@@ -54,6 +54,18 @@ Argora Loom works with a variety of external services through its modular archit
 - **deSEC** – *coming soon*
 - **Vultr** – *coming soon*
 
+### Payment
+
+- **Stripe** – ✅
+- **Revolut Pay** – *coming soon*
+- **PayPal** – *coming soon*
+- **Mollie** – *coming soon*
+- **Razorpay** – *coming soon*
+- **Paystack** – *coming soon*
+- **MercadoPago** – *coming soon*
+- **Komoju** – *coming soon*
+- **Bootpay** – *coming soon*
+
 ## Get Involved
 
 Argora Loom is open source — and we’d love your help!
