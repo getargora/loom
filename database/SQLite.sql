@@ -285,8 +285,6 @@ CREATE TABLE "contact_postalInfo" (
     "name" TEXT NOT NULL,
     "org" TEXT,
     "street1" TEXT,
-    "street2" TEXT,
-    "street3" TEXT,
     "city" TEXT NOT NULL,
     "sp" TEXT,
     "pc" TEXT,

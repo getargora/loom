@@ -485,6 +485,8 @@ class FinancialsController extends Controller
                 $currentDateTime = new \DateTime();
                 $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
 
+                $db->update('orders', ['status' => 'failed'], ['invoice_id' => $invoiceId]);
+
                 $db->insert('service_logs', [
                     'service_id' => 0,
                     'event' => 'payment_failed',
@@ -857,6 +859,8 @@ class FinancialsController extends Controller
             } catch (\Exception $e) {
                 $currentDateTime = new \DateTime();
                 $createdAt = $currentDateTime->format('Y-m-d H:i:s.v');
+
+                $db->update('orders', ['status' => 'failed'], ['invoice_id' => $invoiceId]);
 
                 $db->insert('service_logs', [
                     'service_id' => 0,

@@ -285,8 +285,6 @@ CREATE TABLE IF NOT EXISTS "contact_postalInfo" (
      "name" VARCHAR(255) NOT NULL,
      "org" VARCHAR(255),
      "street1" VARCHAR(255),
-     "street2" VARCHAR(255),
-     "street3" VARCHAR(255),
      "city" VARCHAR(255) NOT NULL,
      "sp" VARCHAR(255),
      "pc" VARCHAR(16),

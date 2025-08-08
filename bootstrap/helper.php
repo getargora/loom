@@ -989,3 +989,37 @@ function extendParamsForRegistry(string $objectType, array $params, string $regi
 
     return $params;
 }
+
+function validate_identifier($identifier) {
+    if (!$identifier) {
+        return 'Oops! It looks like you forgot to provide a contact ID. Please make sure to include one.';
+    }
+
+    $length = strlen($identifier);
+
+    if ($length < 3 || $length > 16) {
+        return 'Identifier must be between 3 and 16 characters long. Please try again.';
+    }
+
+    $pattern = '/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/';
+
+    if (!preg_match($pattern, $identifier)) {
+        return 'Your contact ID must contain letters (A-Z, a-z), digits (0-9), and optionally a hyphen (-). Please adjust and try again.';
+    }
+}
+
+function validateLocField($input, $minLength = 5, $maxLength = 255) {
+    // Normalize input to NFC form
+    $input = normalizer_normalize($input, Normalizer::FORM_C);
+
+    // Remove control characters to prevent hidden injections
+    $input = preg_replace('/[\p{C}]/u', '', $input);
+
+    // Define a general regex pattern to match Unicode letters, numbers, punctuation, and spaces
+    $locRegex = '/^[\p{L}\p{N}\p{P}\p{Zs}\-\/&.,]+$/u';
+
+    // Check length constraints and regex pattern
+    return mb_strlen($input) >= $minLength &&
+           mb_strlen($input) <= $maxLength &&
+           preg_match($locRegex, $input);
+}

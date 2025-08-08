@@ -282,8 +282,6 @@ CREATE TABLE IF NOT EXISTS `contact_postalInfo` (
   `name` varchar(255) NOT NULL,
   `org` varchar(255) default NULL,
   `street1` varchar(255) default NULL,
-  `street2` varchar(255) default NULL,
-  `street3` varchar(255) default NULL,
   `city` varchar(255) NOT NULL,
   `sp` varchar(255) default NULL,
   `pc` varchar(16) default NULL,
