@@ -93,6 +93,7 @@ $app->group('', function ($route) {
     $route->get('/invoice/{invoice}', FinancialsController::class . ':viewInvoice')->setName('viewInvoice');
     $route->map(['GET', 'POST'], '/invoice/{invoice}/pay', FinancialsController::class . ':payInvoice')->setName('payInvoice');
     $route->map(['GET', 'POST'], '/deposit', FinancialsController::class .':deposit')->setName('deposit');
+    $route->map(['GET', 'POST'], '/balance-payment', FinancialsController::class .':balancePayment')->setName('balancePayment');
     $route->map(['GET', 'POST'], '/create-payment', FinancialsController::class .':createStripePayment')->setName('createStripePayment');
     $route->map(['GET', 'POST'], '/create-adyen-payment', FinancialsController::class .':createAdyenPayment')->setName('createAdyenPayment');
     $route->map(['GET', 'POST'], '/create-crypto-payment', FinancialsController::class .':createCryptoPayment')->setName('createCryptoPayment');
