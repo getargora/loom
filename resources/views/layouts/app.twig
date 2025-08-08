@@ -7,7 +7,7 @@
     <title>{% block title %}{% endblock %} | Loom</title>
     <meta name="theme-color" content="#066fd1">
     <!-- CSS files -->
-{% if route_is('transactions') or route_is('users') or is_current_url('listOrders') or route_is('services') or route_is('providers') or route_is('service-logs') or is_current_url('ticketview') or route_is('invoices') or route_is('profile') %}{% include 'partials/css-tables.twig' %}{% else %}{% include 'partials/css.twig' %}{% endif %}
+{% if route_is('transactions') or route_is('users') or is_current_url('listOrders') or is_current_url('listContacts') or route_is('services') or route_is('providers') or route_is('service-logs') or is_current_url('ticketview') or route_is('invoices') or route_is('profile') %}{% include 'partials/css-tables.twig' %}{% else %}{% include 'partials/css.twig' %}{% endif %}
   </head>
   <body>
     <div class="page">
@@ -92,7 +92,7 @@
                     </a>
                   </div>
                 </li>
-                <li {{ is_current_url('listServices') or is_current_url('listProviders') or is_current_url('serviceLogs') or is_current_url('createProvider') or 'service' in currentUri or 'providers' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
+                <li {{ is_current_url('listServices') or is_current_url('listProviders') or is_current_url('listContacts') or is_current_url('serviceLogs') or is_current_url('createProvider') or 'service' in currentUri or 'providers' in currentUri ? 'class="nav-item dropdown active"' : 'class="nav-item dropdown"' }}>
                   <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
                     <span class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /><path d="M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /></svg>
                     </span>
@@ -104,7 +104,7 @@
                     <a class="dropdown-item" href="{{route('listServices')}}">
                       {{ __('List Services') }}
                     </a>
-                    <a class="dropdown-item" href="#">
+                    <a class="dropdown-item" href="{{route('listContacts')}}">
                       {{ __('Contacts') }}
                     </a>
                     <div class="dropdown-divider"></div>
@@ -187,6 +187,8 @@
     {% include 'partials/js-users.twig' %}
 {% elseif is_current_url('listOrders') %}
     {% include 'partials/js-orders.twig' %}
+{% elseif is_current_url('listContacts') %}
+    {% include 'partials/js-contacts.twig' %}
 {% elseif is_current_url('listServices') %}
     {% include 'partials/js-services.twig' %}
 {% elseif is_current_url('listProviders') %}

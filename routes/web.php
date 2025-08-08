@@ -19,6 +19,7 @@ use App\Controllers\UsersController;
 use App\Controllers\FinancialsController;
 use App\Controllers\OrdersController;
 use App\Controllers\ServicesController;
+use App\Controllers\ContactsController;
 use App\Controllers\ProvidersController;
 use App\Controllers\SupportController;
 use App\Controllers\SparkController;
@@ -55,6 +56,7 @@ $app->group('', function ($route) {
     $route->post('/update-password', PasswordController::class.':updatePassword');
 
     $route->post('/webhook/adyen', FinancialsController::class .':webhookAdyen')->setName('webhookAdyen');
+    $route->post('/webhook/sumsub', ContactsController::class .':webhookSumsub')->setName('webhookSumsub');
 })->add(new GuestMiddleware($container));
 
 $app->group('', function ($route) {
@@ -82,6 +84,15 @@ $app->group('', function ($route) {
     $route->post('/services/{service}/update', ServicesController::class . ':updateService')->setName('updateService');
     $route->map(['GET', 'POST'], '/services/{service}/renew', ServicesController::class . ':renewService')->setName('renewService');
     $route->get('/service-logs', ServicesController::class .':serviceLogs')->setName('serviceLogs');
+
+    $route->get('/contacts', ContactsController::class .':listContacts')->setName('listContacts');
+    $route->map(['GET', 'POST'], '/contact/create', ContactsController::class . ':createContact')->setName('createContact');
+    $route->get('/contact/view/{contact}', ContactsController::class . ':viewContact')->setName('viewContact');
+    $route->get('/contact/update/{contact}', ContactsController::class . ':updateContact')->setName('updateContact');
+    $route->get('/contact/validate/{contact}', ContactsController::class . ':validateContact')->setName('validateContact');
+    $route->post('/contact/update', ContactsController::class . ':updateContactProcess')->setName('updateContactProcess');
+    $route->post('/contact/approve', ContactsController::class . ':approveContact')->setName('approveContact');
+    $route->map(['GET', 'POST'], '/contact/delete/{contact}', ContactsController::class . ':deleteContact')->setName('deleteContact');
 
     $route->get('/providers', ProvidersController::class .':listProviders')->setName('listProviders');
     $route->map(['GET', 'POST'], '/providers/create', ProvidersController::class . ':createProvider')->setName('createProvider');

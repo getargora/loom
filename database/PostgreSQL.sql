@@ -247,4 +247,70 @@ CREATE TABLE IF NOT EXISTS "service_logs" (
 
 CREATE INDEX idx_service_logs_service_event ON service_logs(service_id, event);
 
+CREATE TABLE IF NOT EXISTS "contact" (
+     "id" SERIAL PRIMARY KEY,
+     "identifier" VARCHAR(255) NOT NULL UNIQUE,
+     "voice" VARCHAR(17),
+     "email" VARCHAR(255) NOT NULL,
+     "nin" VARCHAR(255),
+     "nin_type" VARCHAR(8) CHECK (nin_type IN ('personal', 'business')),
+     "clid" INTEGER NOT NULL,
+     "crid" INTEGER NOT NULL,
+     "crdate" TIMESTAMP(3) NOT NULL,
+     "upid" INTEGER,
+     "lastupdate" TIMESTAMP(3),
+     "status" VARCHAR(32) NOT NULL CHECK (status IN (
+        'clientDeleteProhibited','clientTransferProhibited','clientUpdateProhibited',
+        'linked','ok','pendingCreate','pendingDelete','pendingTransfer','pendingUpdate',
+        'serverDeleteProhibited','serverTransferProhibited','serverUpdateProhibited')),
+     "validation" VARCHAR(1) CHECK (validation IN ('0', '1', '2', '3', '4')),
+     "validation_stamp" TIMESTAMP(3),
+     "validation_log" VARCHAR(255),
+    FOREIGN KEY (clid) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (crid) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (upid) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_contact_identifier ON contact(identifier);
+CREATE INDEX idx_contact_email ON contact(email);
+CREATE INDEX idx_contact_crid ON contact(crid);
+CREATE INDEX idx_contact_clid ON contact(clid);
+CREATE INDEX idx_contact_upid ON contact(upid);
+CREATE INDEX idx_contact_validation ON contact(validation);
+
+CREATE TABLE IF NOT EXISTS "contact_postalInfo" (
+     "id" SERIAL PRIMARY KEY,
+     "contact_id" INTEGER NOT NULL,
+     "type" VARCHAR(3) NOT NULL CHECK (type IN ('int', 'loc')),
+     "name" VARCHAR(255) NOT NULL,
+     "org" VARCHAR(255),
+     "street1" VARCHAR(255),
+     "street2" VARCHAR(255),
+     "street3" VARCHAR(255),
+     "city" VARCHAR(255) NOT NULL,
+     "sp" VARCHAR(255),
+     "pc" VARCHAR(16),
+     "cc" CHAR(2) NOT NULL,
+    UNIQUE (contact_id, type),
+    FOREIGN KEY (contact_id) REFERENCES contact(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_contact_postalInfo_contact_id ON contact_postalInfo(contact_id);
+CREATE INDEX idx_contact_postalInfo_city ON contact_postalInfo(city);
+CREATE INDEX idx_contact_postalInfo_cc ON contact_postalInfo(cc);
+
+CREATE TABLE IF NOT EXISTS "domain_contact_map" (
+     "id" SERIAL PRIMARY KEY,
+     "domain_id" INTEGER NOT NULL,
+     "contact_id" INTEGER NOT NULL,
+     "type" VARCHAR(10) NOT NULL CHECK (type IN ('registrant','admin','billing','tech')),
+    UNIQUE (domain_id, contact_id, type),
+    FOREIGN KEY (domain_id) REFERENCES services(id) ON DELETE RESTRICT,
+    FOREIGN KEY (contact_id) REFERENCES contact(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_domain_contact_map_domain_id ON domain_contact_map(domain_id);
+CREATE INDEX idx_domain_contact_map_contact_id ON domain_contact_map(contact_id);
+CREATE INDEX idx_domain_contact_map_type ON domain_contact_map(type);
+
 COMMIT;

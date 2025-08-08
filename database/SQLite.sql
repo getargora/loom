@@ -246,3 +246,69 @@ CREATE TABLE "service_logs" (
 );
 
 CREATE INDEX idx_service_logs_service_event ON service_logs(service_id, event);
+
+CREATE TABLE "contact" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "identifier" TEXT NOT NULL UNIQUE,
+    "voice" TEXT,
+    "email" TEXT NOT NULL,
+    "nin" TEXT,
+    "nin_type" TEXT CHECK (nin_type IN ('personal', 'business')),
+    "clid" INTEGER NOT NULL,
+    "crid" INTEGER NOT NULL,
+    "crdate" TEXT NOT NULL,
+    "upid" INTEGER,
+    "lastupdate" TEXT,
+    "status" TEXT NOT NULL CHECK (status IN (
+        'clientDeleteProhibited','clientTransferProhibited','clientUpdateProhibited',
+        'linked','ok','pendingCreate','pendingDelete','pendingTransfer','pendingUpdate',
+        'serverDeleteProhibited','serverTransferProhibited','serverUpdateProhibited')),
+    "validation" TEXT CHECK (validation IN ('0', '1', '2', '3', '4')),
+    "validation_stamp" TEXT,
+    "validation_log" TEXT,
+    FOREIGN KEY (clid) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (crid) REFERENCES users(id) ON DELETE RESTRICT,
+    FOREIGN KEY (upid) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_contact_identifier ON contact(identifier);
+CREATE INDEX idx_contact_email ON contact(email);
+CREATE INDEX idx_contact_crid ON contact(crid);
+CREATE INDEX idx_contact_clid ON contact(clid);
+CREATE INDEX idx_contact_upid ON contact(upid);
+CREATE INDEX idx_contact_validation ON contact(validation);
+
+CREATE TABLE "contact_postalInfo" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "contact_id" INTEGER NOT NULL,
+    "type" TEXT NOT NULL CHECK (type IN ('int', 'loc')),
+    "name" TEXT NOT NULL,
+    "org" TEXT,
+    "street1" TEXT,
+    "street2" TEXT,
+    "street3" TEXT,
+    "city" TEXT NOT NULL,
+    "sp" TEXT,
+    "pc" TEXT,
+    "cc" TEXT NOT NULL,
+    UNIQUE (contact_id, type),
+    FOREIGN KEY (contact_id) REFERENCES contact(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_contact_postalInfo_contact_id ON contact_postalInfo(contact_id);
+CREATE INDEX idx_contact_postalInfo_city ON contact_postalInfo(city);
+CREATE INDEX idx_contact_postalInfo_cc ON contact_postalInfo(cc);
+
+CREATE TABLE "domain_contact_map" (
+    "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "domain_id" INTEGER NOT NULL,
+    "contact_id" INTEGER NOT NULL,
+    "type" TEXT NOT NULL CHECK (type IN ('registrant','admin','billing','tech')),
+    UNIQUE (domain_id, contact_id, type),
+    FOREIGN KEY (domain_id) REFERENCES services(id) ON DELETE RESTRICT,
+    FOREIGN KEY (contact_id) REFERENCES contact(id) ON DELETE RESTRICT
+);
+
+CREATE INDEX idx_domain_contact_map_domain_id ON domain_contact_map(domain_id);
+CREATE INDEX idx_domain_contact_map_contact_id ON domain_contact_map(contact_id);
+CREATE INDEX idx_domain_contact_map_type ON domain_contact_map(type);

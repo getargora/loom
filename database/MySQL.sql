@@ -251,3 +251,55 @@ CREATE TABLE IF NOT EXISTS `service_logs` (
   PRIMARY KEY (`id`),
   INDEX (`service_id`, `event`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contact` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `identifier` varchar(255) NOT NULL,
+  `voice` varchar(17) default NULL,
+  `email` varchar(255) NOT NULL,
+  `nin` varchar(255) default NULL,
+  `nin_type` enum('personal','business') default NULL,
+  `clid` int(10) unsigned NOT NULL,
+  `crid` int(10) unsigned NOT NULL,
+  `crdate` datetime(3) NOT NULL,
+  `upid` int(10) unsigned default NULL,
+  `lastupdate` datetime(3) default NULL,
+  `status` enum('clientDeleteProhibited','clientTransferProhibited','clientUpdateProhibited','linked','ok','pendingCreate','pendingDelete','pendingTransfer','pendingUpdate','serverDeleteProhibited','serverTransferProhibited','serverUpdateProhibited') NOT NULL default 'ok',
+  `validation` enum('0','1','2','3','4'),
+  `validation_stamp` datetime(3) default NULL,
+  `validation_log` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `identifier` (`identifier`),
+  CONSTRAINT `contact_ibfk_1` FOREIGN KEY (`clid`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `contact_ibfk_2` FOREIGN KEY (`crid`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `contact_ibfk_3` FOREIGN KEY (`upid`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contact_postalInfo` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `contact_id` int(10) unsigned NOT NULL,
+  `type` enum('int','loc') NOT NULL default 'int',
+  `name` varchar(255) NOT NULL,
+  `org` varchar(255) default NULL,
+  `street1` varchar(255) default NULL,
+  `street2` varchar(255) default NULL,
+  `street3` varchar(255) default NULL,
+  `city` varchar(255) NOT NULL,
+  `sp` varchar(255) default NULL,
+  `pc` varchar(16) default NULL,
+  `cc` char(2) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniquekey` (`contact_id`,`type`),
+  CONSTRAINT `contact_postalInfo_ibfk_1` FOREIGN KEY (`contact_id`) REFERENCES `contact` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `domain_contact_map` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` int(10) unsigned NOT NULL,
+  `contact_id` int(10) unsigned NOT NULL,
+  `type` enum('registrant','admin','billing','tech') NOT NULL default 'admin',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniquekey` (`domain_id`,`contact_id`,`type`),
+  CONSTRAINT `domain_contact_map_ibfk_1` FOREIGN KEY (`domain_id`) REFERENCES `services` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `domain_contact_map_ibfk_2` FOREIGN KEY (`contact_id`) REFERENCES `contact` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
