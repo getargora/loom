@@ -429,7 +429,7 @@ class FinancialsController extends Controller
                         );
 
                         $db->exec(
-                            'UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?',
+                            'UPDATE users SET account_balance = (account_balance - ?) WHERE id = ?',
                             [
                                 $amount,
                                 $userId
