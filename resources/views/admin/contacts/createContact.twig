@@ -47,18 +47,14 @@
                                     <div class="mb-3">
                                         <label for="intName" class="form-label required">{{ __('Name') }}</label>
                                         <input type="text" class="form-control" id="intName" name="intName">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseNameInt" name="disclose_name_int">
-                                          <span class="form-check-label" for="discloseNameInt">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
                                     </div>
                                     
-                                    {% if registrars and not registrar %}
+                                    {% if users and not user %}
                                         <div class="form-group mb-3">
-                                            <label for="registrarDropdown" class="form-label required">{{ __('Select Registrar') }}</label>
-                                            <select id="registrarDropdown" name="registrar" class="form-select" required="required">
-                                                {% for registrar in registrars %}
-                                                    <option value="{{ registrar.id }}">{{ registrar.name }}</option>
+                                            <label for="registrarDropdown" class="form-label required">{{ __('Assign to User') }}</label>
+                                            <select id="registrarDropdown" name="user" class="form-select" required="required">
+                                                {% for user in users %}
+                                                    <option value="{{ user.id }}">{{ user.username }}</option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -68,24 +64,12 @@
                                     <div class="mb-3">
                                         <label for="intOrg" class="form-label">{{ __('Organization') }}</label>
                                         <input type="text" class="form-control" id="intOrg" name="org">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseOrgInt" name="disclose_org_int">
-                                          <span class="form-check-label" for="discloseOrgInt">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
                                     </div>
 
                                     <!-- Internationalized Address: Street Details -->
                                     <div class="mb-3">
-                                        <label for="street1" class="form-label required">{{ __('Street') }} 1</label>
+                                        <label for="street1" class="form-label required">{{ __('Street') }}</label>
                                         <input type="text" class="form-control" id="street1" name="street1">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="street2" class="form-label">{{ __('Street') }} 2</label>
-                                        <input type="text" class="form-control" id="street2" name="street2">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="street3" class="form-label">{{ __('Street') }} 3</label>
-                                        <input type="text" class="form-control" id="street3" name="street3">
                                     </div>
 
                                     <!-- Internationalized Address: City, SP, PC, CC -->
@@ -109,10 +93,6 @@
                                             {% endfor %}
                                         </select>
                                     </div>            
-                                    <label class="form-check form-switch mt-1">
-                                      <input class="form-check-input" type="checkbox" id="discloseAddrInt" name="disclose_addr_int">
-                                      <span class="form-check-label" for="discloseAddrInt">{{ __('Disclose Address in WHOIS') }}</span>
-                                    </label>
                                 </div>
 
                                 <!-- Second Column: Voice, Fax, Email, and other details -->
@@ -128,41 +108,16 @@
 
                                     <!-- Voice -->
                                     <div class="mb-3">
-                                        <label for="voice" class="form-label required">{{ __('Voice') }}</label>
+                                        <label for="voice" class="form-label required">{{ __('Phone') }}</label>
                                         <input type="tel" class="form-control" id="voice" name="voice" required="required">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseVoice" name="disclose_voice">
-                                          <span class="form-check-label" for="discloseVoice">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Fax -->
-                                    <div class="mb-3">
-                                        <label for="fax" class="form-label">{{ __('Fax') }}</label>
-                                        <input type="tel" class="form-control" id="fax" name="fax">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseFax" name="disclose_fax">
-                                          <span class="form-check-label" for="discloseFax">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
                                     </div>
 
                                     <!-- Email -->
                                     <div class="mb-3">
                                         <label for="email" class="form-label required">{{ __('Email') }}</label>
                                         <input type="text" class="form-control" id="email" name="email"  required="required" autocapitalize="none">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseEmail" name="disclose_email">
-                                          <span class="form-check-label" for="discloseEmail">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
                                     </div>
                                     
-                                    <!-- AuthInfo for Contact -->
-                                    <div class="mb-3">
-                                        <label for="authInfo" class="form-label required">{{ __('Contact AuthInfo') }}</label>
-                                        <input type="text" class="form-control" id="authInfo" name="authInfo" readonly>
-                                        <small class="form-text text-muted">{{ __('Auto-generated authentication information for the contact') }}.</small>
-                                    </div>
-
                                     <!-- NIN - National Identification Number -->
                                     <div class="mb-3">
                                         <label for="nin" class="form-label">{{ __('NIN - National Identification Number') }}</label>
@@ -199,42 +154,25 @@
                                     <div class="mb-3">
                                         <label for="locName" class="form-label">{{ __('Name') }}</label>
                                         <input type="text" class="form-control" id="locName" name="locName">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseNameLoc" name="disclose_name_loc">
-                                          <span class="form-check-label" for="discloseNameLoc">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
                                     </div>
 
                                     <!-- Localized Organization -->
                                     <div class="mb-3">
                                         <label for="locOrg" class="form-label">{{ __('Organization') }}</label>
                                         <input type="text" class="form-control" id="locOrg" name="locOrg">
-                                        <label class="form-check form-switch mt-1">
-                                          <input class="form-check-input" type="checkbox" id="discloseOrgLoc" name="disclose_org_loc">
-                                          <span class="form-check-label" for="discloseOrgLoc">{{ __('Disclose in WHOIS') }}</span>
-                                        </label>
+
                                     </div>
 
                                     <!-- Localized Street Details -->
                                     <div class="mb-3">
-                                        <label for="locStreet1" class="form-label">{{ __('Street') }} 1</label>
+                                        <label for="locStreet1" class="form-label">{{ __('Street') }}</label>
                                         <input type="text" class="form-control" id="locStreet1" name="locStreet1">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locStreet2" class="form-label">{{ __('Street') }} 2</label>
-                                        <input type="text" class="form-control" id="locStreet2" name="locStreet2">
                                     </div>
                                 </div>
 
                                 <!-- Localized Postal Info: Second Column -->
                                 <div class="col-md-6">
                                     <h5 class="card-title mb-3">{{ __('Localized Postal Info: Address Details') }}</h5>
-
-                                    <!-- Continued Localized Street Detail -->
-                                    <div class="mb-3">
-                                        <label for="locStreet3" class="form-label">{{ __('Street') }} 3</label>
-                                        <input type="text" class="form-control" id="locStreet3" name="locStreet3">
-                                    </div>
 
                                     <!-- Localized City, SP, PC, CC -->
                                     <div class="mb-3">
@@ -257,10 +195,6 @@
                                             {% endfor %}
                                         </select>
                                     </div>                        
-                                    <label class="form-check form-switch mt-1">
-                                      <input class="form-check-input" type="checkbox" id="discloseAddrLoc" name="disclose_addr_loc">
-                                      <span class="form-check-label" for="discloseAddrLoc">{{ __('Disclose Address in WHOIS') }}</span>
-                                    </label>
                                 </div>
                             </div>
                     </div>
@@ -294,10 +228,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const contactidInput = document.getElementById('contactid');
     contactidInput.value = generateAuthInfo();
     
-    // Generate authInfo for Contact
-    const authInfoInput = document.getElementById('authInfo');
-    authInfoInput.value = generateAuthInfo();
-
     function generateAuthInfo() {
         const length = 16;
         const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
