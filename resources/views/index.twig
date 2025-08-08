@@ -48,6 +48,11 @@
                                 Login
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('register') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('register')}}">
+                                Register
+                            </a>
+                        </li>
                         {% endif %}
                     </ul>
                 </div>
@@ -57,49 +62,101 @@
 
     <main class="flex-grow-1 d-flex align-items-center justify-content-center">
         <div class="container text-center">
-
-            <!-- Welcome Section -->
-            <div class="p-5 mb-4 bg-light rounded-3">
+        {% include 'partials/flash.twig' %}
+            <div class="p-5 bg-light rounded-3">
               <div class="container-fluid py-5 text-center">
-                <h1 class="display-5 fw-bold">Welcome to Loom</h1>
-                <p class="col-lg-8 mx-auto fs-5 text-muted">
-                  A powerful PHP boilerplate for building SaaS platforms, admin panels, and custom control systems — fast, flexible, and production-ready.
-                </p>
-                <div class="mt-4">
-                  {% if auth.isLogin %}
-                  <a href="{{ route('home') }}" class="btn btn-primary btn-lg me-2">Dashboard</a>
-                  <a href="{{ route('logout') }}" class="btn btn-outline-primary btn-lg">Logout</a>
-                  {% else %}
-                  <a href="{{ route('login') }}" class="btn btn-primary btn-lg me-2">Login</a>
-                  <a href="{{ route('register') }}" class="btn btn-outline-primary btn-lg">Get Started</a>
-                  {% endif %}
+              {% if domainProducts|length > 0 %}
+                <h1>{{ __('Find Your Perfect Domain') }}</h1>
+                <p class="text-muted">{{ __('Start your online journey by searching for an available domain.') }}</p>
+                <div class="card mt-4">
+                  <div class="card-body">
+                    <form class="row g-2 align-items-stretch" onsubmit="checkDomain(event)">
+                      <div class="col-md-9">
+                        <input type="text" id="domainInput" class="form-control form-control-lg rounded" placeholder="example.com" autocapitalize="none" required>
+                      </div>
+                      <div class="col-md-3 d-grid">
+                        <button class="btn btn-primary btn-lg w-100 rounded" type="submit">{{ __('Check') }}</button>
+                      </div>
+                    </form>
+                    <div id="resultContainer" class="mt-4"></div>
+                  </div>
                 </div>
+              {% endif %}
               </div>
             </div>
 
-            <!-- Features Grid -->
-            <div class="row row-cols-1 row-cols-md-3 g-4 mt-4">
-              <div class="col">
-                <div class="card h-100 text-center shadow-sm">
+            <div class="row">
+              <div class="col-12">
+                {% if domainProducts|length > 0 %}
+                <div class="card mb-4">
                   <div class="card-body">
-                    <h5 class="card-title">Modular Architecture</h5>
-                    <p class="card-text">Clean and extensible structure built with Slim 4 and Twig.</p>
+                    {% if domainPricingTable|length > 0 %}
+                    <div class="card mt-4">
+                      <div class="card-body">
+                        <div class="table-responsive">
+                          <table class="table table-striped">
+                            <thead>
+                              <tr>
+                                <th>{{ __('Domain') }}</th>
+                                <th>{{ __('Registration') }}</th>
+                                <th>{{ __('Renewal') }}</th>
+                                <th>{{ __('Transfer') }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for row in domainPricingTable %}
+                                <tr>
+                                  <td><strong>{{ row.tld }}</strong></td>
+                                  <td>{{ row.register ? (row.register ~ ' ' ~ currency) : '-' }}</td>
+                                  <td>{{ row.renew ? (row.renew ~ ' ' ~ currency) : '-' }}</td>
+                                  <td>{{ row.transfer ? (row.transfer ~ ' ' ~ currency) : '-' }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                    {% endif %}
                   </div>
                 </div>
-              </div>
-              <div class="col">
-                <div class="card h-100 text-center shadow-sm">
-                  <div class="card-body">
-                    <h5 class="card-title">Built-in Auth System</h5>
-                    <p class="card-text">User registration, login, and role management ready to use.</p>
-                  </div>
+                <style>
+                input[name="domain"],
+                button[type="submit"] {
+                  height: calc(2.875rem + 2px);
+                  border-radius: 0.5rem;
+                }
+                </style>
+                {% endif %}
+
+                {% if otherProducts|length > 0 %}
+                <h3 class="mb-3">Other Services</h3>
+                <div class="row">
+                  {% for item in otherProducts %}
+                    {% set provider = item.provider %}
+                    {% set product = item.product %}
+                    <div class="col-md-4 mb-4">
+                      <div class="card h-100 cursor-pointer" onclick="showProductOptions('{{ provider.id }}', '{{ product.label }}')">
+                        <div class="card-body">
+                          <h4 class="card-title">{{ product.label }}</h4>
+                          <p class="text-muted small">{{ provider.name }} — {{ product.description }}</p>
+                          <span class="badge bg-blue text-blue-fg">from {{ currency }} {{ product.price }}/{{ product.billing }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
                 </div>
-              </div>
-              <div class="col">
-                <div class="card h-100 text-center shadow-sm">
+                {% endif %}
+
+                <div id="productOptions" class="card mt-4 d-none">
                   <div class="card-body">
-                    <h5 class="card-title">Production Ready</h5>
-                    <p class="card-text">Preconfigured for real apps with environment support and CSRF protection.</p>
+                    <h4>{{ __('Configure Product') }}</h4>
+                    <form method="post" action="{{ route('createOrder') }}">
+                      {{ csrf.field | raw }}
+                      <input type="hidden" name="product_choice" id="selectedProductChoice">
+                      <div class="row g-3" id="dynamicFields"></div>
+                      <div class="mt-3"><button class="btn btn-primary">{{ __('Submit Order') }}</button></div>
+                    </form>
                   </div>
                 </div>
               </div>
@@ -133,5 +190,145 @@
   </footer>
 
     {% include 'partials/js.twig' %}
+<script>
+const productData = {{ otherProducts|json_encode|raw }};
+const currency = {{ currency|json_encode|raw }};
+const domainPrices = {{ domainPrices|json_encode|raw }};
+
+function showProductOptions(providerId, productLabel) {
+  const target = productData.find(p => p.provider.id == providerId && p.product.label == productLabel);
+  if (!target) return;
+
+  const product = target.product;
+  const fieldsDiv = document.getElementById('dynamicFields');
+  const choiceInput = document.getElementById('selectedProductChoice');
+  const optionsCard = document.getElementById('productOptions');
+
+  // Toggle behavior
+  const isAlreadyShown = !optionsCard.classList.contains('d-none') &&
+                         choiceInput.value === `${providerId}::${productLabel}`;
+
+  if (isAlreadyShown) {
+    optionsCard.classList.add('d-none');
+    choiceInput.value = '';
+    fieldsDiv.innerHTML = '';
+    return;
+  }
+
+  fieldsDiv.innerHTML = '';
+  choiceInput.value = `${providerId}::${productLabel}`;
+  optionsCard.classList.remove('d-none');
+
+  fieldsDiv.innerHTML += `
+    <div class="col-md-6">
+      <label class="form-label">Service Name</label>
+      <input type="text" name="config[name]" class="form-control" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Billing Cycle</label>
+      <select name="config[cycle]" class="form-select" required>
+        <option value="monthly">Monthly</option>
+        <option value="yearly" selected>Yearly</option>
+      </select>
+    </div>
+  `;
+
+  if (product.fields) {
+    for (const [field, def] of Object.entries(product.fields)) {
+      fieldsDiv.innerHTML += `
+        <div class="col-md-6">
+          <label class="form-label">${def.label || field}</label>
+          <input type="${def.type || 'text'}" name="config[${field}]" class="form-control" placeholder="${def.hint || ''}" ${def.required ? 'required' : ''}>
+        </div>
+      `;
+    }
+  }
+}
+
+async function checkDomain(event) {
+    event.preventDefault();
+    const domainInput = document.getElementById("domainInput");
+    const resultContainer = document.getElementById("resultContainer");
+
+    const domain = domainInput.value.trim();
+    if (!domain) {
+        resultContainer.innerHTML = '<div class="alert alert-warning">Please enter a domain name.</div>';
+        return;
+    }
+
+    try {
+        const response = await fetch('/spark/domain/check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ domains: [domain] })
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        let data = {};
+
+        if (contentType.includes("application/json")) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            // Try to extract error manually if malformed
+            const match = text.match(/"message"\s*:\s*"([^"]+)"/);
+            const msg = match ? match[1] : 'An unknown error occurred.';
+
+            resultContainer.innerHTML = `<div class="alert alert-danger">${msg}</div>`;
+            return;
+        }
+
+        if (!response.ok || !data.success) {
+            resultContainer.innerHTML = `<div class="alert alert-danger">${data.message || 'Domain check failed.'}</div>`;
+            return;
+        }
+
+        resultContainer.innerHTML = formatResult(data);
+    } catch (error) {
+        resultContainer.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+    }
+}
+
+function formatResult(data) {
+    if (!data.domains || data.domains.length === 0) {
+        return '<div class="alert alert-info">No results found.</div>';
+    }
+
+    return data.domains.map(domain => {
+        const tld = domain.name.split('.').pop().toLowerCase();
+        let domainPrice = domainPrices?.[tld] ? `${currency} ${domainPrices[tld]}` : null;
+
+        return `
+            <div class="card border-${domain.available ? 'success' : 'danger'} mt-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center flex-wrap gap-3">
+                            <strong class="me-2">${domain.name}</strong>
+                            <span class="status ${domain.available ? 'status-green' : 'status-red'}">
+                                ${domain.available ? 'Available' : 'Not Available'}
+                            </span>
+                            ${domainPrice && domain.available ? `<span class="text-muted">${domainPrice}</span>` : ''}
+                            ${domain.reason ? `<span class="text-muted small ms-2">${domain.reason}</span>` : ''}
+                        </div>
+                        <div>
+                            ${domain.available ? `
+                                <a href="/orders/register/${encodeURIComponent(domain.name)}" class="btn btn-success">
+                                    Register
+                                </a>
+                            ` : `
+                                <a href="/orders/transfer/${encodeURIComponent(domain.name)}" class="btn btn-outline-green">
+                                    Transfer
+                                </a>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+</script>
 </body>
 </html>

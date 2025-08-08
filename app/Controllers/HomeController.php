@@ -21,12 +21,71 @@ class HomeController extends Controller
 {
     public function index(Request $request, Response $response)
     {
+        $db = $this->container->get('db');
+        $providers = $db->select("SELECT id, name, type, api_endpoint, credentials, pricing FROM providers WHERE status = 'active'");
+
+        $domainProducts = [];
+        $otherProducts = [];
+        $domainPricingTable = [];
+        $domainPrices = [];
+
+        foreach ($providers as &$provider) {
+            $provider['credentials'] = json_decode($provider['credentials'], true) ?? [];
+            $rawProducts = json_decode($provider['pricing'], true) ?? [];
+            $credentials = $provider['credentials'];
+
+            $enrichedProducts = [];
+
+            foreach ($rawProducts as $label => $actions) {
+                $price = $actions['register']['1'] ?? $actions['price'] ?? 0;
+
+                $product = [
+                    'type' => $provider['type'],
+                    'label' => $label,
+                    'description' => ucfirst($provider['type']) . ' service: ' . $label,
+                    'price' => $price,
+                    'billing' => $actions['billing'] ?? 'year',
+                    'fields' => $credentials['required_fields'] ?? [],
+                    'actions' => $actions,
+                ];
+
+                $enrichedProducts[$label] = $product;
+
+                if ($product['type'] === 'domain') {
+                    $domainProducts[] = ['provider' => $provider, 'product' => $product];
+
+                    $register = $actions['register'][1] ?? null;
+                    $renew = $actions['renew'][1] ?? null;
+                    $transfer = $actions['transfer'][1] ?? null;
+
+                    $domainPricingTable[] = [
+                        'tld' => $label,
+                        'register' => $register,
+                        'renew' => $renew,
+                        'transfer' => $transfer,
+                    ];
+
+                    $domainPrices[ltrim($label, '.')] = $price;
+                } else {
+                    $otherProducts[] = ['provider' => $provider, 'product' => $product];
+                }
+            }
+
+            $provider['products'] = $enrichedProducts;
+        }
+
         $basePath = dirname(__DIR__, 2) . '/resources/views/';
         $template = file_exists($basePath . 'index.custom.twig') 
                     ? 'index.custom.twig' 
                     : 'index.twig';
 
-        return view($response, $template);
+        return view($response, $template, [
+            'domainProducts' => $domainProducts,
+            'otherProducts' => $otherProducts,
+            'domainPrices' => $domainPrices,
+            'domainPricingTable' => $domainPricingTable,
+            'currency' => $_SESSION['_currency'] ?? 'EUR'
+        ]);
     }
 
     public function terms(Request $request, Response $response)
