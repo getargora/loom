@@ -18,13 +18,23 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 class AuthMiddleware extends Middleware
 {
-
     public function __invoke(Request $request, RequestHandler $handler)
     {
-        if(! $this->container->get('auth')->isLogin()) {
+        $auth = $this->container->get('auth');
+
+        if (! $auth->isLogin()) {
+            $uri  = $request->getUri();
+            $path = $uri->getPath();
+            if (str_starts_with($path, '/orders/register') || str_starts_with($path, '/orders/transfer')) {
+                $intent = $path;
+                $q = $uri->getQuery();
+                if ($q !== '') { $intent .= '?' . $q; }
+                $_SESSION['login_intent'] = $intent;
+            }
+
             return redirect()->route('login')->with('error', 'Access denied, you need to login.');
         }
-        $response = $handler->handle($request);
-        return $response;
+
+        return $handler->handle($request);
     }
 }

@@ -235,6 +235,12 @@ class AuthController extends Controller
                     'user_data' => null
                 ]
             );
+            $intent = $_SESSION['login_intent'] ?? null;
+            unset($_SESSION['login_intent']);
+
+            if ($intent && str_starts_with($intent, '/orders/')) {
+                return redirect()->to($intent,302);
+            }
             redirect()->route('home');
         }
     }
