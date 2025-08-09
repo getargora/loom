@@ -138,7 +138,46 @@ class OrdersController extends Controller
 
     public function activateOrder(Request $request, Response $response, string $args): Response
     {
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+        if ($args) {
+            $args = trim($args);
+            $db = $this->container->get('db');
+
+            if (preg_match('/^[A-Za-z0-9\-]+$/', $args)) {
+                $invoiceNumber = $args;
+            } else {
+                $this->container->get('flash')->addMessage('error', 'Invalid order number');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            $order_details = $db->selectRow('SELECT id, user_id, status, invoice_id FROM orders WHERE id = ?',
+            [ $args ]
+            );
+            if (!$order_details) {
+                $this->container->get('flash')->addMessage('error', 'Order not found');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order_details["user_id"]) {
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if (!in_array($order_details['status'], ['failed', 'inactive'], true)) {
+                $this->container->get('flash')->addMessage('error', 'Order cannot be reprovisioned due to its current status');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            try {
+                provisionService($db, $order_details['invoice_id'], $_SESSION["auth_user_id"]);
+                $this->container->get('flash')->addMessage('success', 'Order ' . $order_details['id'] . ' has been reprovisioned successfully.');
+            } catch (Exception $e) {
+                $this->container->get('flash')->addMessage('error', 'Reprovision failed: ' . $e->getMessage());
+            }
+
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        } else {
+            // Redirect to the orders view
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
     }
 
     public function cancelOrder(Request $request, Response $response, string $args): Response
@@ -217,6 +256,10 @@ class OrdersController extends Controller
         $invoice_details = $db->selectRow('SELECT user_id, invoice_id FROM orders WHERE id = ?',
         [ $args ]
         );
+        if (!$invoice_details) {
+            $this->container->get('flash')->addMessage('error', 'Order not found');
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
 
         if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $invoice_details["user_id"]) {
             return $response->withHeader('Location', '/orders')->withStatus(302);
@@ -676,6 +719,10 @@ class OrdersController extends Controller
             $order_details = $db->selectRow('SELECT id, user_id, status FROM orders WHERE id = ?',
             [ $args ]
             );
+            if (!$order_details) {
+                $this->container->get('flash')->addMessage('error', 'Order not found');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
 
             if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order_details["user_id"]) {
                 return $response->withHeader('Location', '/orders')->withStatus(302);
