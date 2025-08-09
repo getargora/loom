@@ -201,10 +201,38 @@ class OrdersController extends Controller
             return $response->withHeader('Location', '/orders')->withStatus(302);
         }
     }
-    
+
     public function retryOrder(Request $request, Response $response, string $args): Response
     {
-        return view($response, 'admin/orders/edit.twig', ['id' => $args['id'] ?? null]);
+        $args = trim($args);
+        $db = $this->container->get('db');
+
+        if (preg_match('/^[A-Za-z0-9\-]+$/', $args)) {
+            $invoiceNumber = $args;
+        } else {
+            $this->container->get('flash')->addMessage('error', 'Invalid order number');
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
+
+        $invoice_details = $db->selectRow('SELECT user_id, invoice_id FROM orders WHERE id = ?',
+        [ $args ]
+        );
+
+        if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $invoice_details["user_id"]) {
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
+
+        $invoice = $db->selectRow(
+            'SELECT id FROM invoices WHERE id = ? AND payment_status IN ("unpaid", "overdue")',
+            [ $invoice_details["invoice_id"] ]
+        );
+
+        if (!$invoice) {
+            $this->container->get('flash')->addMessage('error', 'Invoice not found or already paid');
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
+
+        return $response->withHeader('Location', '/invoice/'.$invoice['id'].'/pay')->withStatus(302);
     }
 
     public function registerOrder(Request $request, Response $response, string $args): Response
@@ -634,6 +662,42 @@ class OrdersController extends Controller
 
     public function deleteOrder(Request $request, Response $response, string $args): Response
     {
-        return view($response, 'admin/orders/delete.twig', ['id' => $args['id'] ?? null]);
+        if ($args) {
+            $args = trim($args);
+            $db = $this->container->get('db');
+
+            if (preg_match('/^[A-Za-z0-9\-]+$/', $args)) {
+                $invoiceNumber = $args;
+            } else {
+                $this->container->get('flash')->addMessage('error', 'Invalid order number');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            $order_details = $db->selectRow('SELECT id, user_id, status FROM orders WHERE id = ?',
+            [ $args ]
+            );
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $order_details["user_id"]) {
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+
+            if (!in_array($order_details['status'], ['cancelled', 'inactive'])) {
+                $this->container->get('flash')->addMessage('error', 'This order cannot be deleted due to its current status');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            } else {
+                $db->delete(
+                    'orders',
+                    [
+                        'id' => $args
+                    ]
+                );
+
+                $this->container->get('flash')->addMessage('success', 'Order ' . $args . ' deleted successfully');
+                return $response->withHeader('Location', '/orders')->withStatus(302);
+            }
+        } else {
+            // Redirect to the orders view
+            return $response->withHeader('Location', '/orders')->withStatus(302);
+        }
     }
 }
