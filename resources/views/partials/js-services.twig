@@ -127,10 +127,11 @@
                 responsive: 0,
                 formatter: function(cell) {
                     const config = cell.getValue();
+                    const id = cell.getRow().getData().id;
                     try {
                         const data = typeof config === 'string' ? JSON.parse(config) : config;
                         if (data && data.domain) {
-                            return `<span class="text-primary">${data.domain}</span>`;
+                            return `<a href="/services/${id}/edit" class="text-primary"><strong>${data.domain}</strong></a>`;
                         } else {
                             return `<span class="text-muted">No domain</span>`;
                         }
