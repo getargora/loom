@@ -169,7 +169,9 @@ class OrdersController extends Controller
             try {
                 provisionService($db, $order_details['invoice_id'], $_SESSION["auth_user_id"]);
                 $this->container->get('flash')->addMessage('success', 'Order ' . $order_details['id'] . ' has been reprovisioned successfully.');
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
+                $this->container->get('flash')->addMessage('error', 'Reprovision failed: ' . $e->getMessage());
+            } catch (\Throwable $e) {
                 $this->container->get('flash')->addMessage('error', 'Reprovision failed: ' . $e->getMessage());
             }
 
@@ -292,7 +294,7 @@ class OrdersController extends Controller
             $years = (int) ($data['reg-years'] ?? 1);
             $authInfo = trim($data['authInfo'] ?? '');
             $nameservers = $data['nameserver'] ?? [];
-            
+
             if (empty($authInfo)) {
                 $this->container->get('flash')->addMessage('error', 'AuthInfo is required');
                 return $response->withHeader('Location', '/orders/transfer/'.$domainName)->withStatus(302);
@@ -367,7 +369,7 @@ class OrdersController extends Controller
                     );
 
                     $contacts[$role] = [
-                        'name' => $row['first_name'] . ' ' . $row['last_name'] ?? '',
+                        'name' => (($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')) ?: '',
                         'org' => $row['org'] ?? '',
                         'street1' => $row['street1'] ?? '',
                         'street2' => $row['street2'] ?? '',
@@ -379,6 +381,23 @@ class OrdersController extends Controller
                         'voice' => $row['voice'] ?? '',
                         'email' => $row['email'] ?? ''
                     ];
+                }
+
+                $overrides = [
+                    'registrant' => $data['contactOwner']   ?? null,
+                    'admin'      => $data['contactAdmin']   ?? null,
+                    'tech'       => $data['contactTech']    ?? null,
+                    'billing'    => $data['contactBilling'] ?? null,
+                ];
+
+                foreach ($overrides as $role => $identifier) {
+                    $identifier = is_string($identifier) ? trim($identifier) : '';
+                    if ($identifier !== '') {
+                        if ($contact = fetchContactByIdentifier($db, $identifier)) {
+                            $contacts[$role] = $contact;
+                        }
+                        // else: silently keep default; optionally collect a warning
+                    }
                 }
 
                 $dnssec = [

@@ -724,7 +724,13 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
     try {
         $db->beginTransaction();
 
-        $order = $db->selectRow('SELECT id, user_id, service_type, service_data FROM orders WHERE invoice_id = ? AND status = ?', [$invoiceId, 'pending']);
+        $order = $db->selectRow(
+            'SELECT id, user_id, service_type, service_data
+             FROM orders
+             WHERE invoice_id = ?
+               AND status IN (?, ?)',
+            [$invoiceId, 'pending', 'failed']
+        );
 
         $serviceData = json_decode($order['service_data'], true);
         $serviceName = $serviceData['domain'] ?? $serviceData['server'] ?? 'unnamed-service';
@@ -760,60 +766,104 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     throw new \Exception('Failed to connect to EPP server.');
                 }
 
-                $contactId = 'ct' . substr(md5(uniqid('', true)), 0, 8);
+                $roles = ['registrant','admin','tech','billing'];
+                $roleContactIds = [];
+                $fingerprints = [];
 
-                $registrant = $serviceData['contacts']['registrant'] ?? [];
-                $fullName = $registrant['name'] ?? 'John Doe';
-                $nameParts = preg_split('/\s+/', trim($fullName));
+                // Helper to fingerprint contact data (normalize + hash)
+                $fp = function (array $rc): string {
+                    $norm = function ($v) {
+                        $v = (string)$v;
+                        $v = preg_replace('/\s+/u', ' ', trim($v));
+                        return strtolower($v);
+                    };
+                    return sha1(json_encode([
+                        'name'    => $norm($rc['name']    ?? ''),
+                        'org'     => $norm($rc['org']     ?? ''),
+                        'street1' => $norm($rc['street1'] ?? ''),
+                        'street2' => $norm($rc['street2'] ?? ''),
+                        'city'    => $norm($rc['city']    ?? ''),
+                        'sp'      => $norm($rc['sp']      ?? ''),
+                        'pc'      => $norm($rc['pc']      ?? ''),
+                        'cc'      => strtoupper(trim($rc['cc'] ?? '')),
+                        'voice'   => preg_replace('/\D+/', '', (string)($rc['voice'] ?? '')),
+                        'email'   => $norm($rc['email']   ?? ''),
+                    ], JSON_UNESCAPED_UNICODE));
+                };
 
-                if (count($nameParts) === 1) {
-                    $firstname = $nameParts[0];
-                    $lastname = 'Doe';
-                }
-                elseif (count($nameParts) === 2) {
-                    $firstname = $nameParts[0];
-                    $lastname = $nameParts[1];
-                }
-                else {
-                    // Split on the middle word (e.g., "Jean Paul Gotty" → "Jean Paul", "Gotty")
-                    $middle = intdiv(count($nameParts), 2);
-                    $firstname = implode(' ', array_slice($nameParts, 0, $middle));
-                    $lastname = implode(' ', array_slice($nameParts, $middle));
+                // Seed map with roles that already have a registry_id (reuse them)
+                foreach ($roles as $role) {
+                    $rc = $serviceData['contacts'][$role] ?? [];
+                    if (!empty($rc['registry_id'])) {
+                        $roleContactIds[$role] = $rc['registry_id'];
+                        $fingerprints[$fp($rc)] = $rc['registry_id'];
+                    }
                 }
 
-                $contactParams = [
-                    'id' => $contactId,
-                    'type' => 'int',
-                    'firstname' => $firstname ?? 'John',
-                    'lastname' => $lastname ?? 'Doe',
-                    'companyname' => $registrant['org'] ?? 'Unknown Company',
-                    'address1' => $registrant['street1'] ?? 'Unknown Street',
-                    'address2' => $registrant['street2'] ?? '',
-                    'city' => $registrant['city'] ?? 'Unknown City',
-                    'state' => $registrant['sp'] ?? '',
-                    'postcode' => $registrant['pc'] ?? '00000',
-                    'country' => strtoupper($registrant['cc'] ?? 'XX'),
-                    'fullphonenumber' => $registrant['voice'] ?? '+380.1234567',
-                    'email' => $registrant['email'] ?? 'test@example.com',
-                    'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
-                ];
+                // Create missing contacts; reuse by fingerprint if identical
+                foreach ($roles as $role) {
+                    if (isset($roleContactIds[$role])) continue;
 
-                $contactParams = extendParamsForRegistry('contact', $contactParams, $registryType, $serviceData);
-                $contactCreate = $epp->contactCreate($contactParams);
-                if (isset($contactCreate['error'])) {
-                    throw new \Exception('ContactCreate Error: ' . $contactCreate['error']);
+                    $rc  = $serviceData['contacts'][$role] ?? [];
+                    $key = $fp($rc);
+
+                    // If identical data was already used for another role, reuse that contact
+                    if (isset($fingerprints[$key])) {
+                        $roleContactIds[$role] = $fingerprints[$key];
+                        $serviceData['contacts'][$role]['registry_id'] = $fingerprints[$key];
+                        continue;
+                    }
+
+                    // Split name
+                    $fullName = trim($rc['name'] ?? 'John Doe');
+                    $parts = preg_split('/\s+/', $fullName);
+                    if (count($parts) === 1) {
+                        [$firstname, $lastname] = [$parts[0], 'Doe'];
+                    } elseif (count($parts) === 2) {
+                        [$firstname, $lastname] = $parts;
+                    } else {
+                        $mid = intdiv(count($parts), 2);
+                        $firstname = implode(' ', array_slice($parts, 0, $mid));
+                        $lastname  = implode(' ', array_slice($parts, $mid));
+                    }
+
+                    $contactParams = [
+                        'id'              => 'ct' . substr(md5(uniqid('', true)), 0, 8),
+                        'type'            => 'int',
+                        'firstname'       => $firstname,
+                        'lastname'        => $lastname,
+                        'companyname'     => $rc['org']     ?? '',
+                        'address1'        => $rc['street1'] ?? '',
+                        'address2'        => $rc['street2'] ?? '',
+                        'city'            => $rc['city']    ?? '',
+                        'state'           => $rc['sp']      ?? '',
+                        'postcode'        => $rc['pc']      ?? '',
+                        'country'         => strtoupper($rc['cc'] ?? 'XX'),
+                        'fullphonenumber' => $rc['voice']   ?? '',
+                        'email'           => $rc['email']   ?? '',
+                        'authInfoPw'      => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
+                    ];
+
+                    $contactParams = extendParamsForRegistry('contact', $contactParams, $registryType, $serviceData);
+                    $res = $epp->contactCreate($contactParams);
+                    if (isset($res['error'])) {
+                        throw new \Exception("ContactCreate ($role) Error: " . $res['error']);
+                    }
+
+                    $roleContactIds[$role] = $res['id'];
+                    $serviceData['contacts'][$role]['registry_id'] = $res['id'];
+                    $fingerprints[$key] = $res['id'];
                 }
-                $contactId = $contactCreate['id'];
 
                 $domainParams = [
                     'domainname' => $serviceData['domain'] ?? 'example.invalid',
-                    'period' => $serviceData['years'] ?? 1,
-                    'nss' => $serviceData['nameservers'] ?? ['ns1.default.com', 'ns2.default.com'],
-                    'registrant' => $contactId,
-                    'contacts' => [
-                        'admin' => $contactId,
-                        'tech' => $contactId,
-                        'billing' => $contactId,
+                    'period'     => $serviceData['years'] ?? 1,
+                    'nss'        => $serviceData['nameservers'] ?? ['ns1.default.com', 'ns2.default.com'],
+                    'registrant' => $roleContactIds['registrant'],
+                    'contacts'   => [
+                        'admin'   => $roleContactIds['admin'],
+                        'tech'    => $roleContactIds['tech'],
+                        'billing' => $roleContactIds['billing'],
                     ],
                     'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
                 ];
@@ -830,12 +880,6 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
 
                 $serviceData['authcode'] = $serviceData['authInfo'] ?? 'AutoGenAuth123!';
                 $serviceData['status'] = $serviceData['status'] ?? ['ok'];
-
-                foreach (['registrant', 'admin', 'tech', 'billing'] as $role) {
-                    if (isset($serviceData['contacts'][$role])) {
-                        $serviceData['contacts'][$role]['registry_id'] = $contactId;
-                    }
-                }
 
                 $order['service_data'] = json_encode($serviceData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -1022,4 +1066,43 @@ function validateLocField($input, $minLength = 5, $maxLength = 255) {
     return mb_strlen($input) >= $minLength &&
            mb_strlen($input) <= $maxLength &&
            preg_match($locRegex, $input);
+}
+
+/**
+ * Load a contact by identifier and normalize to Loom's contact array shape.
+ * Prefers postalInfo type 'int'; falls back to 'loc' if 'int' is missing.
+ */
+function fetchContactByIdentifier(\Pinga\Db\PdoDatabase $db, string $identifier): ?array
+{
+    $c = $db->selectRow(
+        'SELECT * FROM contact WHERE identifier = ? LIMIT 1',
+        [$identifier]
+    );
+    if (!$c) {
+        return null;
+    }
+
+    // Prefer 'int', fallback to 'loc'
+    $p = $db->selectRow(
+        "SELECT * FROM contact_postalInfo 
+         WHERE contact_id = ? AND type IN ('int','loc')
+         ORDER BY FIELD(type,'int','loc') LIMIT 1",
+        [$c['id']]
+    ) ?? [];
+
+    // Normalize
+    $name = trim(($p['name'] ?? '') ?: (($c['identifier'] ?? '') ?: ''));
+    return [
+        'name'    => $name,
+        'org'     => $p['org']     ?? '',
+        'street1' => $p['street1'] ?? '',
+        'street2' => $p['street2'] ?? '',
+        'street3' => $p['street3'] ?? '',
+        'city'    => $p['city']    ?? '',
+        'sp'      => $p['sp']      ?? '',
+        'pc'      => $p['pc']      ?? '',
+        'cc'      => $p['cc']      ?? '',
+        'voice'   => $c['voice']   ?? '',
+        'email'   => $c['email']   ?? '',
+    ];
 }
