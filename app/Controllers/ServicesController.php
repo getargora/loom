@@ -48,7 +48,12 @@ class ServicesController extends Controller
 
             if ($service) {
                 $config = json_decode($service['config'], true);
+                $statuses = array_map('strtolower', $config['status'] ?? []);
                 
+                $clientLockSet = ['clienttransferprohibited','clientdeleteprohibited','clientupdateprohibited'];
+                $clientLocks = array_values(array_intersect($statuses, $clientLockSet));
+                $isLockedClient = !empty($clientLocks);
+
                 $provider = $db->selectValue(
                     'SELECT name FROM providers WHERE id = ?',
                     [ $service['provider_id'] ]
@@ -58,7 +63,8 @@ class ServicesController extends Controller
                     'service' => $service,
                     'provider' => $provider,
                     'config' => $config,
-                    'currentUri' => $uri
+                    'currentUri' => $uri,
+                    'isLocked'=> $isLockedClient,
                 ];
 
                 return view($response, 'admin/services/edit.twig', $responseData);
@@ -455,6 +461,128 @@ class ServicesController extends Controller
                 $_SESSION['domains_to_renew_price'] = [$pricing[$tld]['renew']['1']] ?? null;
 
                 return view($response, 'admin/services/renew.twig', $responseData);
+            } else {
+                // Service does not exist, redirect to the services view
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+        } else {
+            // Redirect to the services view
+            return $response->withHeader('Location', '/services')->withStatus(302);
+        }
+    }
+    
+    public function lockService(Request $request, Response $response, string $args): Response
+    {
+        $db = $this->container->get('db');
+        $uri = $request->getUri()->getPath();
+
+        if ($args) {
+            $args = trim($args);
+
+            if (!preg_match('/^[a-zA-Z0-9\-]+$/', $args)) {
+                $this->container->get('flash')->addMessage('error', 'Invalid service ID format');
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            $service = $db->selectRow('SELECT id, user_id, provider_id, order_id, type, status, config, registered_at, expires_at, updated_at FROM services WHERE id = ?',
+            [ $args ]);
+
+            if ($service['type'] !== 'domain') {
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            if ($_SESSION["auth_roles"] != 0 && $_SESSION["auth_user_id"] !== $service["user_id"]) {
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            if ($service) {
+                $config = json_decode($service['config'], true);
+                $domains = [$config['domain']];
+                $domainData = getDomainConfig($domains, $db);
+
+                if (empty($domainData) || !isset($domainData[0]['tld'])) {
+                    $this->container->get('flash')->addMessage('error', 'Error checking domain');
+                    return $response->withHeader('Location', '/services/'.$service['id'].'/edit')->withStatus(302);
+                }
+
+                $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
+                $statuses = array_map('strtolower', $config['status'] ?? []);
+
+                $isLocked = (bool) array_intersect(
+                    $statuses,
+                    ['clienttransferprohibited','clientupdateprohibited','clientdeleteprohibited']
+                );
+
+                try {
+                    $epp = connectToEpp(
+                        $registryType,
+                        $domainData[0]['host'],
+                        $domainData[0]['port'],
+                        $domainData[0]['cafile'] ?? '',
+                        $domainData[0]['cert_file'],
+                        $domainData[0]['key_file'],
+                        $domainData[0]['passphrase'] ?? '',
+                        $domainData[0]['username'],
+                        $domainData[0]['password']
+                    );
+
+                    if (!$epp) {
+                        $this->container->get('flash')->addMessage('error', 'Failed to connect to EPP server');
+                        return $response->withHeader('Location', '/services/'.$service['id'].'/edit')->withStatus(302);
+                    }
+
+                    $params = [
+                        'domainname' => $config['domain'],
+                    ];
+
+                    if ($isLocked) {
+                        // Unlock
+                        $order = ['clientUpdateProhibited', 'clientDeleteProhibited', 'clientTransferProhibited'];
+                        foreach ($order as $st) {
+                            $epp->domainUpdateStatus([
+                                'domainname' => $config['domain'],
+                                'command'    => 'rem',
+                                'status'   => $st,
+                            ]);
+                        }
+                        $flashMsg = 'Domain unlocked';
+                    } else {
+                        // Lock
+                        $order = ['clientTransferProhibited', 'clientDeleteProhibited', 'clientUpdateProhibited'];
+                        foreach ($order as $st) {
+                            $epp->domainUpdateStatus([
+                                'domainname' => $config['domain'],
+                                'command'    => 'add',
+                                'status'   => $st,
+                            ]);
+                        }
+                        $flashMsg = 'Domain locked';
+                    }
+
+                    // Re-fetch fresh domain info to avoid drift
+                    $info = $epp->domainInfo(['domainname' => $config['domain'],'authInfoPw' => '']);
+                    $config['status'] = $info['status'] ?? $config['status'] ?? [];
+
+                    $currentDateTime = new \DateTime();
+                    $updatedAt = $currentDateTime->format('Y-m-d H:i:s.v');
+                    $db->update(
+                        'services',
+                        [
+                            'config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT),
+                            'updated_at' => $updatedAt
+                        ],
+                        ['id' => $service['id']]
+                    );
+
+                    $this->container->get('flash')->addMessage('success', $flashMsg);
+                } catch (Throwable $e) {
+                    $db->insert('service_logs', ['service_id' => $service['id'], 'event' => 'lock_update_failed', 'actor_type' => 'system', 'actor_id' => $_SESSION["auth_user_id"], 'details' => $config['domain'] . '|' . $domainUpdateAuthinfo['error']]);
+                    $this->container->get('flash')->addMessage('error', 'Lock toggle failed: '.$e->getMessage());
+                }
+
+                // Always land on the edit screen; Twig can read statuses and show lock state.
+                return $response->withHeader('Location', "/services/{$service['id']}/edit")->withStatus(302);
+
             } else {
                 // Service does not exist, redirect to the services view
                 return $response->withHeader('Location', '/services')->withStatus(302);

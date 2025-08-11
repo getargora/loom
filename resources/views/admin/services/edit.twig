@@ -32,13 +32,23 @@
               <div class="col-auto ms-auto d-print-none">
                 <div class="btn-list">
                   {% if service.type == 'domain' %}
-                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-success d-none d-sm-inline-block">
+                  {% if isLocked %}
+                    <a href="/services/{{ service.id }}/lock" class="btn btn-outline-red btn-icon" aria-label="{{ __('Unlock Domain') }}" title="{{ __('Unlock Domain') }}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" /><path d="M9 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M13 11v-4a4 4 0 1 1 8 0v4" /></svg>
+                    </a>
+                  {% else %}
+                    <a href="/services/{{ service.id }}/lock" class="btn btn-outline-success btn-icon" aria-label="{{ __('Lock Domain') }}" title="{{ __('Lock Domain') }}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" /><path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" /><path d="M8 11v-4a4 4 0 1 1 8 0v4" /></svg>
+                    </a>
+                  {% endif %}
+                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-azure d-none d-sm-inline-block">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                     {{ __('Renew Domain') }}
                   </a>
-                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-success d-sm-none btn-icon" aria-label="{{ __('Renew Domain') }}">
+                  <a href="/services/{{ service.id }}/renew" class="btn btn-outline-azure d-sm-none btn-icon" aria-label="{{ __('Renew Domain') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                   </a>
+                  {% if not isLocked %}
                   <button class="btn btn-primary d-none d-sm-inline-block" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                     {{ __('Update Domain') }}
@@ -46,6 +56,7 @@
                   <button class="btn btn-primary d-sm-none btn-icon" aria-label="{{ __('Update Domain') }}" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                   </button>
+                  {% endif %}
                   {% endif %}
                 </div>
               </div>
@@ -119,7 +130,7 @@
                           <div class="datagrid-item">
                             <div class="datagrid-title">{{ __('Nameserver') }} {{ loop.index }}</div>
                             <div class="datagrid-content">
-                              <input type="text" name="ns{{ loop.index }}" class="form-control" value="{{ ns }}" />
+                              <input type="text" name="ns{{ loop.index }}" class="form-control" value="{{ ns }}" {% if isLocked %}readonly{% endif %}/>
                             </div>
                           </div>
                         {% endfor %}
@@ -294,7 +305,7 @@
     item.innerHTML = `
       <div class="datagrid-title">Nameserver ${index}</div>
       <div class="datagrid-content">
-        <input type="text" name="ns${index}" class="form-control" value="" />
+        <input type="text" name="ns${index}" class="form-control" value="" {% if isLocked %}readonly{% endif %}/>
       </div>
     `;
     nsContainer.appendChild(item);

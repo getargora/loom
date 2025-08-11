@@ -83,6 +83,7 @@ $app->group('', function ($route) {
     $route->get('/services/{service}/edit', ServicesController::class . ':editService')->setName('editService');
     $route->post('/services/{service}/update', ServicesController::class . ':updateService')->setName('updateService');
     $route->map(['GET', 'POST'], '/services/{service}/renew', ServicesController::class . ':renewService')->setName('renewService');
+    $route->get('/services/{service}/lock', ServicesController::class . ':lockService')->setName('lockService');
     $route->get('/service-logs', ServicesController::class .':serviceLogs')->setName('serviceLogs');
 
     $route->get('/contacts', ContactsController::class .':listContacts')->setName('listContacts');
