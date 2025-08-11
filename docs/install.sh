@@ -89,7 +89,7 @@ fi
 # Admin user for Loom
 echo
 log "Admin user for Loom"
-prompt ADMIN_USER "Admin username" "admin"
+prompt ADMIN_USER "Admin email" "admin@example.com"
 prompt ADMIN_PASS "Admin password" "" "secret"
 
 # Optional custom bind IPs for Caddy
@@ -156,19 +156,18 @@ systemctl restart php8.3-fpm
 
 # ---------- Caddy repo & install ----------
 log "Installing Caddy…"
-install -d -m 0755 /etc/apt/keyrings
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' -o /tmp/caddy-stable.gpg.key
-gpg --dearmor -o /etc/apt/keyrings/caddy-stable-archive-keyring.gpg /tmp/caddy-stable.gpg.key
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
+apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+chmod o+r /etc/apt/sources.list.d/caddy-stable.list
 apt-get update -y
 apt-get install -y caddy
-
 # ---------- Adminer (randomized path) ----------
 log "Installing Adminer…"
 mkdir -p /usr/share/adminer
 wget -q "https://www.adminer.org/latest.php" -O /usr/share/adminer/latest.php
-ln -sf /usr/share/adminer/latest.php /usr/share/adminer/adminer.php
-ADMINER_SLUG="adminer-$(tr -dc a-z0-9 </dev/urandom | head -c 8).php"
+ADMINER_SLUG="adminer-$(cut -d- -f1 </proc/sys/kernel/random/uuid).php"
 ln -sf /usr/share/adminer/latest.php "/usr/share/adminer/${ADMINER_SLUG}"
 
 # ---------- Database setup ----------
@@ -255,7 +254,8 @@ esac
 log "Creating Loom project in $INSTALL_PATH …"
 mkdir -p "$INSTALL_PATH"
 if [[ -z "$(ls -A "$INSTALL_PATH")" ]]; then
-  composer create-project argora/loom "$INSTALL_PATH"
+  COMPOSER_ALLOW_SUPERUSER=1 composer create-project --no-interaction --prefer-dist \
+  argora/loom:^1.0.0-alpha1 "$INSTALL_PATH"
 else
   warn "$INSTALL_PATH is not empty. Skipping composer create-project."
 fi
@@ -266,6 +266,7 @@ cd "$INSTALL_PATH"
 if [[ ! -f ".env" ]]; then
   cp env-sample .env
 fi
+sed -i "s|^APP_URL=.*|APP_URL=https://$DEFAULT_HOST|" .env
 
 # DB DSN/env
 case "$DB_BACKEND" in
@@ -273,17 +274,17 @@ case "$DB_BACKEND" in
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=mysql/" .env
     sed -i "s/^DB_HOST=.*/DB_HOST=127.0.0.1/" .env
     sed -i "s/^DB_PORT=.*/DB_PORT=3306/" .env
-    sed -i "s/^DB_NAME=.*/DB_NAME=${DB_NAME}/" .env
-    sed -i "s/^DB_USER=.*/DB_USER=${DB_USER}/" .env
-    sed -i "s/^DB_PASS=.*/DB_PASS=${DB_PASS}/" .env
+    sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
+    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
+    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
     ;;
   PostgreSQL)
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=pgsql/" .env
     sed -i "s/^DB_HOST=.*/DB_HOST=127.0.0.1/" .env
     sed -i "s/^DB_PORT=.*/DB_PORT=5432/" .env
-    sed -i "s/^DB_NAME=.*/DB_NAME=${DB_NAME}/" .env
-    sed -i "s/^DB_USER=.*/DB_USER=${DB_USER}/" .env
-    sed -i "s/^DB_PASS=.*/DB_PASS=${DB_PASS}/" .env
+    sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
+    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
+    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
     ;;
   SQLite)
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=sqlite/" .env
@@ -305,12 +306,20 @@ php bin/install-db.php
 
 # ---------- Create admin user (best effort) ----------
 log "Creating admin user (attempting non-interactive)…"
+
 if php -v >/dev/null 2>&1; then
   set +e
-  # Try to feed username/password via stdin (works if script reads from STDIN)
-  printf "%s\n%s\n" "$ADMIN_USER" "$ADMIN_PASS" | php bin/create-admin-user.php >/tmp/loom-admin.log 2>&1
+
+  # Replace sample variables directly in the original script
+  sed -i \
+    -e "s|\(\$email\s*=\s*\).*|\1'${ADMIN_USER}';|" \
+    -e "s|\(\$newPW\s*=\s*\).*|\1'${ADMIN_PASS}';|" \
+    bin/create-admin-user.php
+
+  php bin/create-admin-user.php >/tmp/loom-admin.log 2>&1
   CREATE_EXIT=$?
   set -e
+
   if [[ "$CREATE_EXIT" -ne 0 ]]; then
     warn "Automatic admin creation may have failed. Check /tmp/loom-admin.log"
     warn "If needed, run: php bin/create-admin-user.php  (and enter credentials manually)"
