@@ -71,10 +71,8 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <label class="form-label required mb-0">{{ __('Domain Contacts') }}</label>
                                     <a href="{{ route('profile') }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path stroke="none" d="M0 0h24v24H0z"/><path d="M10 6h10m-10 6h10m-10 6h10M3 6v.01M3 12v.01M3 18v.01"/>
-                                        </svg>
-                                        {{ __('Edit Contacts') }}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                        {{ __('Default Contacts') }}
                                     </a>
                                 </div>
 
@@ -90,9 +88,16 @@
                                         {% set inputId = 'contact' ~ role %}
                                         <div class="col-md-6">
                                             <label for="{{ inputId }}" class="form-label">{{ __(role ~ ' Contact') }}</label>
-                                            <div class="input-group input-group-flat mb-1">
+                                            <div class="row g-2 mb-1">
+                                              <div class="col">
                                                 <input type="text" class="form-control contact-field" placeholder="{{ __(role ~ ' Contact ID') }}"
                                                        name="{{ inputId }}" id="{{ inputId }}" readonly>
+                                              </div>
+                                              <div class="col-auto">
+                                                <a href="{{route('listContacts')}}" target="_blank" class="btn btn-2 btn-icon" aria-label="Select Contact ID" title="Select Contact ID">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-2"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                                </a>
+                                              </div>
                                             </div>
                                             <div class="form-check form-switch small">
                                                 <input class="form-check-input toggle-role" type="checkbox" id="toggle{{ role }}" data-input="{{ inputId }}" checked>
@@ -167,7 +172,7 @@
                           <div class="col-md-12">
                             <div class="mb-3 mt-2 form-check">
                               <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
-                              <label class="form-check-label" for="addDnssec">{{ __('Add DNSSEC') }}</label>
+                              <label class="form-check-label" for="addDnssec">{{ __('Enable DNSSEC') }}</label>
                             </div>
                           </div>
                           <div id="dnssecData" style="display: none;">

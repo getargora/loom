@@ -144,7 +144,7 @@
             {title:"{{ __('Status') }}", field:"status", minWidth:80, resizable:false, headerSort:true, formatter: statusBadgeFormatter, responsive:2},
             {title:"{{ __('Created') }}", field:"created_at", width:250, resizable:false, headerSort:true, responsive:2},
             {title:"{{ __('Expiration') }}", field:"expires_at", width:250, resizable:false, headerSort:true, responsive:2},
-            {title: "{{ __('Actions') }}", formatter: actionsFormatter, minWidth:120, responsive:0, headerSort: false, download:false, hozAlign: "center", cellClick:function(e, cell){ e.stopPropagation(); }},
+            {title: "{{ __('Actions') }}", formatter: actionsFormatter, resizable:false, minWidth:120, responsive:0, headerSort: false, download:false, hozAlign: "center", cellClick:function(e, cell){ e.stopPropagation(); }},
         ]
     });
     var searchInput = document.getElementById("search-input");
