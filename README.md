@@ -15,12 +15,11 @@ It’s ideal for self-hosted registrars, resellers, and service providers who wa
 - **Unified Dashboard** – Manage domains, DNS, servers, users, billing, and more from one clean UI.
 - **EPP Automation** – Built-in support for domain provisioning and updates via EPP.
 - **Lightweight Billing** – Users can place orders, receive invoices, and manage services like domains or hosting.
-- **ICANN-Ready Architecture** – Designed to support the needs of accredited registrars, with features like WDRP, Transfer Policy compliance, and abuse handling.
-- **DNS Management** – Full zone and record editor included.
-- **Reseller System** – Allow others to offer and manage services under their own accounts.
+- **ICANN-Ready Architecture** – Designed to support the needs of accredited registrars, with features like WDRP, Transfer Policy compliance, and abuse handling. – *coming soon*
+- **DNS Management** – Full zone and record editor included. – *coming soon*
+- **Reseller System** – Allow others to offer and manage services under their own accounts. – *coming soon*
 - **Modular & Extensible** – Add your own modules or integrate third-party tools easily.
 - **Modern Stack** – Slim 4 Framework, Twig, Bootstrap 5, PHP 8+.
-- **API-Ready** – Structured for REST or GraphQL integration.
 - **Self-Hosted** – Your data, your control.
 
 ## Supported Providers
@@ -84,7 +83,7 @@ Whether you're a developer, designer, registrar, or just exploring alternatives 
 
 ### Installation
 
-**Minimum requirement:** a VPS running Ubuntu 22.04 or 24.04, with at least 1 CPU core, 2 GB RAM, and 10 GB hard drive space.
+**Minimum requirement:** a VPS running Ubuntu 22.04/24.04 or Debian 12/13, with at least 1 CPU core, 2 GB RAM, and 10 GB hard drive space.
 
 To get started, copy the command below and paste it into your server terminal:
 
@@ -96,7 +95,11 @@ For detailed installation steps, see [install.md](docs/install.md)
 
 ### Update
 
+To get started, copy the command below and paste it into your server terminal:
+
+```bash
 (TODO)
+```
 
 ## Support
 
