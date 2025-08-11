@@ -55,6 +55,7 @@ Argora Loom works with a variety of external services through its modular archit
 
 ### Payment
 
+- **Balance** – ✅
 - **Stripe** – ✅
 - **Revolut Pay** – *coming soon*
 - **PayPal** – *coming soon*
@@ -88,7 +89,7 @@ Whether you're a developer, designer, registrar, or just exploring alternatives 
 To get started, copy the command below and paste it into your server terminal:
 
 ```bash
-(TODO)
+bash <(wget -qO- https://raw.githubusercontent.com/getargora/loom/refs/heads/main/docs/install.sh)
 ```
 
 For detailed installation steps, see [install.md](docs/install.md)
@@ -98,7 +99,7 @@ For detailed installation steps, see [install.md](docs/install.md)
 To get started, copy the command below and paste it into your server terminal:
 
 ```bash
-(TODO)
+bash <(wget -qO- https://raw.githubusercontent.com/getargora/loom/refs/heads/main/docs/update.sh)
 ```
 
 ## Support
