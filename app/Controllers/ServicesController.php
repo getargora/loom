@@ -160,6 +160,62 @@ class ServicesController extends Controller
                                 }
                             }
 
+                            $newRegistrant = trim((string)($data['contact_registrant'] ?? ''));
+                            $oldRegistrant = (string)($config['contacts']['registrant']['registry_id'] ?? '');
+
+                            if ($newRegistrant !== '' && strcasecmp($newRegistrant, $oldRegistrant) !== 0) {
+                                $resp = $epp->domainUpdateContact([
+                                    'domainname' => $config['domain'],
+                                    'contacttype' => 'registrant',
+                                    'old_contactid' => $oldRegistrant,
+                                    'new_contactid' => $newRegistrant
+                                ]);
+
+                                if (!empty($resp['error'])) {
+                                    $messages[] = 'Registrant change failed: ' . $resp['error'];
+                                    $db->insert('service_logs', [
+                                        'service_id' => $args,
+                                        'event'      => 'registrant_update_failed',
+                                        'actor_type' => 'system',
+                                        'actor_id'   => $_SESSION["auth_user_id"],
+                                        'details'    => $config['domain'] . '|' . $oldRegistrant . '→' . $newRegistrant . '|' . $resp['error'],
+                                    ]);
+                                } else {
+                                    $messages[] = 'Registrant changed.';
+                                    $config['contacts']['registrant']['registry_id'] = $newRegistrant;
+                                }
+                            }
+
+                            foreach (['admin', 'tech', 'billing'] as $role) {
+                                $keyPost = 'contact_' . $role;
+                                $newId   = trim((string)($data[$keyPost] ?? ''));
+                                $oldId   = (string)($config['contacts'][$role]['registry_id'] ?? '');
+
+                                if ($newId === '' || strcasecmp($newId, $oldId) === 0) {
+                                    continue;
+                                }
+
+                                if ($oldId !== '') {
+                                    $result = $epp->domainUpdateContact([
+                                        'domainname' => $config['domain'],
+                                        'contacttype' => $role,
+                                        'old_contactid' => $oldId,
+                                        'new_contactid' => $newId
+                                    ]);
+
+                                    if (!empty($result['error'])) {
+                                        $messages[] = ucfirst($role) . ' contact remove failed: ' . $result['error'];
+                                        $db->insert('service_logs', [
+                                            'service_id' => $args,
+                                            'event'      => $role . '_contact_remove_failed',
+                                            'actor_type' => 'system',
+                                            'actor_id'   => $_SESSION["auth_user_id"],
+                                            'details'    => $config['domain'] . '|' . $oldId . '|' . $result['error'],
+                                        ]);
+                                    }
+                                }
+                            }
+
                             $hasNs = false;
                             for ($i = 1; $i <= 13; $i++) {
                                 if (!empty($params['ns' . $i])) {
