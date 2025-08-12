@@ -229,18 +229,26 @@ SQL
     log "Installing PostgreSQL…"
     apt-get install -y postgresql
     systemctl enable --now postgresql
+
     log "Creating database and role…"
-    sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
-DO
-$$
-BEGIN
-   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '$DB_USER') THEN
-      CREATE ROLE "$DB_USER" LOGIN PASSWORD '$DB_PASS';
-   END IF;
-END
-$$;
-CREATE DATABASE "$DB_NAME" OWNER "$DB_USER";
-GRANT ALL PRIVILEGES ON DATABASE "$DB_NAME" TO "$DB_USER";
+    sudo -u postgres psql -v ON_ERROR_STOP=1 \
+      -v dbuser="$DB_USER" -v dbpass="$DB_PASS" -v dbname="$DB_NAME" <<'SQL'
+-- Create role if missing
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'dbuser', :'dbpass')
+WHERE NOT EXISTS (
+  SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = :'dbuser'
+)
+\gexec
+
+-- Create database if missing
+SELECT format('CREATE DATABASE %I OWNER %I', :'dbname', :'dbuser')
+WHERE NOT EXISTS (
+  SELECT 1 FROM pg_database WHERE datname = :'dbname'
+)
+\gexec
+
+-- Grant privileges (idempotent)
+GRANT ALL PRIVILEGES ON DATABASE :"dbname" TO :"dbuser";
 SQL
     ;;
 

@@ -27,7 +27,7 @@ try {
     // Connect to database
     if ($dbType == 'mysql') {
         $pdo = new PDO("mysql:host=$host", $username, $password);
-    } elseif ($dbType == 'postgresql') {
+    } elseif ($dbType == 'pgsql') {
         $pdo = new PDO("pgsql:host=$host", $username, $password);
     } elseif ($dbType == 'sqlite') {
         $pdo = new PDO("sqlite:host=$host");
@@ -39,16 +39,12 @@ try {
     // Create new database
     if ($dbType == 'mysql') {
         $pdo->exec("CREATE DATABASE `$databaseName`");
-    } elseif ($dbType == 'postgresql') {
-        $pdo->exec("CREATE DATABASE $databaseName");
-    } elseif ($dbType == 'sqlite') {
-        $pdo->exec("CREATE DATABASE $databaseName");
+        echo "Created new database '$databaseName'\n";
     }
-    echo "Created new database '$databaseName'\n";
 
     if ($dbType == 'mysql') {
         $pdo = new PDO("mysql:host=$host;dbname=$databaseName", $username, $password);
-    } elseif ($dbType == 'postgresql') {
+    } elseif ($dbType == 'pgsql') {
         $pdo = new PDO("pgsql:host=$host;dbname=$databaseName", $username, $password);
     } elseif ($dbType == 'sqlite') {
         $pdo = new PDO("sqlite:" . __DIR__ . "/../$databaseName");
@@ -63,7 +59,6 @@ try {
         case 'mysql':
             $sqlFile = "$baseDir/MySQL.sql";
             break;
-        case 'postgresql':
         case 'pgsql':
             $sqlFile = "$baseDir/PostgreSQL.sql";
             break;
