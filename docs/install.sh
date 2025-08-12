@@ -274,7 +274,7 @@ cd "$INSTALL_PATH"
 if [[ ! -f ".env" ]]; then
   cp env-sample .env
 fi
-sed -i "s|^APP_URL=.*|APP_URL=https://$DEFAULT_HOST|" .env
+sed -i "s|^APP_URL=.*|APP_URL=https://${DEFAULT_HOST//\//\\/}|" .env
 
 # DB DSN/env
 case "$DB_BACKEND" in
@@ -300,7 +300,7 @@ case "$DB_BACKEND" in
     ;;
   SQLite)
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=sqlite/" .env
-    sed -i "s/^DB_PATH=.*/DB_PATH=${INSTALL_PATH//\//\\/}\/storage\/loom.sqlite/" .env
+    sed -i "s|^DB_PASSWORD=.*|DB_PATH=${INSTALL_PATH}/storage/loom.sqlite|" .env
     mkdir -p storage
     touch storage/loom.sqlite
     ;;
