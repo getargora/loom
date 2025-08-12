@@ -275,16 +275,20 @@ case "$DB_BACKEND" in
     sed -i "s/^DB_HOST=.*/DB_HOST=127.0.0.1/" .env
     sed -i "s/^DB_PORT=.*/DB_PORT=3306/" .env
     sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
-    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
-    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
+    ESCAPED_DB_USER=$(printf '%s\n' "$DB_USER" | sed -e 's/[&/\]/\\&/g')
+    ESCAPED_DB_PASS=$(printf '%s\n' "$DB_PASS" | sed -e 's/[&/\]/\\&/g')
+    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=\"$ESCAPED_DB_USER\"/" .env
+    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=\"$ESCAPED_DB_PASS\"/" .env
     ;;
   PostgreSQL)
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=pgsql/" .env
     sed -i "s/^DB_HOST=.*/DB_HOST=127.0.0.1/" .env
     sed -i "s/^DB_PORT=.*/DB_PORT=5432/" .env
     sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
-    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
-    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
+    ESCAPED_DB_USER=$(printf '%s\n' "$DB_USER" | sed -e 's/[&/\]/\\&/g')
+    ESCAPED_DB_PASS=$(printf '%s\n' "$DB_PASS" | sed -e 's/[&/\]/\\&/g')
+    sed -i "s/^DB_USERNAME=.*/DB_USERNAME=\"$ESCAPED_DB_USER\"/" .env
+    sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=\"$ESCAPED_DB_PASS\"/" .env
     ;;
   SQLite)
     sed -i "s/^DB_DRIVER=.*/DB_DRIVER=sqlite/" .env
@@ -299,6 +303,9 @@ log "Setting permissions…"
 mkdir -p logs cache /var/log/loom
 chown -R www-data:www-data logs cache /var/log/loom
 chmod -R 775 logs cache
+touch /var/log/loom/caddy.log
+chown caddy:caddy /var/log/loom/caddy.log
+chmod 664 /var/log/loom/caddy.log
 
 # ---------- Install DB schema ----------
 log "Running Loom DB installer…"

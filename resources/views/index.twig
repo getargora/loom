@@ -104,6 +104,17 @@
         {% include 'partials/flash.twig' %}
             <div class="p-5 bg-light rounded-3">
               <div class="container-fluid py-5 text-center">
+              {% if domainProducts|length == 0 and otherProducts|length == 0 %}
+                <div class="text-center py-5">
+                  <h1>{{ __('Welcome to Loom!') }}</h1>
+                  <p class="text-muted">
+                    {{ __('No products or services are configured yet.') }}
+                  </p>
+                  <p class="small text-muted">
+                    {{ __('Log in to the admin area to add your first services.') }}
+                  </p>
+                </div>
+              {% endif %}
               {% if domainProducts|length > 0 %}
                 <h1>{{ __('Find Your Perfect Domain') }}</h1>
                 <p class="text-muted">{{ __('Start your online journey by searching for an available domain.') }}</p>
