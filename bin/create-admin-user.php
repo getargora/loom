@@ -16,12 +16,11 @@ require __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
-// Retrieve database connection details from environment variables
-$dbDriver = $_ENV['DB_DRIVER'];
-$dbHost = $_ENV['DB_HOST'];
-$dbName = $_ENV['DB_DATABASE'];
-$dbUser = $_ENV['DB_USERNAME'];
-$dbPass = $_ENV['DB_PASSWORD'];
+$dbDriver = $_ENV['DB_DRIVER'] ?? null;
+$dbHost = $_ENV['DB_HOST'] ?? null;
+$dbName = $_ENV['DB_DATABASE'] ?? null;
+$dbUser = $_ENV['DB_USERNAME'] ?? null;
+$dbPass = $_ENV['DB_PASSWORD'] ?? null;
 
 // User details (replace these with actual user data)
 $email = 'admin@example.com'; // Replace with admin email
@@ -45,7 +44,7 @@ try {
         $dsn = "pgsql:host=$dbHost;dbname=$dbName";
         $pdo = new PDO($dsn, $dbUser, $dbPass);
     } elseif ($dbDriver == 'sqlite') {
-        $pdo = new PDO("sqlite:" . __DIR__ . '/../foundry.db');
+        $pdo = new PDO("sqlite:" . $dbName);
     }
 
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

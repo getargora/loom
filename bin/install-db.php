@@ -16,44 +16,32 @@ require __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-$dbType = $_ENV['DB_DRIVER'];
-$host = $_ENV['DB_HOST'];
-$username = $_ENV['DB_USERNAME'];
-$password = $_ENV['DB_PASSWORD'];
-
-$databaseName = $_ENV['DB_DATABASE'];
+$dbDriver = $_ENV['DB_DRIVER'] ?? null;
+$dbHost = $_ENV['DB_HOST'] ?? null;
+$dbName = $_ENV['DB_DATABASE'] ?? null;
+$dbUser = $_ENV['DB_USERNAME'] ?? null;
+$dbPass = $_ENV['DB_PASSWORD'] ?? null;
 
 try {
     // Connect to database
-    if ($dbType == 'mysql') {
-        $pdo = new PDO("mysql:host=$host", $username, $password);
-    } elseif ($dbType == 'pgsql') {
-        $pdo = new PDO("pgsql:host=$host", $username, $password);
-    } elseif ($dbType == 'sqlite') {
-        $pdo = new PDO("sqlite:host=$host");
+    if ($dbDriver == 'mysql') {
+        $pdo = new PDO("mysql:host=$dbHost", $dbUser, $dbPass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->exec("CREATE DATABASE `$dbName`");
+        echo "Created new database '$dbName'\n";
     }
-
-    // Set PDO attributes
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    // Create new database
-    if ($dbType == 'mysql') {
-        $pdo->exec("CREATE DATABASE `$databaseName`");
-        echo "Created new database '$databaseName'\n";
-    }
-
-    if ($dbType == 'mysql') {
-        $pdo = new PDO("mysql:host=$host;dbname=$databaseName", $username, $password);
-    } elseif ($dbType == 'pgsql') {
-        $pdo = new PDO("pgsql:host=$host;dbname=$databaseName", $username, $password);
-    } elseif ($dbType == 'sqlite') {
-        $pdo = new PDO("sqlite:" . __DIR__ . "/../$databaseName");
+    if ($dbDriver == 'mysql') {
+        $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+    } elseif ($dbDriver == 'pgsql') {
+        $pdo = new PDO("pgsql:host=$dbHost;dbname=$dbName", $dbUser, $dbPass);
+    } elseif ($dbDriver == 'sqlite') {
+        $pdo = new PDO("sqlite:" . $dbName);
     }
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Import SQL file
     $baseDir = realpath(__DIR__ . '/../database');
-    $driver = strtolower($dbType);
+    $driver = strtolower($dbDriver);
 
     switch ($driver) {
         case 'mysql':
@@ -75,7 +63,7 @@ try {
 
     $sql = file_get_contents($sqlFile);
     $pdo->exec($sql);
-    echo "Imported SQL file '$sqlFile' into database '$databaseName'\n";
+    echo "Imported SQL file '$sqlFile' into database '$dbName'\n";
 
 } catch (PDOException $e) {
     echo $e->getMessage() . PHP_EOL;
