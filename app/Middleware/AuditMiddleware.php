@@ -24,53 +24,23 @@ class AuditMiddleware extends Middleware
     {
         if (isset($_SESSION['auth_user_id'])) {
             $userId = (int) $_SESSION['auth_user_id'];
+            $sessionId = crc32(\Pinga\Session\Session::id());
+            $db = $this->container->get('db');
 
-            $db  = $this->container->get('db');
+            switch (envi('DB_DRIVER')) {
+                case 'mysql':
+                    $db->exec("SET @audit_usr_id = {$userId}");
+                    $db->exec("SET @audit_ses_id = {$sessionId}");
+                    break;
 
-            // Figure out the driver name safely
-            $driver = null;
-
-            if (method_exists($db, 'getDriverName')) {
-                // some wrappers expose this
-                $driver = $db->getDriverName();
-            } elseif (method_exists($db, 'getPdo')) {
-                // Delight/Pinga sometimes expose the underlying PDO
-                $pdo = $db->getPdo();
-                if ($pdo instanceof \PDO) {
-                    $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-                }
-            } elseif ($db instanceof \PDO) {
-                $driver = $db->getAttribute(\PDO::ATTR_DRIVER_NAME);
-            } else {
-                // Heuristic fallback: try a MySQL-only statement in a safe try/catch
-                try {
-                    // harmless in MySQL/MariaDB; will error on pgsql
-                    $db->exec('DO 0'); // invalid in both; use something MySQL-specific:
-                } catch (\Throwable $e) {
-                    // as a better heuristic, try a MySQL variable; if it succeeds -> mysql
-                    try {
-                        $db->exec('SET @__probe := 1'); // MySQL/MariaDB only
-                        $driver = 'mysql';
-                    } catch (\Throwable $e2) {
-                        $driver = 'pgsql'; // assume pg otherwise
-                    }
-                }
-            }
-
-            if ($driver === 'mysql') {
-                // MySQL/MariaDB session vars
-                $db->exec("SET @audit_usr_id = {$userId}");
-                $db->exec("SET @audit_ses_id = " . crc32(\Pinga\Session\Session::id()));
-            }
-            elseif ($driver === 'pgsql') {
-                // Use SELECT to avoid exec-on-SELECT differences across wrappers
-                if (method_exists($db, 'query')) {
-                    $sid = (string) crc32(\Pinga\Session\Session::id());
-                    $db->query("SELECT set_config('audit.usr_id', '{$userId}', true)");
-                    $db->query("SELECT set_config('audit.ses_id', '{$sid}', true)");
-                }
+                case 'pgsql':
+                    // Use dotted custom GUC names; SELECT set_config(...) works everywhere
+                    $db->exec("SELECT set_config('app.audit_usr_id', '{$userId}', true)");
+                    $db->exec("SELECT set_config('app.audit_ses_id', '{$sessionId}', true)");
+                    break;
             }
         }
+
         return $handler->handle($request);
     }
 
