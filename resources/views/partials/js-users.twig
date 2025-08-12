@@ -56,17 +56,24 @@
         // Join assigned roles with separators
         return assignedRoles.length > 0 ? assignedRoles.join(', ') : '<span class="status status-secondary">Unknown Role</span>';
     }
-    
+
     function verifiedFormatter(cell) {
-        var value = cell.getValue();
-        if (value === false) {
-            return '<span class="status status-orange">Pending</span>';
-        } else if (value === true) {
-            return '<span class="status status-green">ok</span>';
-        } else {
-            return '<span class="status status-dark">?</span>';
-        }
-        return value;
+      const v = cell.getValue();
+
+      const isTrue =
+        v === true || v === 1 || v === '1' || v === 't' || v === 'true';
+
+      const isFalse =
+        v === false || v === 0 || v === '0' || v === 'f' || v === 'false' ||
+        v === null || v === undefined;
+
+      if (isTrue) {
+        return '<span class="status status-green">ok</span>';
+      } else if (isFalse) {
+        return '<span class="status status-orange">Pending</span>';
+      } else {
+        return '<span class="status status-dark">?</span>';
+      }
     }
 
     function statusBadgeFormatter(cell) {

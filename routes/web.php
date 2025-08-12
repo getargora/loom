@@ -163,7 +163,7 @@ $app->any('/api[/{params:.*}]', function (
         $db_username = null;
         $db_password = null;
         $db_database = null;
-        $db_address = realpath(__DIR__ . '/../foundry.db');
+        $db_address = $db['sqlite']['database'];
     }
     $config = new Config([
         'driver' => config('default'),

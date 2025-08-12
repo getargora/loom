@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
     <title>{% block title %}{% endblock %} | Loom</title>
-    <meta name="theme-color" content="#066fd1">
+    <meta name="theme-color" content="#5B099B">
     <!-- CSS files -->
 {% if route_is('transactions') or route_is('users') or is_current_url('listOrders') or is_current_url('listContacts') or route_is('services') or route_is('providers') or route_is('service-logs') or is_current_url('ticketview') or route_is('invoices') or route_is('profile') %}{% include 'partials/css-tables.twig' %}{% else %}{% include 'partials/css.twig' %}{% endif %}
   </head>
