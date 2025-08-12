@@ -58,24 +58,24 @@ CREATE TABLE IF NOT EXISTS `users_confirmations` (
 
 CREATE TABLE IF NOT EXISTS `users_remembered` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
   `selector` varchar(24) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,
   `token` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,
   `expires` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `selector` (`selector`),
-  KEY `user` (`user`)
+  KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users_resets` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
   `selector` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,
   `token` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_cs NOT NULL,
   `expires` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `selector` (`selector`),
-  KEY `user_expires` (`user`,`expires`)
+  KEY `user_expires` (`user_id`,`expires`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users_throttling` (

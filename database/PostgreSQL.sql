@@ -54,21 +54,21 @@ CREATE INDEX IF NOT EXISTS user_id ON users_confirmations (user_id);
 
 CREATE TABLE IF NOT EXISTS users_remembered (
     id BIGSERIAL PRIMARY KEY CHECK (id >= 0),
-    user INTEGER NOT NULL CHECK (user >= 0),
+    user_id INTEGER NOT NULL CHECK (user_id >= 0),
     selector VARCHAR(24) UNIQUE NOT NULL,
     token VARCHAR(255) NOT NULL,
     expires INTEGER NOT NULL CHECK (expires >= 0)
 );
-CREATE INDEX IF NOT EXISTS user ON users_remembered (user);
+CREATE INDEX IF NOT EXISTS user_id ON users_remembered (user_id);
 
 CREATE TABLE IF NOT EXISTS users_resets (
     id BIGSERIAL PRIMARY KEY CHECK (id >= 0),
-    user INTEGER NOT NULL CHECK (user >= 0),
+    user_id INTEGER NOT NULL CHECK (user_id >= 0),
     selector VARCHAR(20) UNIQUE NOT NULL,
     token VARCHAR(255) NOT NULL,
     expires INTEGER NOT NULL CHECK (expires >= 0)
 );
-CREATE INDEX IF NOT EXISTS user_expires ON users_resets (user, expires);
+CREATE INDEX IF NOT EXISTS user_expires ON users_resets (user_id, expires);
 
 CREATE TABLE IF NOT EXISTS users_throttling (
     bucket VARCHAR(44) PRIMARY KEY,
