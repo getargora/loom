@@ -44,3 +44,14 @@ $routeCacheFile = $cacheDir . '/routes.php';
 if (file_exists($routeCacheFile)) {
     unlink($routeCacheFile);
 }
+
+// Try to restart PHP-FPM 8.3
+echo "Restarting PHP-FPM (php8.3-fpm)...\n";
+exec("sudo systemctl restart php8.3-fpm 2>&1", $restartOutput, $status);
+
+if ($status === 0) {
+    echo "PHP-FPM restarted successfully.\n";
+} else {
+    echo "Could not restart PHP-FPM automatically.\n";
+    echo "Please run manually: sudo systemctl restart php8.3-fpm\n";
+}
