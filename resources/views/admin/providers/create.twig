@@ -56,19 +56,19 @@
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">{{ __('API Endpoint or Host:Port') }}</label>
-                        <input type="text" name="api_connection" class="form-control" placeholder="https://api.example.com/v1 or example.com:443">
+                        <label class="form-label required">{{ __('API Endpoint or Host:Port') }}</label>
+                        <input type="text" name="api_connection" class="form-control" placeholder="https://api.example.com/v1 or example.com:443" required>
                     </div>
                     
                     <div class="form-group mt-3">
-                        <label class="form-label">{{ __('Credentials / Configuration (JSON)') }}</label>
-                        <textarea name="credentials" rows="6" class="form-control font-monospace" placeholder='{"api_key":"abc123","username":"admin"}'></textarea>
+                        <label class="form-label required">{{ __('Credentials / Configuration (JSON)') }}</label>
+                        <textarea name="credentials" rows="6" class="form-control font-monospace" placeholder='{"api_key":"abc123","username":"admin"}' required></textarea>
                         <small class="form-hint">{{ __('Include any connection details or configuration here as valid JSON.') }}</small>
                     </div>
 
                     <div class="form-group mt-3">
-                        <label class="form-label">{{ __('Pricing / Product Definitions (JSON)') }}</label>
-                        <textarea name="pricing" rows="6" class="form-control font-monospace" placeholder='{"domain_registration": 9.99, "domain_renewal": 10.99, "vps_small": 4.99}'></textarea>
+                        <label class="form-label required">{{ __('Pricing / Product Definitions (JSON)') }}</label>
+                        <textarea name="pricing" rows="6" class="form-control font-monospace" placeholder='{"domain_registration": 9.99, "domain_renewal": 10.99, "vps_small": 4.99}' required></textarea>
                         <small class="form-hint">{{ __('Define service types and their prices as valid JSON. For example: domain, hosting, etc.') }}</small>
                     </div>
 
