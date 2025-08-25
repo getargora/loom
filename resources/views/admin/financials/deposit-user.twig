@@ -103,6 +103,34 @@
                                 </div>
                             </label>
                             {% endif %}
+                            {% if 'liqpay' in enabledGateways %}
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="liqpay" class="form-selectgroup-input">
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-liqpay-dark payment-xs me-2"></span>
+                                        {{ __('Liqpay') }}
+                                    </div>
+                                </div>
+                            </label>
+                            {% endif %}
+                            {% if 'plata' in enabledGateways %}
+                            <label class="form-selectgroup-item flex-fill">
+                                <input type="radio" name="paymentMethod" value="plata" class="form-selectgroup-input">
+                                <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <div class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </div>
+                                    <div>
+                                        <span class="payment payment-provider-plata-dark payment-xs me-2"></span>
+                                        {{ __('Plata by mono') }}
+                                    </div>
+                                </div>
+                            </label>
+                            {% endif %}
                             {% if 'adyen' in enabledGateways %}
                             <label class="form-selectgroup-item flex-fill">
                                 <input type="radio" name="paymentMethod" value="adyen" class="form-selectgroup-input">
@@ -187,6 +215,16 @@ document.getElementById('depositForm').addEventListener('submit', function (e) {
             const stripe = Stripe('{{ stripe_key }}');
             sendPayment('/create-payment', formData, (data) => {
                 stripe.redirectToCheckout({ sessionId: data.id });
+            });
+        },
+        liqpay : () => {
+          document.getElementById('depositForm').action = '/create-liqpay-payment-page';
+          document.getElementById('depositForm').method = 'POST';
+          document.getElementById('depositForm').submit();
+        },
+        plata: () => {
+            sendPayment('/create-plata-payment', new FormData(document.getElementById('depositForm')), (data) => {
+                window.location.href = data.url;
             });
         },
         adyen: () => {

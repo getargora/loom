@@ -21,6 +21,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Ramsey\Uuid\Uuid;
 use League\ISO3166\ISO3166;
+use LiqPay;
 
 class FinancialsController extends Controller
 {
@@ -554,7 +555,172 @@ class FinancialsController extends Controller
         $response->getBody()->write(json_encode(['id' => $checkout_session->id]));
         return $response->withHeader('Content-Type', 'application/json');
     }
-    
+
+    public function createLiqPayPayment(Request $request, Response $response)
+    {
+        $postData = $request->getParsedBody();
+        $amount = $postData['amount'] ?? null;
+
+        // Keep Loom’s “pending invoice” shortcut
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            $invoiceId = $_SESSION['pending_invoice_id'] ?? null;
+            $paymentDescription = 'Payment for Invoice #' . ($invoiceId ?? '');
+            unset($_SESSION['pending_invoice_amount'], $_SESSION['pending_invoice_id']);
+        } else {
+            $invoiceId = null;
+            $paymentDescription = 'Account balance deposit';
+        }
+
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        if (!is_numeric($amount) || $amount <= 0) {
+            $response->getBody()->write(json_encode(['error' => 'Invalid amount']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        // Order id encodes type for easy parsing later
+        $orderPrefix = $invoiceId ? ('inv-' . (int)$invoiceId) : ('dep-' . ((int)($_SESSION['auth_user_id'] ?? 0)));
+        $orderId = $orderPrefix . '.' . uniqid('', true);
+
+        $liqpay = new LiqPay(envi('LIQPAY_PUBLIC_KEY'), envi('LIQPAY_PRIVATE_KEY'));
+        $lang = strtolower(substr($_SESSION['_lang'] ?? 'en', 0, 2));
+
+        $params = [
+            'version'     => 3,
+            'action'      => 'pay',
+            'amount'      => (float)$amount,
+            'currency'    => $_SESSION['_currency'] ?? 'USD',
+            'description' => $paymentDescription,
+            'language'    => (in_array($lang, ['uk','en']) ? $lang : 'en'),
+            'order_id'    => $orderId,
+            'server_url'  => rtrim(envi('APP_URL'), '/') . '/webhook/liqpay', // webhook you implement
+            'result_url'  => rtrim(envi('APP_URL'), '/') . '/payment-success-liqpay?order_id=' . rawurlencode($orderId),
+        ];
+
+        // Give the frontend raw payload so it can submit a form or render LiqPay button
+        $raw = $liqpay->cnb_form_raw($params);
+        // $raw = ['url' => 'https://www.liqpay.ua/api/3/checkout','data'=>'...','signature'=>'...']
+
+        $response->getBody()->write(json_encode($raw));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function createLiqPayPaymentPage(Request $req, Response $res)
+    {
+        $post = $req->getParsedBody();
+        $amount = isset($post['amount']) ? (float)$post['amount'] : (float)($_SESSION['pending_invoice_amount'] ?? 0);
+        $invoiceId = $_SESSION['pending_invoice_id'] ?? null;
+
+        $orderPrefix = $invoiceId ? ('inv-' . (int)$invoiceId) : ('dep-' . ((int)($_SESSION['auth_user_id'] ?? 0)));
+        $orderId = $orderPrefix . '.' . uniqid('', true);
+
+        $liqpay = new LiqPay(envi('LIQPAY_PUBLIC_KEY'), envi('LIQPAY_PRIVATE_KEY'));
+        $params = [
+            'version'     => 3,
+            'action'      => 'pay',
+            'amount'      => $amount,
+            'currency'    => $_SESSION['_currency'] ?? 'USD',
+            'description' => $invoiceId ? ("Payment for Invoice #{$invoiceId}") : 'Account balance deposit',
+            'language'    => in_array($_SESSION['_lang'] ?? 'en',['uk','en']) ? $_SESSION['_lang'] : 'en',
+            'order_id'    => $orderId,
+            'server_url'  => rtrim(envi('APP_URL'), '/') . '/webhook/liqpay',
+            'result_url'  => rtrim(envi('APP_URL'), '/') . '/payment-success-liqpay?order_id=' . rawurlencode($orderId),
+        ];
+        $raw = $liqpay->cnb_form_raw($params); // ['url','data','signature']
+
+        return $this->view->render($res, 'admin/financials/liqpay_post_bridge.twig', ['raw' => $raw]);
+    }
+
+    public function createPlataPayment(Request $request, Response $response)
+    {
+        $postData = $request->getParsedBody();
+        $amount   = $postData['amount'] ?? null;
+
+        // Same shortcut logic as LiqPay
+        if (!$amount && isset($_SESSION['pending_invoice_amount'])) {
+            $amount = $_SESSION['pending_invoice_amount'];
+            $invoiceId = $_SESSION['pending_invoice_id'] ?? null;
+            $paymentDescription = 'Payment for Invoice #' . ($invoiceId ?? '');
+            unset($_SESSION['pending_invoice_amount'], $_SESSION['pending_invoice_id']);
+        } else {
+            $invoiceId = null;
+            $paymentDescription = 'Account balance deposit';
+        }
+
+        $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        if (!is_numeric($amount) || $amount <= 0) {
+            $response->getBody()->write(json_encode(['error' => 'Invalid amount']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        // Order id encodes type for easy parsing later
+        $orderPrefix = $invoiceId ? ('inv-' . (int)$invoiceId) : ('dep-' . ((int)($_SESSION['auth_user_id'] ?? 0)));
+        $orderId = $orderPrefix . '.' . uniqid('', true);
+
+        $amountMinor = (int) round(((float)$amount) * 100); // kopiyky
+        if (($currency = strtoupper($_SESSION['_currency'] ?? 'UAH')) !== 'UAH') {
+            $response->getBody()->write(json_encode(['error' => 'Plata: only UAH supported']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        // Build payload for Plata API
+        $payload = [
+            'amount' => $amountMinor,
+            'ccy'    => 980, // UAH ISO code
+            'merchantPaymInfo' => [
+                'reference'   => $orderId,
+                'destination' => $paymentDescription,
+                'comment'     => $paymentDescription,
+                'basketOrder' => [[
+                    'name'  => $paymentDescription,
+                    'qty'   => 1,
+                    'sum'   => $amountMinor,
+                    'total' => $amountMinor,
+                    'unit'  => 'шт.',
+                    'code'  => (string)($invoiceId ?? 0),
+                ]],
+            ],
+            'redirectUrl' => rtrim(envi('APP_URL'), '/') . '/payment-success-plata?order_id=' . rawurlencode($orderId),
+            'webHookUrl'  => rtrim(envi('APP_URL'), '/') . '/webhook/plata',
+            'validity'    => 24 * 3600,
+            'paymentType' => 'debit',
+        ];
+
+        $token = envi('PLATA_TOKEN');
+        $ch = curl_init('https://api.monobank.ua/api/merchant/invoice/create');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'Content-Type: application/json',
+                'X-Token: ' . $token,
+            ],
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),
+        ]);
+        $raw = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($raw === false || $code >= 400) {
+            $response->getBody()->write(json_encode(['error' => 'Plata API error: ' . $raw]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+
+        $resp = json_decode($raw, true);
+        if (!isset($resp['invoiceId'], $resp['pageUrl'])) {
+            $response->getBody()->write(json_encode(['error' => 'Plata: no invoiceId/pageUrl returned']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+
+        // Return URL to frontend so it can redirect
+        $response->getBody()->write(json_encode([
+            'invoice_id' => $resp['invoiceId'],
+            'url'        => $resp['pageUrl'],
+        ]));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
     public function createAdyenPayment(Request $request, Response $response)
     {
         $postData = $request->getParsedBody();
@@ -877,6 +1043,175 @@ class FinancialsController extends Controller
         }
     }
 
+    public function successLiqPay(Request $request, Response $response)
+    {
+        $q = $request->getQueryParams();
+        $orderId = $q['order_id'] ?? null;
+        $db = $this->container->get('db');
+
+        // Fallback link if we can’t infer destination
+        $fallbackLink = '/deposit';
+
+        if (!$orderId) {
+            $this->container->get('flash')->addMessage('error', 'Missing order ID.');
+            return $response->withHeader('Location', $fallbackLink)->withStatus(302);
+        }
+
+        // Determine intent (invoice vs deposit) from our order_id prefix
+        $firstToken = explode('.', $orderId)[0]; // e.g., inv-123 or dep-45
+        $paymentType = str_starts_with($firstToken, 'inv-') ? 'invoice' : 'deposit';
+        $invoiceId = null;
+        if ($paymentType === 'invoice') {
+            $invoiceId = (int)substr($firstToken, 4);
+        }
+        $link = ($paymentType === 'invoice' && $invoiceId) ? "/invoice/{$invoiceId}" : $fallbackLink;
+
+        try {
+            $liqpay = new \LiqPay(envi('LIQPAY_PUBLIC_KEY'), envi('LIQPAY_PRIVATE_KEY'));
+            // Poll LiqPay for the status of this order
+            $resp = $liqpay->api('payment/status', [
+                'version'  => 3,
+                'action'   => 'status',
+                'order_id' => $orderId,
+            ]);
+
+            // Basic sanity checks
+            if (!is_object($resp)) {
+                $this->container->get('flash')->addMessage('error', 'Unable to verify payment status.');
+                return $response->withHeader('Location', $link)->withStatus(302);
+            }
+
+            // Map LiqPay status to our states
+            // Common statuses: success, failure, error, processing, sandbox, reversed, subscribed, unsubscribed, 3ds_verify
+            $status = strtolower((string)($resp->status ?? ''));
+            $isPaid = ($status === 'success' || $status === 'sandbox');
+
+            if (!$isPaid) {
+                $this->container->get('flash')->addMessage('error', 'Payment not completed (status: ' . $status . ').');
+                return $response->withHeader('Location', $link)->withStatus(302);
+            }
+
+            // Amount & currency returned by LiqPay
+            $amount = (float)($resp->amount ?? 0);
+            $currency = (string)($resp->currency ?? ($_SESSION['_currency'] ?? 'USD'));
+            $amountValid = $amount > 0 && preg_match('/^\d+(\.\d{1,2})?$/', (string)$amount);
+
+            if (!$amountValid) {
+                $this->container->get('flash')->addMessage('error', 'Invalid paid amount.');
+                return $response->withHeader('Location', $link)->withStatus(302);
+            }
+
+            $userId = $_SESSION['auth_user_id'] ?? null;
+            if (!$userId) {
+                // As a fallback you could look up the invoice owner if $invoiceId is set.
+                // Keeping it simple & consistent with your existing flow:
+                $this->container->get('flash')->addMessage('error', 'User session missing.');
+                return $response->withHeader('Location', $link)->withStatus(302);
+            }
+
+            // Record transaction and update balances/statuses
+            try {
+                $db->beginTransaction();
+                $now = (new \DateTime())->format('Y-m-d H:i:s.v');
+
+                $relatedType = $paymentType === 'invoice' ? 'invoice' : 'deposit';
+                $relatedId   = $paymentType === 'invoice' ? $invoiceId : 0;
+                $category    = $paymentType === 'invoice' ? 'invoice' : 'deposit';
+                $description = $paymentType === 'invoice'
+                    ? "Payment for Invoice #{$invoiceId}"
+                    : "Account balance deposit";
+
+                $db->insert('transactions', [
+                    'user_id'             => $userId,
+                    'related_entity_type' => $relatedType,
+                    'related_entity_id'   => $relatedId,
+                    'type'                => 'debit',
+                    'category'            => $category,
+                    'description'         => $description,
+                    'amount'              => $amount,
+                    'currency'            => $currency,
+                    'status'              => 'completed',
+                    'created_at'          => $now
+                ]);
+
+                if ($paymentType === 'invoice' && $invoiceId) {
+                    $db->update(
+                        'invoices',
+                        ['payment_status' => 'paid', 'updated_at' => $now],
+                        ['id' => $invoiceId, 'user_id' => $userId]
+                    );
+                } else {
+                    $db->exec(
+                        'UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?',
+                        [$amount, $userId]
+                    );
+                }
+
+                $db->commit();
+            } catch (\Exception $e) {
+                $db->rollBack();
+
+                $this->container->get('flash')->addMessage('error', 'Failure: ' . $e->getMessage());
+                return $response->withHeader('Location', $link)->withStatus(302);
+            }
+
+            // Optional: provision on successful invoice payment
+            if ($paymentType === 'invoice' && $invoiceId) {
+                try {
+                    provisionService($db, $invoiceId, $userId);
+                } catch (\Exception $e) {
+                    $this->container->get('flash')->addMessage('error', 'Failure: ' . $e->getMessage());
+                    return $response->withHeader('Location', $link)->withStatus(302);
+                }
+            }
+
+            $msg = ($paymentType === 'invoice')
+                ? 'Invoice payment received successfully. Your service will be processed shortly.'
+                : 'Deposit added successfully. Your account balance has been updated.';
+            $this->container->get('flash')->addMessage('success', $msg);
+
+            return $response->withHeader('Location', $link)->withStatus(302);
+        } catch (\Exception $e) {
+            // Best-effort logging similar to your Stripe handler
+            $now = (new \DateTime())->format('Y-m-d H:i:s.v');
+            if ($paymentType === 'invoice' && $invoiceId) {
+                $db->update('orders', ['status' => 'failed'], ['invoice_id' => $invoiceId]);
+            }
+            $db->insert('service_logs', [
+                'service_id' => 0,
+                'event'      => 'payment_failed',
+                'actor_type' => 'system',
+                'actor_id'   => $_SESSION['auth_user_id'] ?? 0,
+                'details'    => 'order ' . $orderId . '|' . $e->getMessage(),
+                'created_at' => $now
+            ]);
+
+            $this->container->get('flash')->addMessage('error', 'We encountered an issue while processing your order. Please contact our support team.');
+            return $response->withHeader('Location', $link)->withStatus(302);
+        }
+    }
+    
+    public function successPlata(Request $request, Response $response)
+    {
+        $q = $request->getQueryParams();
+        $orderId = $q['order_id'] ?? null;
+
+        if (!$orderId) {
+            $this->container->get('flash')->addMessage('error', 'Missing order ID.');
+            return $response->withHeader('Location', '/deposit')->withStatus(302);
+        }
+
+        // Same prefix logic as LiqPay
+        $firstToken = explode('.', $orderId)[0];
+        $paymentType = str_starts_with($firstToken, 'inv-') ? 'invoice' : 'deposit';
+        $invoiceId = $paymentType === 'invoice' ? (int)substr($firstToken, 4) : null;
+        $link = ($paymentType === 'invoice' && $invoiceId) ? "/invoice/{$invoiceId}" : '/deposit';
+
+        // Here you do NOT have immediate status. You assume webhook has updated DB.
+        $this->container->get('flash')->addMessage('info', 'We have received your payment request. It will be confirmed shortly.');
+        return $response->withHeader('Location', $link)->withStatus(302);
+    }
+
     public function successAdyen(Request $request, Response $response)
     {
         $sessionId = $request->getQueryParams()['sessionId'] ?? null;
@@ -1142,6 +1477,151 @@ class FinancialsController extends Controller
             $this->container->get('flash')->addMessage('error', 'Request failed: ' . $e->getMessage());
             return $response->withHeader('Location', '/payment-success-nicky')->withStatus(302);
         }
+    }
+
+    public function webhookPlata(Request $request, Response $response)
+    {
+        $db  = $this->container->get('db');
+        $raw = (string)($request->getBody() ?? '');
+        if ($raw === '') {
+            return $response->withStatus(400)->withBody($this->stream('Empty body'));
+        }
+
+        $json = json_decode($raw, true);
+        if (!is_array($json)) {
+            return $response->withStatus(400)->withBody($this->stream('Bad JSON'));
+        }
+
+        // Verify signature
+        $xSign = $request->getHeaderLine('X-Sign');
+        if (!$xSign) {
+            return $response->withStatus(400)->withBody($this->stream('Missing X-Sign'));
+        }
+        $signature = base64_decode($xSign, true);
+        if ($signature === false) {
+            return $response->withStatus(400)->withBody($this->stream('Bad X-Sign'));
+        }
+
+        $pubKeyPem = $this->getMonobankPublicKeyPem(); // fetch & cache (below)
+        $ok = openssl_verify($raw, $signature, $pubKeyPem, OPENSSL_ALGO_SHA256);
+        if ($ok !== 1) {
+            return $response->withStatus(400)->withBody($this->stream('Signature verify failed'));
+        }
+
+        $plataStatus = strtolower($json['status'] ?? 'processing');
+        $orderId     = $json['reference']   ?? null; // we set this to our $orderId earlier
+        $amountMinor = $json['finalAmount'] ?? ($json['amount'] ?? null);
+        $currencyIso = (int)($json['ccy']   ?? 980);
+        $txnId       = $json['invoiceId']   ?? null;
+
+        if (!$orderId || !$amountMinor || !$txnId) {
+            return $response->withStatus(400)->withBody($this->stream('Missing fields'));
+        }
+
+        $amount = round(((int)$amountMinor) / 100, 2);
+        $currency = ($currencyIso === 980) ? 'UAH' : 'UAH'; // adapter is UAH-only for now
+
+        // Map Plata statuses to our notion
+        $paid = in_array($plataStatus, ['success'], true);
+
+        // Same inv-/dep- convention
+        $firstToken = explode('.', $orderId)[0];
+        $isInvoice  = str_starts_with($firstToken, 'inv-');
+        $invoiceId  = $isInvoice ? (int)substr($firstToken, 4) : null;
+        $userId     = $_SESSION['auth_user_id'] ?? null; // if you want, you can also resolve from invoice
+
+        try {
+            $db->beginTransaction();
+            $now = (new \DateTime())->format('Y-m-d H:i:s.v');
+
+            $relatedType = $isInvoice ? 'invoice' : 'deposit';
+            $relatedId   = $isInvoice ? $invoiceId : 0;
+            $category    = $isInvoice ? 'invoice' : 'deposit';
+            $description = $isInvoice ? "Payment for Invoice #{$invoiceId}" : "Account balance deposit";
+
+            $db->insert('transactions', [
+                'user_id'             => $userId,
+                'related_entity_type' => $relatedType,
+                'related_entity_id'   => $relatedId,
+                'type'                => 'debit',
+                'category'            => $category,
+                'description'         => $description,
+                'amount'              => $amount,
+                'currency'            => $currency,
+                'status'              => $paid ? 'completed' : 'pending',
+                'created_at'          => $now,
+                'gateway'             => 'plata',
+                'gateway_txn_id'      => $txnId,
+            ]);
+
+            if ($paid) {
+                if ($isInvoice && $invoiceId) {
+                    $db->update('invoices', ['payment_status' => 'paid', 'updated_at' => $now], ['id' => $invoiceId]);
+                    try {
+                        provisionService($db, $invoiceId, $userId);
+                    } catch (\Exception $e) {
+                        $db->insert('service_logs', [
+                            'service_id' => 0,
+                            'event'      => 'provision_failed',
+                            'actor_type' => 'system',
+                            'actor_id'   => $userId ?? 0,
+                            'details'    => 'invoice ' . $invoiceId . '|' . $e->getMessage(),
+                            'created_at' => $now
+                        ]);
+                    }
+                } else {
+                    if ($userId) {
+                        $db->exec('UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?', [$amount, $userId]);
+                    }
+                }
+            }
+
+            $db->commit();
+        } catch (\Exception $e) {
+            $db->rollBack();
+            return $response->withStatus(500)->withBody($this->stream('Server error'));
+        }
+
+        $response->getBody()->write('OK');
+        return $response->withHeader('Content-Type', 'text/plain');
+    }
+
+    /**
+     * Fetch Monobank public key (PEM). Cache it on disk for ~24h.
+     */
+    private function getMonobankPublicKeyPem(): string
+    {
+        $cacheFile = sys_get_temp_dir() . '/monobank_pubkey.pem';
+        if (is_file($cacheFile) && (time() - filemtime($cacheFile) < 86400)) {
+            return file_get_contents($cacheFile);
+        }
+
+        $token = envi('PLATA_TOKEN');
+        $ch = curl_init('https://api.monobank.ua/api/merchant/pubkey');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Accept: application/json', 'X-Token: ' . $token],
+        ]);
+        $raw = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($raw === false || $code >= 400) {
+            throw new \RuntimeException('Failed to fetch Monobank pubkey');
+        }
+        $data = json_decode($raw, true);
+        if (!isset($data['key'])) {
+            throw new \RuntimeException('Monobank pubkey missing');
+        }
+
+        // API returns base64 of PEM: decode to raw PEM
+        $pem = base64_decode($data['key'], true);
+        if ($pem === false) {
+            throw new \RuntimeException('Bad pubkey base64');
+        }
+
+        @file_put_contents($cacheFile, $pem);
+        return $pem;
     }
 
     public function webhookAdyen(Request $request, Response $response)

@@ -63,7 +63,8 @@
         "pinga/tembo": "^1.1.0-beta5",
         "utopia-php/domains": "^0.8.0",
         "egulias/email-validator": "^4.0",
-        "brick/postcode": "^0.5.0"
+        "brick/postcode": "^0.5.0",
+        "liqpay/liqpay": "^1.4"
     },
     "autoload": {
         "psr-4": {

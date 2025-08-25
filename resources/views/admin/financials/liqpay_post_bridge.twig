@@ -1,0 +1,12 @@
+{# views/liqpay_post_bridge.twig #}
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Redirecting…</title></head>
+<body onload="document.forms[0].submit()">
+  <form method="POST" action="{{ raw.url }}" accept-charset="utf-8">
+    <input type="hidden" name="data" value="{{ raw.data }}">
+    <input type="hidden" name="signature" value="{{ raw.signature }}">
+    <noscript><button type="submit">{{ __("Continue to payment") }}</button></noscript>
+  </form>
+</body>
+</html>
