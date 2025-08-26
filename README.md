@@ -42,6 +42,10 @@ Argora Loom works with a variety of external services through its modular archit
 - **RyCE** – ✅🧪
 - **Tucows Registry** – ✅🧪
 
+### Hosting
+
+- **cPanel/WHM** – *coming soon*
+
 ### Cloud Infrastructure
 
 - **Hetzner** – *coming soon*
@@ -57,6 +61,8 @@ Argora Loom works with a variety of external services through its modular archit
 
 - **Balance** – ✅
 - **Stripe** – ✅
+- **LiqPay** – ✅
+- **plata by mono** – ✅
 - **Revolut Pay** – *coming soon*
 - **PayPal** – *coming soon*
 - **Mollie** – *coming soon*
