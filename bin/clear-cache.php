@@ -39,6 +39,13 @@ foreach ($dirs as $dir) {
     }
 }
 
+$randomFiles = glob($cacheDir . '/*');
+foreach ($randomFiles as $file) {
+    if (is_file($file)) {
+        unlink($file);
+    }
+}
+
 // Clear Slim route cache if it exists
 $routeCacheFile = $cacheDir . '/routes.php';
 if (file_exists($routeCacheFile)) {

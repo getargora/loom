@@ -178,6 +178,7 @@ $app->any('/api[/{params:.*}]', function (
         'database' => $db_database,
         'address' => $db_address,
         'basePath' => '/api',
+        'cachePath' => __DIR__ . '/../cache',
         'middlewares' => 'customization,dbAuth,authorization,sanitation,multiTenancy',
         'authorization.tableHandler' => function ($operation, $tableName) {
         $restrictedTables = ['example_restricted_table'];

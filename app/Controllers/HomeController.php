@@ -234,11 +234,22 @@ class HomeController extends Controller
                 }
             }
 
+            $randomFiles = glob($cacheDir . '/*');
+            foreach ($randomFiles as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+
             // Clear Slim route cache if it exists
             $routeCacheFile = $cacheDir . '/routes.php';
             if (file_exists($routeCacheFile)) {
                 unlink($routeCacheFile);
             }
+
+            // Try to restart PHP-FPM 8.3
+            echo "Restarting PHP-FPM (php8.3-fpm)...\n";
+            exec("sudo systemctl restart php8.3-fpm 2>&1", $restartOutput, $status);
         } catch (Exception $e) {
             $result = [
                 'success' => false,
