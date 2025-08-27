@@ -593,7 +593,6 @@ class FinancialsController extends Controller
             'description' => $paymentDescription,
             'language'    => (in_array($lang, ['uk','en']) ? $lang : 'en'),
             'order_id'    => $orderId,
-            'server_url'  => rtrim(envi('APP_URL'), '/') . '/webhook/liqpay', // webhook you implement
             'result_url'  => rtrim(envi('APP_URL'), '/') . '/payment-success-liqpay?order_id=' . rawurlencode($orderId),
         ];
 
@@ -615,13 +614,14 @@ class FinancialsController extends Controller
         $orderId = $orderPrefix . '.' . uniqid('', true);
 
         $liqpay = new LiqPay(envi('LIQPAY_PUBLIC_KEY'), envi('LIQPAY_PRIVATE_KEY'));
+        $lang = strtolower(substr($_SESSION['_lang'] ?? 'en', 0, 2));
         $params = [
             'version'     => 3,
             'action'      => 'pay',
             'amount'      => $amount,
             'currency'    => $_SESSION['_currency'] ?? 'USD',
             'description' => $invoiceId ? ("Payment for Invoice #{$invoiceId}") : 'Account balance deposit',
-            'language'    => in_array($_SESSION['_lang'] ?? 'en',['uk','en']) ? $_SESSION['_lang'] : 'en',
+            'language'    => (in_array($lang, ['uk','en']) ? $lang : 'en'),
             'order_id'    => $orderId,
             'server_url'  => rtrim(envi('APP_URL'), '/') . '/webhook/liqpay',
             'result_url'  => rtrim(envi('APP_URL'), '/') . '/payment-success-liqpay?order_id=' . rawurlencode($orderId),
