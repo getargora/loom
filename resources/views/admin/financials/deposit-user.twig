@@ -5,12 +5,32 @@
 {% block content %}
 <link href="/assets/modules/css/sweetalert2.min.css" rel="stylesheet">
 <style>
-    .payment-provider-custom {
+    .payment-provider-nicky {
         display: inline-block;
         background-image: url('/assets/nicky.svg');
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center;
+    }
+    .payment-provider-plata {
+        display: inline-block;
+        background-image: url('/assets/plata.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    [data-bs-theme="dark"] .payment-provider-plata {
+        background-image: url('/assets/plata-dark.svg');
+    }
+    .payment-provider-liqpay {
+        display: inline-block;
+        background-image: url('/assets/liqpay.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+    [data-bs-theme="dark"] .payment-provider-liqpay {
+        background-image: url('/assets/liqpay-dark.svg');
     }
 
     /* Fullscreen overlay */
@@ -111,7 +131,7 @@
                                         <span class="form-selectgroup-check"></span>
                                     </div>
                                     <div>
-                                        <span class="payment payment-provider-liqpay-dark payment-xs me-2"></span>
+                                        <span class="payment payment-provider-liqpay payment-xs me-2"></span>
                                         {{ __('Liqpay') }}
                                     </div>
                                 </div>
@@ -125,7 +145,7 @@
                                         <span class="form-selectgroup-check"></span>
                                     </div>
                                     <div>
-                                        <span class="payment payment-provider-plata-dark payment-xs me-2"></span>
+                                        <span class="payment payment-provider-plata payment-xs me-2"></span>
                                         {{ __('Plata by mono') }}
                                     </div>
                                 </div>
@@ -153,7 +173,7 @@
                                         <span class="form-selectgroup-check"></span>
                                     </div>
                                     <div>
-                                        <span class="payment payment-provider-custom payment-xs me-2"></span>
+                                        <span class="payment payment-provider-nicky payment-xs me-2"></span>
                                         {{ __('Crypto') }}: Nicky
                                     </div>
                                 </div>
