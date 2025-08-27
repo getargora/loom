@@ -623,7 +623,6 @@ class FinancialsController extends Controller
             'description' => $invoiceId ? ("Payment for Invoice #{$invoiceId}") : 'Account balance deposit',
             'language'    => (in_array($lang, ['uk','en']) ? $lang : 'en'),
             'order_id'    => $orderId,
-            'server_url'  => rtrim(envi('APP_URL'), '/') . '/webhook/liqpay',
             'result_url'  => rtrim(envi('APP_URL'), '/') . '/payment-success-liqpay?order_id=' . rawurlencode($orderId),
         ];
         $raw = $liqpay->cnb_form_raw($params); // ['url','data','signature']
