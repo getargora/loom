@@ -680,7 +680,6 @@ class FinancialsController extends Controller
                 ]],
             ],
             'redirectUrl' => rtrim(envi('APP_URL'), '/') . '/payment-success-plata?order_id=' . rawurlencode($orderId),
-            'webHookUrl'  => rtrim(envi('APP_URL'), '/') . '/webhook/plata',
             'validity'    => 24 * 3600,
             'paymentType' => 'debit',
         ];
@@ -717,6 +716,7 @@ class FinancialsController extends Controller
             'invoice_id' => $resp['invoiceId'],
             'url'        => $resp['pageUrl'],
         ]));
+        $_SESSION['plata_invoice_id'] = $resp['invoiceId'];
         return $response->withHeader('Content-Type', 'application/json');
     }
 
@@ -1189,26 +1189,142 @@ class FinancialsController extends Controller
             return $response->withHeader('Location', $link)->withStatus(302);
         }
     }
-    
+
     public function successPlata(Request $request, Response $response)
     {
-        $q = $request->getQueryParams();
-        $orderId = $q['order_id'] ?? null;
+        $q        = $request->getQueryParams();
+        $orderId  = $q['order_id']  ?? null;
 
         if (!$orderId) {
             $this->container->get('flash')->addMessage('error', 'Missing order ID.');
             return $response->withHeader('Location', '/deposit')->withStatus(302);
         }
 
-        // Same prefix logic as LiqPay
-        $firstToken = explode('.', $orderId)[0];
-        $paymentType = str_starts_with($firstToken, 'inv-') ? 'invoice' : 'deposit';
-        $invoiceId = $paymentType === 'invoice' ? (int)substr($firstToken, 4) : null;
-        $link = ($paymentType === 'invoice' && $invoiceId) ? "/invoice/{$invoiceId}" : '/deposit';
+        $firstToken  = explode('.', $orderId)[0];
+        $isInvoice   = str_starts_with($firstToken, 'inv-');
+        $invoiceId   = $isInvoice ? (int)substr($firstToken, 4) : null;
+        $redirectUrl = ($isInvoice && $invoiceId) ? "/invoice/{$invoiceId}" : '/deposit';
 
-        // Here you do NOT have immediate status. You assume webhook has updated DB.
-        $this->container->get('flash')->addMessage('info', 'We have received your payment request. It will be confirmed shortly.');
-        return $response->withHeader('Location', $link)->withStatus(302);
+        // We need Plata's invoiceId for polling:
+        $db = $this->container->get('db');
+        $plataInvoiceId = $_SESSION['plata_invoice_id'] ?? null;
+        unset($_SESSION['plata_invoice_id']);
+
+        if (!$plataInvoiceId) {
+            $this->container->get('flash')->addMessage('error', 'Missing Plata invoice identifier.');
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+        }
+
+        // Poll Plata 2–3 times quickly to catch the just-finished payment
+        $statusPayload = null;
+        for ($i = 0; $i < 3; $i++) {
+            $statusPayload = $this->plataFetchStatus($plataInvoiceId);
+            if ($statusPayload && !empty($statusPayload['status']) && $statusPayload['status'] !== 'processing') {
+                break;
+            }
+            usleep(250000); // 250ms between tries (tune as you wish)
+        }
+
+        if (!$statusPayload) {
+            $this->container->get('flash')->addMessage('error', 'Unable to verify payment status. Please try again shortly.');
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+        }
+
+        $plataStatus = strtolower($statusPayload['status'] ?? 'processing');
+        $txnId       = $statusPayload['invoiceId'] ?? $plataInvoiceId;
+        $amountMinor = $statusPayload['finalAmount'] ?? ($statusPayload['amount'] ?? null);
+        $currencyIso = (int)($statusPayload['ccy'] ?? 980);
+        $amount      = $amountMinor !== null ? round(((int)$amountMinor) / 100, 2) : null;
+        $currency    = ($currencyIso === 980) ? 'UAH' : 'UAH'; // Plata is UAH today
+
+        // Decide action by status
+        if ($plataStatus === 'success') {
+            try {
+                $now = (new \DateTime())->format('Y-m-d H:i:s');
+
+                // Insert transaction if not exists
+                $db->insert('transactions', [
+                    'user_id'             => $_SESSION['auth_user_id'] ?? null,
+                    'related_entity_type' => $isInvoice ? 'invoice' : 'deposit',
+                    'related_entity_id'   => $isInvoice ? $invoiceId : 0,
+                    'type'                => 'debit',
+                    'category'            => $isInvoice ? 'invoice' : 'deposit',
+                    'description'         => $isInvoice ? "Payment for Invoice #{$invoiceId}" : "Account balance deposit",
+                    'amount'              => $amount ?? 0,
+                    'currency'            => $currency,
+                    'status'              => 'completed',
+                    'created_at'          => $now
+                ]);
+
+                if ($isInvoice && $invoiceId) {
+                    $db->update('invoices', [
+                        'payment_status' => 'paid',
+                        'updated_at'     => $now
+                    ], ['id' => $invoiceId]);
+
+                    // Optional provisioning
+                    try {
+                        provisionService($db, $invoiceId, $_SESSION['auth_user_id'] ?? null);
+                    } catch (\Throwable $e) {
+                        $db->insert('service_logs', [
+                            'service_id' => 0,
+                            'event'      => 'provision_failed',
+                            'actor_type' => 'system',
+                            'actor_id'   => $_SESSION['auth_user_id'] ?? 0,
+                            'details'    => 'invoice ' . $invoiceId . '|' . $e->getMessage(),
+                            'created_at' => $now
+                        ]);
+                    }
+                } else {
+                    if (!empty($_SESSION['auth_user_id']) && $amount !== null) {
+                        $db->exec('UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?', [
+                            $amount,
+                            $_SESSION['auth_user_id']
+                        ]);
+                    }
+                }
+
+            } catch (\Throwable $e) {
+                $this->container->get('flash')->addMessage('danger', 'Payment recorded but post-processing failed. Support has been notified.');
+                return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+            }
+
+            $this->container->get('flash')->addMessage('success', 'Payment successful.');
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+        }
+
+        if ($plataStatus === 'failure' || $plataStatus === 'expired') {
+            $this->container->get('flash')->addMessage('danger', 'Payment failed or expired.');
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+        }
+
+        // processing / unknown
+        $this->container->get('flash')->addMessage('warning', 'Payment is processing. It will be confirmed shortly.');
+        return $response->withHeader('Location', $redirectUrl)->withStatus(302);
+    }
+
+    private function plataFetchStatus(string $invoiceId): ?array
+    {
+        $token = envi('PLATA_TOKEN');
+        $url   = "https://api.monobank.ua/api/merchant/invoice/status?invoiceId=" . rawurlencode($invoiceId);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['X-Token: ' . $token],
+            CURLOPT_TIMEOUT        => 10,
+        ]);
+        $raw  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+
+        if ($code !== 200 || $raw === false) {
+            // optional: log error
+            return null;
+        }
+        $json = json_decode($raw, true);
+        return is_array($json) ? $json : null;
     }
 
     public function successAdyen(Request $request, Response $response)
@@ -1476,151 +1592,6 @@ class FinancialsController extends Controller
             $this->container->get('flash')->addMessage('error', 'Request failed: ' . $e->getMessage());
             return $response->withHeader('Location', '/payment-success-nicky')->withStatus(302);
         }
-    }
-
-    public function webhookPlata(Request $request, Response $response)
-    {
-        $db  = $this->container->get('db');
-        $raw = (string)($request->getBody() ?? '');
-        if ($raw === '') {
-            return $response->withStatus(400)->withBody($this->stream('Empty body'));
-        }
-
-        $json = json_decode($raw, true);
-        if (!is_array($json)) {
-            return $response->withStatus(400)->withBody($this->stream('Bad JSON'));
-        }
-
-        // Verify signature
-        $xSign = $request->getHeaderLine('X-Sign');
-        if (!$xSign) {
-            return $response->withStatus(400)->withBody($this->stream('Missing X-Sign'));
-        }
-        $signature = base64_decode($xSign, true);
-        if ($signature === false) {
-            return $response->withStatus(400)->withBody($this->stream('Bad X-Sign'));
-        }
-
-        $pubKeyPem = $this->getMonobankPublicKeyPem(); // fetch & cache (below)
-        $ok = openssl_verify($raw, $signature, $pubKeyPem, OPENSSL_ALGO_SHA256);
-        if ($ok !== 1) {
-            return $response->withStatus(400)->withBody($this->stream('Signature verify failed'));
-        }
-
-        $plataStatus = strtolower($json['status'] ?? 'processing');
-        $orderId     = $json['reference']   ?? null; // we set this to our $orderId earlier
-        $amountMinor = $json['finalAmount'] ?? ($json['amount'] ?? null);
-        $currencyIso = (int)($json['ccy']   ?? 980);
-        $txnId       = $json['invoiceId']   ?? null;
-
-        if (!$orderId || !$amountMinor || !$txnId) {
-            return $response->withStatus(400)->withBody($this->stream('Missing fields'));
-        }
-
-        $amount = round(((int)$amountMinor) / 100, 2);
-        $currency = ($currencyIso === 980) ? 'UAH' : 'UAH'; // adapter is UAH-only for now
-
-        // Map Plata statuses to our notion
-        $paid = in_array($plataStatus, ['success'], true);
-
-        // Same inv-/dep- convention
-        $firstToken = explode('.', $orderId)[0];
-        $isInvoice  = str_starts_with($firstToken, 'inv-');
-        $invoiceId  = $isInvoice ? (int)substr($firstToken, 4) : null;
-        $userId     = $_SESSION['auth_user_id'] ?? null; // if you want, you can also resolve from invoice
-
-        try {
-            $db->beginTransaction();
-            $now = (new \DateTime())->format('Y-m-d H:i:s.v');
-
-            $relatedType = $isInvoice ? 'invoice' : 'deposit';
-            $relatedId   = $isInvoice ? $invoiceId : 0;
-            $category    = $isInvoice ? 'invoice' : 'deposit';
-            $description = $isInvoice ? "Payment for Invoice #{$invoiceId}" : "Account balance deposit";
-
-            $db->insert('transactions', [
-                'user_id'             => $userId,
-                'related_entity_type' => $relatedType,
-                'related_entity_id'   => $relatedId,
-                'type'                => 'debit',
-                'category'            => $category,
-                'description'         => $description,
-                'amount'              => $amount,
-                'currency'            => $currency,
-                'status'              => $paid ? 'completed' : 'pending',
-                'created_at'          => $now,
-                'gateway'             => 'plata',
-                'gateway_txn_id'      => $txnId,
-            ]);
-
-            if ($paid) {
-                if ($isInvoice && $invoiceId) {
-                    $db->update('invoices', ['payment_status' => 'paid', 'updated_at' => $now], ['id' => $invoiceId]);
-                    try {
-                        provisionService($db, $invoiceId, $userId);
-                    } catch (\Exception $e) {
-                        $db->insert('service_logs', [
-                            'service_id' => 0,
-                            'event'      => 'provision_failed',
-                            'actor_type' => 'system',
-                            'actor_id'   => $userId ?? 0,
-                            'details'    => 'invoice ' . $invoiceId . '|' . $e->getMessage(),
-                            'created_at' => $now
-                        ]);
-                    }
-                } else {
-                    if ($userId) {
-                        $db->exec('UPDATE users SET account_balance = (account_balance + ?) WHERE id = ?', [$amount, $userId]);
-                    }
-                }
-            }
-
-            $db->commit();
-        } catch (\Exception $e) {
-            $db->rollBack();
-            return $response->withStatus(500)->withBody($this->stream('Server error'));
-        }
-
-        $response->getBody()->write('OK');
-        return $response->withHeader('Content-Type', 'text/plain');
-    }
-
-    /**
-     * Fetch Monobank public key (PEM). Cache it on disk for ~24h.
-     */
-    private function getMonobankPublicKeyPem(): string
-    {
-        $cacheFile = sys_get_temp_dir() . '/monobank_pubkey.pem';
-        if (is_file($cacheFile) && (time() - filemtime($cacheFile) < 86400)) {
-            return file_get_contents($cacheFile);
-        }
-
-        $token = envi('PLATA_TOKEN');
-        $ch = curl_init('https://api.monobank.ua/api/merchant/pubkey');
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => ['Accept: application/json', 'X-Token: ' . $token],
-        ]);
-        $raw = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($raw === false || $code >= 400) {
-            throw new \RuntimeException('Failed to fetch Monobank pubkey');
-        }
-        $data = json_decode($raw, true);
-        if (!isset($data['key'])) {
-            throw new \RuntimeException('Monobank pubkey missing');
-        }
-
-        // API returns base64 of PEM: decode to raw PEM
-        $pem = base64_decode($data['key'], true);
-        if ($pem === false) {
-            throw new \RuntimeException('Bad pubkey base64');
-        }
-
-        @file_put_contents($cacheFile, $pem);
-        return $pem;
     }
 
     public function webhookAdyen(Request $request, Response $response)
