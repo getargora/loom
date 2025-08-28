@@ -175,7 +175,7 @@ $container->set('view', function ($container) {
     if (isset($_SESSION['_theme'])) {
         $view->getEnvironment()->addGlobal('theme', $_SESSION['_theme']);
     } else {
-        $view->getEnvironment()->addGlobal('theme', 'blue');
+        $view->getEnvironment()->addGlobal('theme', 'purple');
     }
     if (isset($_SESSION['auth_roles'])) {
         $view->getEnvironment()->addGlobal('roles', $_SESSION['auth_roles']);

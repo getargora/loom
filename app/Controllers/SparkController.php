@@ -361,6 +361,8 @@ class SparkController extends Controller
 
     public function domainCheck(Request $request, Response $response): Response
     {
+        $db = $this->container->get('db');
+
         if ($request->getMethod() !== 'POST') {
             return $response
                 ->withHeader('Location', '/')
@@ -414,12 +416,26 @@ class SparkController extends Controller
                 $results = [];
                 $x = 1;
                 foreach ($domainCheck['domains'] as $domain) {
+                    $reason = $domain['avail'] ? null : ($domain['reason'] ?? null);
+                    $transferable = (!$domain['avail'] && is_string($reason) && strcasecmp(trim($reason), 'In use') === 0);
+
+                    $fqdn = mb_strtolower($domain['name']);
+
+                    $ownedServiceId = $db->selectValue(
+                        'SELECT `id` FROM `services` WHERE `type` = ? AND `service_name` = ? LIMIT 1',
+                        [ 'domain', $fqdn ]
+                    );
+
+                    if ($ownedServiceId !== null) {
+                        $transferable = false;
+                    }
+
                     $results[] = [
-                        'index' => $x++,
-                        'name' => $domain['name'],
+                        'index'     => $x++,
+                        'name'      => $domain['name'],
                         'available' => $domain['avail'],
-                        'reason' => $domain['avail'] ? null : $domain['reason']
-                    ];
+                        'reason'    => $reason,
+                    ] + ($transferable ? ['transferable' => true] : []);
                 }
 
                 $payload = [
