@@ -34,6 +34,8 @@ use Tqdev\PhpCrudApi\Config\Config;
 $app->get('/', HomeController::class .':index')->setName('index');
 $app->get('/terms', HomeController::class .':terms')->setName('terms');
 $app->get('/privacy', HomeController::class .':privacy')->setName('privacy');
+$app->get('/contact', HomeController::class .':contact')->setName('contact');
+$app->get('/report-abuse', HomeController::class .':reportabuse')->setName('reportabuse');
 $app->post('/spark/domain/check', [SparkController::class, 'domainCheck']);
 
 $app->group('', function ($route) {

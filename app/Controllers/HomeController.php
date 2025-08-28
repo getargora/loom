@@ -108,6 +108,26 @@ class HomeController extends Controller
         return view($response, $template);
     }
 
+    public function contact(Request $request, Response $response)
+    {
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'contact.custom.twig') 
+                    ? 'contact.custom.twig' 
+                    : 'contact.twig';
+
+        return view($response, $template);
+    }
+
+    public function reportabuse(Request $request, Response $response)
+    {
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'report-abuse.custom.twig') 
+                    ? 'report-abuse.custom.twig' 
+                    : 'report-abuse.twig';
+
+        return view($response, $template);
+    }
+
     public function dashboard(Request $request, Response $response)
     {
         $db = $this->container->get('db');

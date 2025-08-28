@@ -1,109 +1,124 @@
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="Privacy Policy for Loom">
-  <meta name="author" content="Taras Kondratyuk">
-  <meta name="theme-color" content="#5B099B">
-  <title>Privacy Policy | Loom</title>
-  {% include 'partials/css.twig' %}
-  <style>
-    @import url('/assets/fonts/inter/inter.css');
-    :root {
-        --tblr-font-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-    }
-    @supports (font-variation-settings: normal) {
-        :root {
-            --tblr-font-sans-serif: "InterVariable", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-            font-optical-sizing: auto;
-        }
-    }
-    .navbar .container-fluid { min-height: 56px; }
-    footer .text-muted { white-space: nowrap; }
-    @media (max-width: 575.98px) {
-      footer .container a { display:inline-block; margin:0 .25rem; }
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A skeleton for a PHP application built on Slim Framework 4.">
+    <meta name="author" content="Taras Kondratyuk">
+    <meta name="theme-color" content="#5B099B">
+    <title>Privacy Policy | Loom</title>
+    {% include 'partials/css.twig' %}
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
-  <header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-      <div class="container-fluid px-3 px-md-4">
-        <a class="navbar-brand d-flex align-items-center" href=".">
-          <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbar">
-          <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
-            {% if auth.isLogin %}
-            <li class="nav-item"><a class="nav-link" href="{{ route('home') }}">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ route('logout') }}">Logout</a></li>
-            {% else %}
-            <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ route('register') }}">Register</a></li>
-            {% endif %}
-          </ul>
-        </div>
-      </div>
-    </nav>
-  </header>
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+        <div class="container-xl">
+                <a class="navbar-brand d-flex align-items-center" href=".">
+                  <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar">
+                    <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
+                        <li class="nav-item">
+                            <a {{ is_current_url('index') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('index')}}">
+                                Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('contact') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('contact')}}">
+                                Contact
+                            </a>
+                        </li>
 
-  <main class="flex-grow-1 py-5">
-    <div class="container-xl">
-      <h1 class="display-5 fw-bold text-center mb-4">Privacy Policy</h1>
-      <div class="card shadow-sm">
-        <div class="card-body p-4">
-          <p class="text-muted">
-            This Privacy Policy outlines how Loom collects, uses, and protects your personal information.
-          </p>
+                        <li class="nav-item d-none d-lg-block">
+                            <span class="nav-link disabled px-2">|</span>
+                        </li>
 
-          <h5>1. Information We Collect</h5>
-          <p>We collect information you provide when registering, such as your name, email, and billing details. We may also collect data related to your usage of the platform.</p>
+                        {% if auth.isLogin %}
+                            <li class="nav-item">
+                                <a {{ is_current_url('home') ? 'class="btn btn-primary me-2"' : 'class="btn btn-primary me-2"' }} href="{{route('home')}}">
+                                    Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('logout') ? 'class="btn btn-outline-primary"' : 'class="btn btn-outline-primary"' }} href="{{route('logout')}}">
+                                    Logout
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a {{ is_current_url('login') ? 'class="btn btn-outline-primary me-2"' : 'class="btn btn-outline-primary me-2"' }} href="{{route('login')}}">
+                                    Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('register') ? 'class="btn btn-primary"' : 'class="btn btn-primary"' }} href="{{route('register')}}">
+                                    Register
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
 
-          <h5>2. How We Use Your Information</h5>
-          <p>Your information is used to provide and improve our services, process transactions, respond to inquiries, and ensure the security of our platform.</p>
+    <main class="flex-grow-1 py-5">
+        <div class="container-xl">
+          <h1 class="display-5 fw-bold text-center mb-4">Privacy Policy</h1>
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <p class="text-muted">
+                This Privacy Policy outlines how Loom collects, uses, and protects your personal information.
+              </p>
 
-          <h5>3. Sharing of Information</h5>
-          <p>We do not sell or rent your personal data. We may share information with trusted third parties who assist in operating our services, under strict confidentiality agreements.</p>
+              <h5>1. Information We Collect</h5>
+              <p>We collect information you provide when registering, such as your name, email, and billing details. We may also collect data related to your usage of the platform.</p>
 
-          <h5>4. Cookies and Tracking</h5>
-          <p>We may use cookies and similar technologies to enhance your experience. You can manage cookies through your browser settings.</p>
+              <h5>2. How We Use Your Information</h5>
+              <p>Your information is used to provide and improve our services, process transactions, respond to inquiries, and ensure the security of our platform.</p>
 
-          <h5>5. Data Security</h5>
-          <p>We implement industry-standard security measures to protect your data. However, no online platform can be 100% secure.</p>
+              <h5>3. Sharing of Information</h5>
+              <p>We do not sell or rent your personal data. We may share information with trusted third parties who assist in operating our services, under strict confidentiality agreements.</p>
 
-          <h5>6. Your Rights</h5>
-          <p>You may access, correct, or delete your personal data at any time. Contact us if you need assistance exercising your rights.</p>
+              <h5>4. Cookies and Tracking</h5>
+              <p>We may use cookies and similar technologies to enhance your experience. You can manage cookies through your browser settings.</p>
 
-          <h5>7. Changes to This Policy</h5>
-          <p>We may update this Privacy Policy. Changes will be posted on this page with a revised "Last Updated" date.</p>
+              <h5>5. Data Security</h5>
+              <p>We implement industry-standard security measures to protect your data. However, no online platform can be 100% secure.</p>
 
-          <h5>8. Contact</h5>
-          <p>If you have questions or concerns about our privacy practices, please contact us at <a href="mailto:help@argora.org">help@argora.org</a>.</p>
-        </div>
-      </div>
+              <h5>6. Your Rights</h5>
+              <p>You may access, correct, or delete your personal data at any time. Contact us if you need assistance exercising your rights.</p>
 
-      <div class="text-center mt-5">
-        <div class="alert alert-info alert-dismissible mt-4" role="alert">
-          <div class="alert-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>
+              <h5>7. Changes to This Policy</h5>
+              <p>We may update this Privacy Policy. Changes will be posted on this page with a revised "Last Updated" date.</p>
+
+              <h5>8. Contact</h5>
+              <p>If you have questions or concerns about our privacy practices, please contact us at <a href="mailto:help@argora.org">help@argora.org</a>.</p>
+            </div>
           </div>
-          <h4 class="alert-title">To customize this page, copy <code>privacy.twig</code> from <code>resources/views</code> to <code>privacy.custom.twig</code> and edit the file as required.</h4>
-          <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+
+          <div class="text-center mt-5">
+            <div class="alert alert-info alert-dismissible mt-4" role="alert">
+              <div class="alert-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>
+              </div>
+              <h4 class="alert-title">To customize this page, copy <code>privacy.twig</code> from <code>resources/views</code> to <code>privacy.custom.twig</code> and edit the file as required.</h4>
+              <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </main>
+    </main>
 
   <footer class="footer bg-white border-top shadow-sm py-3 mt-auto">
-    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-between text-center text-md-start gap-2">
+    <div class="container-xl d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-between text-center text-md-start gap-2">
       <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
       <div class="mt-2 mt-md-0">
         <a href="{{ route('terms') }}" class="text-muted me-3">Terms & Conditions</a>
-        <a href="{{ route('privacy') }}" class="text-muted">Privacy Policy</a>
+        <a href="{{ route('privacy') }}" class="text-muted me-3">Privacy Policy</a>
+        <a href="{{ route('reportabuse') }}" class="text-muted">Report Abuse</a>
       </div>
     </div>
   </footer>

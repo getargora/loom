@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -9,21 +9,6 @@
     <title>Home | Loom</title>
     {% include 'partials/css.twig' %}
     <style>
-      @import url('/assets/fonts/inter/inter.css');
-      :root {
-          --tblr-font-sans-serif: "Inter", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-      }
-      @supports (font-variation-settings: normal) {
-          :root {
-              --tblr-font-sans-serif: "InterVariable", -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-              font-optical-sizing: auto;
-          }
-      }
-      .navbar .container-fluid { min-height: 56px; }
-      footer .text-muted { white-space: nowrap; }
-      @media (max-width: 575.98px) {
-        footer .container a { display:inline-block; margin:0 .25rem; }
-      }
       @media (max-width: 575.98px) {
         .pricing-table thead { 
           display: none; 
@@ -61,7 +46,7 @@
 <body class="d-flex flex-column min-vh-100 bg-light">
     <header>
       <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-        <div class="container-fluid px-3 px-md-4">
+        <div class="container-xl">
                 <a class="navbar-brand d-flex align-items-center" href=".">
                   <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
                 </a>
@@ -70,28 +55,43 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
                     <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
+                        <li class="nav-item">
+                            <a {{ is_current_url('index') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('index')}}">
+                                Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('contact') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('contact')}}">
+                                Contact
+                            </a>
+                        </li>
+
+                        <li class="nav-item d-none d-lg-block">
+                            <span class="nav-link disabled px-2">|</span>
+                        </li>
+
                         {% if auth.isLogin %}
-                        <li class="nav-item">
-                            <a {{ is_current_url('home') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('home')}}">
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a {{ is_current_url('logout') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('logout')}}">
-                                Logout
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('home') ? 'class="btn btn-primary me-2"' : 'class="btn btn-primary me-2"' }} href="{{route('home')}}">
+                                    Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('logout') ? 'class="btn btn-outline-primary"' : 'class="btn btn-outline-primary"' }} href="{{route('logout')}}">
+                                    Logout
+                                </a>
+                            </li>
                         {% else %}
-                        <li class="nav-item">
-                            <a {{ is_current_url('login') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('login')}}">
-                                Login
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a {{ is_current_url('register') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('register')}}">
-                                Register
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('login') ? 'class="btn btn-outline-primary me-2"' : 'class="btn btn-outline-primary me-2"' }} href="{{route('login')}}">
+                                    Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('register') ? 'class="btn btn-primary"' : 'class="btn btn-primary"' }} href="{{route('register')}}">
+                                    Register
+                                </a>
+                            </li>
                         {% endif %}
                     </ul>
                 </div>
@@ -230,11 +230,12 @@
     </main>
 
   <footer class="footer bg-white border-top shadow-sm py-3 mt-auto">
-    <div class="container d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-between text-center text-md-start gap-2">
+    <div class="container-xl d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-between text-center text-md-start gap-2">
       <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
       <div class="mt-2 mt-md-0">
         <a href="{{ route('terms') }}" class="text-muted me-3">Terms & Conditions</a>
-        <a href="{{ route('privacy') }}" class="text-muted">Privacy Policy</a>
+        <a href="{{ route('privacy') }}" class="text-muted me-3">Privacy Policy</a>
+        <a href="{{ route('reportabuse') }}" class="text-muted me-3">Report Abuse</a>
       </div>
     </div>
   </footer>

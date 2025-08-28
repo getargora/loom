@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A skeleton for a PHP application built on Slim Framework 4.">
+    <meta name="author" content="Taras Kondratyuk">
+    <meta name="theme-color" content="#5B099B">
+    <title>Report Abuse | Loom</title>
+    {% include 'partials/css.twig' %}
+</head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+        <div class="container-xl">
+                <a class="navbar-brand d-flex align-items-center" href=".">
+                  <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar">
+                    <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
+                        <li class="nav-item">
+                            <a {{ is_current_url('index') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('index')}}">
+                                Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('contact') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('contact')}}">
+                                Contact
+                            </a>
+                        </li>
+
+                        <li class="nav-item d-none d-lg-block">
+                            <span class="nav-link disabled px-2">|</span>
+                        </li>
+
+                        {% if auth.isLogin %}
+                            <li class="nav-item">
+                                <a {{ is_current_url('home') ? 'class="btn btn-primary me-2"' : 'class="btn btn-primary me-2"' }} href="{{route('home')}}">
+                                    Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('logout') ? 'class="btn btn-outline-primary"' : 'class="btn btn-outline-primary"' }} href="{{route('logout')}}">
+                                    Logout
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a {{ is_current_url('login') ? 'class="btn btn-outline-primary me-2"' : 'class="btn btn-outline-primary me-2"' }} href="{{route('login')}}">
+                                    Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a {{ is_current_url('register') ? 'class="btn btn-primary"' : 'class="btn btn-primary"' }} href="{{route('register')}}">
+                                    Register
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow-1 py-5">
+        <div class="container-xl">
+          <h1 class="display-5 fw-bold text-center mb-4">Report Abuse</h1>
+            <div class="row g-4">
+              <div class="col-12">
+                <div class="card shadow-sm h-100">
+                  <div class="card-body p-4">
+                    <h4 class="card-title mb-3">Report Abuse (24/7)</h4>
+                    <p class="text-muted">Use this channel to report phishing, malware, spam, fraud, illegal content, or network abuse related to domains sponsored by us.</p>
+
+                    <div class="border rounded p-3 mb-3">
+                      <h6 class="mb-2">Abuse Desk (24/7)</h6>
+                      <ul class="list-unstyled mb-0">
+                        <li><strong>Email:</strong> <a href="mailto:abuse@example.tld">abuse@example.tld</a></li>
+                        <li><strong>Hotline:</strong> +1-234-567-9999</li>
+                        <li><strong>Initial acknowledgement:</strong> within 24 hours</li>
+                        <li><strong>Priority handling:</strong> life-threatening / LEA / ongoing harm</li>
+                      </ul>
+                    </div>
+
+                    <h6>What to include</h6>
+                    <ul class="mb-3">
+                      <li>Domain(s) or URL(s) involved</li>
+                      <li>Type of abuse (phishing, malware, spam, CSAM*, fraud, trademark, etc.)</li>
+                      <li>Evidence (email headers, screenshots, logs, WHOIS data, time stamps)</li>
+                      <li>Your contact details for follow-up</li>
+                    </ul>
+                    <p class="small text-muted">*Reports involving child sexual abuse material are fast-tracked and escalated to relevant hotlines/LEA per law.</p>
+
+                    <h6>How we handle reports</h6>
+                    <ol class="mb-3">
+                      <li>Ticket is created and acknowledged within 24h.</li>
+                      <li>We verify registrar sponsorship and assess severity.</li>
+                      <li>For confirmed abuse, proportionate action may include notice to registrant/reseller, DNS/hosting coordination, suspension, or lock—subject to policy and law.</li>
+                      <li>We update the reporter on outcome when appropriate.</li>
+                    </ol>
+
+                    <div class="bg-light border rounded p-3">
+                      <h6 class="mb-2">Escalations & ICANN</h6>
+                      <ul class="mb-0">
+                        <li>WHOIS inaccuracy: <a href="https://www.icann.org/wicf/">ICANN WHOIS Inaccuracy Form</a></li>
+                        <li>Registrar complaint: <a href="https://www.icann.org/compliance/complaint">ICANN Compliance Complaint</a></li>
+                        <li>UDRP/URS for trademark disputes: consult a qualified provider (WIPO, Forum, etc.).</li>
+                      </ul>
+                    </div>
+
+                    <p class="small text-muted mt-3 mb-0">
+                      We balance rapid mitigation with due process, applicable law, and ICANN policies. False or bad-faith reports may be rejected.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="card shadow-sm">
+                  <div class="card-body p-4">
+                    <h5 class="mb-3">Quick FAQs</h5>
+                    <div class="accordion" id="contactAbuseFAQ">
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqOne">
+                          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqOneC">
+                            Do you provide 24/7 abuse handling?
+                          </button>
+                        </h2>
+                        <div id="faqOneC" class="accordion-collapse collapse show" data-bs-parent="#contactAbuseFAQ">
+                          <div class="accordion-body">
+                            Yes. Our abuse email and hotline are monitored 24/7. Life-threatening or ongoing-harm issues are prioritized.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqTwo">
+                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwoC">
+                            How quickly will you respond to abuse reports?
+                          </button>
+                        </h2>
+                        <div id="faqTwoC" class="accordion-collapse collapse" data-bs-parent="#contactAbuseFAQ">
+                          <div class="accordion-body">
+                            We acknowledge within 24 hours and aim to resolve or provide a substantive update within 3 business days, depending on complexity and third-party coordination.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqThree">
+                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqThreeC">
+                            How do Law Enforcement Agencies contact you?
+                          </button>
+                        </h2>
+                        <div id="faqThreeC" class="accordion-collapse collapse" data-bs-parent="#contactAbuseFAQ">
+                          <div class="accordion-body">
+                            LEA can use our priority hotline and legal email. We cooperate consistent with applicable laws and due process and may preserve data upon proper request.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqFour">
+                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqFourC">
+                            Where do I report inaccurate WHOIS data?
+                          </button>
+                        </h2>
+                        <div id="faqFourC" class="accordion-collapse collapse" data-bs-parent="#contactAbuseFAQ">
+                          <div class="accordion-body">
+                            Submit via ICANN’s WHOIS Inaccuracy Form. We review and act per policy, which may include validation requests and holds if not remedied.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+          <div class="text-center mt-5">
+            <div class="alert alert-info alert-dismissible mt-4" role="alert">
+               <div class="alert-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />        </svg>
+               </div>
+                 <h4 class="alert-title">To customize this page, copy <code>report-abuse.twig</code> from <code>resources/views</code> to <code>report-abuse.custom.twig</code> and edit the file as required.</h4>
+                 <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+            </div>
+          </div>
+        </div>
+    </main>
+
+  <footer class="footer bg-white border-top shadow-sm py-3 mt-auto">
+    <div class="container-xl d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-between text-center text-md-start gap-2">
+      <span class="text-muted">&copy; {{ 'now' | date('Y') }}. All rights reserved.</span>
+      <div class="mt-2 mt-md-0">
+        <a href="{{ route('terms') }}" class="text-muted me-3">Terms & Conditions</a>
+        <a href="{{ route('privacy') }}" class="text-muted me-3">Privacy Policy</a>
+        <a href="{{ route('reportabuse') }}" class="text-muted">Report Abuse</a>
+      </div>
+    </div>
+  </footer>
+
+  {% include 'partials/js.twig' %}
+</body>
+</html>
