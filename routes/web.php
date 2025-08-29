@@ -36,6 +36,11 @@ $app->get('/terms', HomeController::class .':terms')->setName('terms');
 $app->get('/privacy', HomeController::class .':privacy')->setName('privacy');
 $app->get('/contact', HomeController::class .':contact')->setName('contact');
 $app->get('/report-abuse', HomeController::class .':reportabuse')->setName('reportabuse');
+
+$app->get('/validation/{token}', HomeController::class .':validation')->setName('validation');
+$app->get('/whois', HomeController::class .':whois')->setName('whois');
+$app->post('/lookup', HomeController::class .':lookup')->setName('lookup');
+
 $app->post('/spark/domain/check', [SparkController::class, 'domainCheck']);
 
 $app->group('', function ($route) {

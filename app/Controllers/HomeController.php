@@ -127,6 +127,182 @@ class HomeController extends Controller
 
         return view($response, $template);
     }
+    
+    public function validation(Request $request, Response $response, $args)
+    {
+        $db = $this->container->get('db');
+
+        if ($args) {
+            $args = trim($args);
+
+            if (!preg_match('/^(?:[a-zA-Z0-9]+|[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})$/', $args)) {
+                return $response->withHeader('Location', '/')->withStatus(302);
+            }
+
+            // Look up token in database
+            $client = $db->selectRow('SELECT id FROM users WHERE validation_log = ? LIMIT 1', [ $args ]);
+
+            // If token is found and not yet validated, update database and display success message
+            if ($client && $client['validation_log'] == null) {
+                $contact_id = $client['id'];
+                $db->update(
+                    'users',
+                    [ 
+                        'validation'     => 1,
+                        'validation_log' => null
+                    ],
+                    [ 'id' => (int) $contact_id ]
+                );
+                $message = 'Contact information validated successfully!';
+            }
+            // If token is not found or already validated, display error message
+            else {
+                $message = 'Error: Invalid or already validated validation token.';
+            }
+        } else {
+            $message = 'Please provide a validation token.';
+        }
+
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'validation.custom.twig') 
+                    ? 'validation.custom.twig' 
+                    : 'validation.twig';
+
+        return view($response, $template, [
+            'message' => $message,
+        ]);
+    }
+    
+    public function whois(Request $request, Response $response)
+    {
+        $basePath = dirname(__DIR__, 2) . '/resources/views/';
+        $template = file_exists($basePath . 'whois.custom.twig') 
+                    ? 'whois.custom.twig' 
+                    : 'whois.twig';
+
+        return view($response, $template);
+    }
+    
+    public function lookup(Request $request, Response $response)
+    {
+        if ($request->getMethod() === 'POST') {
+            // Retrieve POST data
+            $data = $request->getParsedBody();
+
+            // WHOIS server
+            $whoisServer = envi('WHOIS_SERVER');
+
+            // RDAP server
+            $rdap_url = envi('RDAP_SERVER');
+
+            $domain = $data['domain'];
+            $type = $data['type'];
+            $rdapServer = 'https://' . $rdap_url . '/domain/';
+
+            $sanitized_domain = filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
+
+            // Check if the domain is in Unicode and convert it to Punycode
+            if (mb_check_encoding($domain, 'UTF-8') && !filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+                $punycodeDomain = idn_to_ascii($domain, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+
+                if ($punycodeDomain !== false) {
+                    $domain = $punycodeDomain;
+                } else {
+                    $payload = ['error' => 'Invalid domain.'];
+                    $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                    return $response
+                        ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                        ->withStatus(200);
+                }
+            }
+
+            $sanitized_domain = filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME);
+
+            if ($sanitized_domain) {
+                $domain = $sanitized_domain;
+            } else {
+                $payload = ['error' => 'Invalid domain.'];
+                $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                return $response
+                    ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                    ->withStatus(200);
+            }
+
+            $sanitized_type = filter_var($type, FILTER_SANITIZE_STRING);
+
+            if ($sanitized_type === 'whois' || $sanitized_type === 'rdap') {
+                $type = $sanitized_type;
+            } else {
+                $payload = ['error' => 'Invalid input.'];
+                $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                return $response
+                    ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                    ->withStatus(200);
+            }
+
+            if ($type === 'whois') {
+                $output = '';
+                $socket = fsockopen($whoisServer, 43, $errno, $errstr, 30);
+
+                if (!$socket) {
+                    $payload = ['error' => 'Error fetching WHOIS data.'];
+                    $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                    return $response
+                        ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                        ->withStatus(200);
+                }
+                    
+                fwrite($socket, $domain . "\r\n");
+                while (!feof($socket)) {
+                    $output .= fgets($socket);
+                }
+                fclose($socket);
+            } elseif ($type === 'rdap') {
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $rdapServer . $domain);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+                $output = curl_exec($ch);
+
+                if (curl_errno($ch)) {
+                    $payload = ['error' => 'cURL error: ' . curl_error($ch)];
+                    curl_close($ch);
+                    $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                    return $response
+                        ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                        ->withStatus(200);
+                }
+
+                curl_close($ch);
+
+                if (!$output) {
+                    $payload = ['error' => 'Error fetching RDAP data.'];
+                    $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+                    return $response
+                        ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                        ->withStatus(200);
+                }
+            }
+
+            if ($type === 'whois') {
+                // WHOIS always plain text
+                $response->getBody()->write($output);
+                return $response
+                    ->withHeader('Content-Type', 'text/plain; charset=utf-8')
+                    ->withStatus(200);
+            }
+            elseif ($type === 'rdap') {
+                // RDAP always JSON
+                $response->getBody()->write($output);
+                return $response
+                    ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                    ->withStatus(200);
+            }
+        } else {
+            return $response->withHeader('Location', '/whois')->withStatus(302);
+        }
+    }
 
     public function dashboard(Request $request, Response $response)
     {

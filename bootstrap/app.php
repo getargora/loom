@@ -293,6 +293,9 @@ $csrfMiddleware = function ($request, $handler) use ($container) {
     if ($path && $path === '/spark/domain/check') {
         return $handler->handle($request);
     }
+    if ($path && $path === '/lookup') {
+        return $handler->handle($request);
+    }
     if ($path && $path === '/token-well') {
         $csrf->generateToken();
         return $handler->handle($request);

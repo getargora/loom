@@ -6,7 +6,7 @@
     <meta name="description" content="A skeleton for a PHP application built on Slim Framework 4.">
     <meta name="author" content="Taras Kondratyuk">
     <meta name="theme-color" content="#5B099B">
-    <title>Terms & Conditions | Loom</title>
+    <title>Contact Validation | Loom</title>
     {% include 'partials/css.twig' %}
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
@@ -67,53 +67,32 @@
 
     <main class="flex-grow-1 py-5">
         <div class="container-xl">
-          <h1 class="display-5 fw-bold text-center mb-4">Information for Registrants</h1>
-          <div class="card shadow-sm mb-4">
-            <div class="card-body p-4">
-              <ul>
-                <li><a href="https://www.icann.org/resources/pages/approved-with-specs-2013-09-17-en#registrant" target="_blank">Registrants’ Benefits and Responsibilities Specification</a></li>
-                <li><a href="https://www.icann.org/registrants" target="_blank">Registrant Educational Information</a></li>
-                <li><a href="https://www.icann.org/resources/pages/registrars/consensus-policies-en" target="_blank">ICANN Consensus Policies</a></li>
-                <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
-                <hr />
-                <li><a href="#">Registry Policy: .xx</a></li>
-              </ul>
+          <h1 class="display-5 fw-bold text-center mb-4">Contact Validation</h1>
+          <p>This page confirms the accuracy of contact information for domain registrants, as required by ICANN regulations.</p>
+            <div class="row">
+                <article class="span12 data-block">
+                    <div class="data-container">
+                        <section>
+                            {% if message is defined %}
+                                {% if 'Error' in message %}
+                                    <div class="alert alert-warning">{{ message|e }}</div>
+                                {% else %}
+                                    <div class="alert alert-info">{{ message|e }}</div>
+                                {% endif %}
+                            {% else %}
+                                <div class="alert alert-warning">No validation token provided in the URL.</div>
+                            {% endif %}
+                        </section>
+                    </div>
+                </article>
             </div>
-          </div>
-
-          <h1 class="display-5 fw-bold text-center mb-4">Terms & Conditions</h1>
-          <div class="card shadow-sm">
-            <div class="card-body p-4">
-              <p class="text-muted">
-                Welcome to Loom. These Terms & Conditions ("Terms") govern your access to and use of our application, services, and content.
-              </p>
-
-              <h5>1. Acceptance of Terms</h5>
-              <p>By registering or using Loom, you agree to be bound by these Terms. If you do not agree, please do not use the service.</p>
-
-              <h5>2. User Accounts</h5>
-              <p>You are responsible for your account, including keeping your login credentials secure. You may not use another user's account without permission.</p>
-
-              <h5>3. Use of Services</h5>
-              <p>You agree not to misuse the platform, including attempting to access areas or data you are not authorized to access.</p>
-
-              <h5>4. Privacy</h5>
-              <p>We respect your privacy. Please refer to our <a href="/privacy">Privacy Policy</a> for details on how we collect and process your data.</p>
-
-              <h5>5. Changes</h5>
-              <p>We may update these Terms at any time. Continued use of the service means you accept the changes.</p>
-
-              <h5>6. Contact</h5>
-              <p>If you have any questions, please contact us at <a href="mailto:help@argora.org">help@argora.org</a>.</p>
-            </div>
-          </div>
           
           <div class="text-center mt-5">
             <div class="alert alert-info alert-dismissible mt-4" role="alert">
                <div class="alert-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />        </svg>
                </div>
-                 <h4 class="alert-title">To customize this page, copy <code>terms.twig</code> from <code>resources/views</code> to <code>terms.custom.twig</code> and edit the file as required.</h4>
+                 <h4 class="alert-title">To customize this page, copy <code>contact.twig</code> from <code>resources/views</code> to <code>contact.custom.twig</code> and edit the file as required.</h4>
                  <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
             </div>
           </div>

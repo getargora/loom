@@ -1,6 +1,8 @@
 APP_NAME='Loom'
 APP_ENV=public
 APP_URL=http://localhost
+WHOIS_SERVER=whois.example.com
+RDAP_SERVER=rdap.example.com
 
 LANG=en_US
 UI_LANG=us
