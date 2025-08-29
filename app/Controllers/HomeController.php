@@ -16,6 +16,7 @@ namespace App\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Container\ContainerInterface;
+use App\Lib\Mail;
 
 class HomeController extends Controller
 {
@@ -301,6 +302,128 @@ class HomeController extends Controller
             }
         } else {
             return $response->withHeader('Location', '/whois')->withStatus(302);
+        }
+    }
+
+    public function registrantContact(Request $request, Response $response, $args)
+    {
+        $db = $this->container->get('db');
+        
+        $error   = null;
+        $success = null;
+
+        if ($request->getMethod() === 'POST') {
+            $data = $request->getParsedBody();
+
+            if ($args) {
+                $args = trim($args);
+
+                if (!preg_match('/^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,}|xn--[A-Za-z0-9-]{2,})$/', $args)) {
+                    $error = "Error: Invalid domain format.";
+                }
+
+                $exists = $db->selectValue(
+                    'SELECT 1 FROM services WHERE type = ? AND service_name = ? LIMIT 1',
+                    [ 'domain', $args ]
+                );
+
+                if (!$exists) {
+                    $error = "Error: The specified domain does not exist.";
+                }
+            } else {
+                $error = "Error: You must specify a domain.";
+            }
+
+            // Capture and sanitize form data
+            $name    = isset($data['name'])
+                ? filter_var($data['name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS)
+                : null;
+
+            $email   = isset($data['email'])
+                ? filter_var($data['email'], FILTER_VALIDATE_EMAIL)
+                : null;
+
+            $message = isset($data['message'])
+                ? filter_var($data['message'], FILTER_SANITIZE_FULL_SPECIAL_CHARS)
+                : null;
+
+            // Validate form data
+            if ($name && $email && $message) {
+                $contact = $db->selectRow(
+                    'SELECT
+                        JSON_UNQUOTE(JSON_EXTRACT(config, "$.contacts.registrant.registry_id")) AS registry_id,
+                        JSON_UNQUOTE(JSON_EXTRACT(config, "$.contacts.registrant.name"))        AS name,
+                        JSON_UNQUOTE(JSON_EXTRACT(config, "$.contacts.registrant.email"))       AS email,
+                        JSON_UNQUOTE(JSON_EXTRACT(config, "$.contacts.registrant.phone"))       AS phone,
+                        JSON_UNQUOTE(JSON_EXTRACT(config, "$.contacts.registrant.address"))     AS address
+                     FROM services
+                     WHERE type = ? AND service_name = ? AND status = ?
+                     LIMIT 1',
+                    [ 'domain', $args, 'active' ]
+                );
+
+                $sender = [
+                    'email' => $email,
+                    'name' => $name,
+                ];
+                $recipient = [
+                    'email' => $contact['email'],
+                    'name' => $contact['name'],
+                ];
+
+                try {
+                    Mail::send("Contact Domain Registrant: " . $args, $message, $sender, $recipient);
+                    $success = 'Your message has been sent successfully.';
+                } catch (\Exception $e) {
+                    $error = 'Failed to send the message. Please try again later.';
+                }
+            } else {
+                $error = 'Please fill in all fields with valid information.';
+            }
+            
+            $basePath = dirname(__DIR__, 2) . '/resources/views/';
+            $template = file_exists($basePath . 'registrant-contact.custom.twig') 
+                        ? 'registrant-contact.custom.twig' 
+                        : 'registrant-contact.twig';
+
+            return view($response, $template, [
+                'domain' => $args,
+                'error' => $error,
+                'success' => $success,
+            ]);
+        } else {
+            $error   = null;
+            $success = null;
+
+            if ($args) {
+                $args = trim($args);
+
+                if (!preg_match('/^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:[A-Za-z]{2,}|xn--[A-Za-z0-9-]{2,})$/', $args)) {
+                    $error = "Error: Invalid domain format.";
+                }
+
+                $exists = $db->selectValue(
+                    'SELECT 1 FROM services WHERE type = ? AND service_name = ? LIMIT 1',
+                    [ 'domain', $args ]
+                );
+
+                if (!$exists) {
+                    $error = "Error: The specified domain does not exist.";
+                }
+            } else {
+                $error = "Error: You must specify a domain.";
+            }
+
+            $basePath = dirname(__DIR__, 2) . '/resources/views/';
+            $template = file_exists($basePath . 'registrant-contact.custom.twig') 
+                        ? 'registrant-contact.custom.twig' 
+                        : 'registrant-contact.twig';
+
+            return view($response, $template, [
+                'domain' => $args,
+                'error' => $error,
+                'success' => $success,
+            ]);
         }
     }
 

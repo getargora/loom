@@ -40,6 +40,7 @@ $app->get('/report-abuse', HomeController::class .':reportabuse')->setName('repo
 $app->get('/validation/{token}', HomeController::class .':validation')->setName('validation');
 $app->get('/whois', HomeController::class .':whois')->setName('whois');
 $app->post('/lookup', HomeController::class .':lookup')->setName('lookup');
+$app->map(['GET', 'POST'], '/registrant-contact/{domain}', HomeController::class .':registrantContact')->setName('registrantContact');
 
 $app->post('/spark/domain/check', [SparkController::class, 'domainCheck']);
 

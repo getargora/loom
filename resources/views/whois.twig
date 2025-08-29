@@ -150,7 +150,7 @@
             // Function to update the contact link
             function updateContactLink(domain) {
                 var contactElement = document.getElementById("contact");
-                var contactLink = '/contact?domain=' + encodeURIComponent(domain);
+                var contactLink = '/registrant-contact/' + encodeURIComponent(domain);
                 contactElement.innerHTML = '<a href="' + contactLink + '">Contact the domain registrant</a>';
             }
 
