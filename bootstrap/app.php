@@ -28,12 +28,9 @@ use Punic\Language;
 //     session_start();
 // }
 
-ini_set('session.cookie_secure', '1');
 ini_set('session.cookie_httponly', '1');
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.cookie_lifetime', '0');
-ini_set('session.hash_function', 'sha256');
-ini_set('session.entropy_length', '32');
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/helper.php';
@@ -41,20 +38,22 @@ require __DIR__ . '/helper.php';
 try {
     Dotenv\Dotenv::createImmutable(__DIR__. '/../')->load();
 } catch (\Dotenv\Exception\InvalidPathException $e) {
-    //
+    header('Content-Type: text/plain; charset=utf-8', true, 500);
+    echo "Configuration error: .env file not found.\n";
+    echo "Path: " . realpath(__DIR__ . '/../') . "\n";
+    exit;
 }
 
-//Enable error display in details when APP_ENV=local
-if(envi('APP_ENV')=='local') {
+// Enable error display in details when APP_ENV=local
+if (envi('APP_ENV')=='local') {
     Logger::systemLogs(true);
-}else{
+} else{
     Logger::systemLogs(false);
+    ini_set('session.cookie_secure', '1');
 }
 
-// Set container to create App with on AppFactory
 $container = new Container();
 AppFactory::setContainer($container);
-
 $app = AppFactory::create();
 
 $responseFactory = $app->getResponseFactory();
@@ -190,9 +189,8 @@ $container->set('view', function ($container) {
     }));
 
     // Fetch user currency
-    $db = $container->get('db');
-
     if (isset($_SESSION['auth_user_id'])) {
+        $db = $container->get('db');
         $user_data = $db->selectRow("SELECT id, currency FROM users WHERE id = ? LIMIT 1", [$_SESSION['auth_user_id']]);
         $_SESSION['_currency'] = $user_data['currency'] ?? 'EUR';
     } else {
@@ -217,7 +215,7 @@ $container->set('view', function ($container) {
     });
     $view->getEnvironment()->addFunction($translateFunction);
 
-    //route
+    // Route
     $route = new TwigFunction('route', function ($name) {
         return route($name);
     });
@@ -229,17 +227,11 @@ $container->set('view', function ($container) {
     });
     $view->getEnvironment()->addFunction($routeIs);
 
-    //assets
+    // Assets
     $assets = new TwigFunction('assets', function ($location) {
         return assets($location);
     });
     $view->getEnvironment()->addFunction($assets);
-
-    //Pagination
-    $pagination = new TwigFunction("links", function ($object) {
-
-    });
-    $view->getEnvironment()->addFunction($pagination);
 
     return $view;
 });
