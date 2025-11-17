@@ -11,12 +11,16 @@
  * @link       https://github.com/getargora/foundry
  */
 
+echo "[INFO] Starting cache cleanup...\n";
+
 $cacheDir = realpath(__DIR__ . '/../cache');
 
 if (!$cacheDir || !is_dir($cacheDir)) {
-    echo "Cache directory not found.\n";
+    echo "[ERROR] Cache directory not found. Aborting.\n";
     exit(1);
 }
+
+echo "[INFO] Using cache directory: {$cacheDir}\n";
 
 $files = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($cacheDir, RecursiveDirectoryIterator::SKIP_DOTS),
@@ -39,6 +43,16 @@ foreach ($dirs as $dir) {
     }
 }
 
+// Clear Slim route cache
+$routeCacheFile = $cacheDir . '/routes.php';
+if (file_exists($routeCacheFile)) {
+    if (@unlink($routeCacheFile)) {
+        echo "[INFO] Slim route cache file removed: routes.php\n";
+    } else {
+        echo "[WARN] Could not remove Slim route cache file: routes.php\n";
+    }
+}
+
 $randomFiles = glob($cacheDir . '/*');
 foreach ($randomFiles as $file) {
     if (is_file($file)) {
@@ -46,19 +60,20 @@ foreach ($randomFiles as $file) {
     }
 }
 
-// Clear Slim route cache if it exists
-$routeCacheFile = $cacheDir . '/routes.php';
-if (file_exists($routeCacheFile)) {
-    unlink($routeCacheFile);
-}
+echo "[INFO] Cache cleanup complete.\n";
 
 // Try to restart PHP-FPM 8.3
-echo "Restarting PHP-FPM (php8.3-fpm)...\n";
+echo "[INFO] Restarting PHP-FPM service (php8.3-fpm)...\n";
 exec("sudo systemctl restart php8.3-fpm 2>&1", $restartOutput, $status);
 
 if ($status === 0) {
-    echo "PHP-FPM restarted successfully.\n";
+    echo "[OK]   PHP-FPM restarted successfully.\n";
 } else {
-    echo "Could not restart PHP-FPM automatically.\n";
-    echo "Please run manually: sudo systemctl restart php8.3-fpm\n";
+    echo "[WARN] Could not restart PHP-FPM automatically.\n";
+    echo "[WARN] Please run manually: sudo systemctl restart php8.3-fpm\n";
+    if (!empty($restartOutput)) {
+        echo "[DEBUG] systemctl output:\n" . implode("\n", $restartOutput) . "\n";
+    }
 }
+
+exit(0);
