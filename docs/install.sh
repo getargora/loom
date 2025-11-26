@@ -119,7 +119,6 @@ else
   die "Unsupported OS."
 fi
 
-apt-get update -y
 log "Installing PHP 8.3 and extensions…"
 apt-get install -y composer php8.3 php8.3-cli php8.3-common php8.3-fpm php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-ds php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip php8.3-sqlite3
 
@@ -131,25 +130,46 @@ if [[ "$DB_BACKEND" == "MariaDB" || "$DB_BACKEND" == "PostgreSQL" ]]; then
   esac
 fi
 
-# ---------- Secure PHP config ----------
-log "Hardening PHP (opcache, sessions)…"
-for INI in /etc/php/8.3/cli/php.ini /etc/php/8.3/fpm/php.ini; do
-  [[ -f "$INI" ]] || continue
-  sed -i 's/^;\?opcache.enable=.*/opcache.enable=1/' "$INI"
-  sed -i 's/^;\?opcache.enable_cli=.*/opcache.enable_cli=1/' "$INI"
-  if ! grep -q '^opcache.jit_buffer_size=' "$INI"; then echo "opcache.jit_buffer_size=100M" >> "$INI"; else sed -i 's/^opcache.jit_buffer_size=.*/opcache.jit_buffer_size=100M/' "$INI"; fi
-  if ! grep -q '^opcache.jit=' "$INI"; then echo "opcache.jit=1255" >> "$INI"; else sed -i 's/^opcache.jit=.*/opcache.jit=1255/' "$INI"; fi
+# ---------- Secure PHP configuration ----------
+log "Hardening PHP configuration (sessions, OPCache)…"
 
-  sed -i 's/^;\?session.cookie_secure.*/session.cookie_secure = 1/' "$INI"
-  sed -i 's/^;\?session.cookie_httponly.*/session.cookie_httponly = 1/' "$INI"
-  if ! grep -q '^session.cookie_samesite' "$INI"; then echo 'session.cookie_samesite = "Strict"' >> "$INI"; else sed -i 's/^session.cookie_samesite.*/session.cookie_samesite = "Strict"/' "$INI"; fi
-  if ! grep -q '^session.cookie_domain' "$INI"; then echo 'session.cookie_domain =' >> "$INI"; else sed -i 's/^session.cookie_domain.*/session.cookie_domain =/' "$INI"; fi
-done
+# SESSION SETTINGS (FPM ONLY)
+FPM_INI="/etc/php/8.3/fpm/php.ini"
 
+if [[ -f "$FPM_INI" ]]; then
+  sed -i 's/^;\?session\.cookie_secure.*/session.cookie_secure = 1/' "$FPM_INI"
+  sed -i 's/^;\?session\.cookie_httponly.*/session.cookie_httponly = 1/' "$FPM_INI"
+
+  if ! grep -q '^session\.cookie_samesite' "$FPM_INI"; then
+    echo 'session.cookie_samesite = "Strict"' >> "$FPM_INI"
+  else
+    sed -i 's/^session\.cookie_samesite.*/session.cookie_samesite = "Strict"/' "$FPM_INI"
+  fi
+
+  # Remove forced domain, keep default behavior
+  if grep -q '^session\.cookie_domain' "$FPM_INI"; then
+    sed -i 's/^session\.cookie_domain.*/session.cookie_domain =/' "$FPM_INI"
+  fi
+fi
+
+# OPCACHE SETTINGS (GLOBAL VIA opcache.ini)
 OPC_AVAIL="/etc/php/8.3/mods-available/opcache.ini"
+
 if [[ -f "$OPC_AVAIL" ]]; then
-  if ! grep -q '^opcache.jit=' "$OPC_AVAIL"; then echo "opcache.jit=1255" >> "$OPC_AVAIL"; else sed -i 's/^opcache.jit=.*/opcache.jit=1255/' "$OPC_AVAIL"; fi
-  if ! grep -q '^opcache.jit_buffer_size=' "$OPC_AVAIL"; then echo "opcache.jit_buffer_size=100M" >> "$OPC_AVAIL"; else sed -i 's/^opcache.jit_buffer_size=.*/opcache.jit_buffer_size=100M/' "$OPC_AVAIL"; fi
+  sed -i 's/^;\?opcache\.enable=.*/opcache.enable=1/' "$OPC_AVAIL"
+  sed -i 's/^;\?opcache\.enable_cli=.*/opcache.enable_cli=1/' "$OPC_AVAIL"
+
+  if ! grep -q '^opcache\.jit_buffer_size=' "$OPC_AVAIL"; then
+    echo "opcache.jit_buffer_size=100M" >> "$OPC_AVAIL"
+  else
+    sed -i 's/^opcache\.jit_buffer_size=.*/opcache.jit_buffer_size=100M/' "$OPC_AVAIL"
+  fi
+
+  if ! grep -q '^opcache\.jit=' "$OPC_AVAIL"; then
+    echo "opcache.jit=1255" >> "$OPC_AVAIL"
+  else
+    sed -i 's/^opcache\.jit=.*/opcache.jit=1255/' "$OPC_AVAIL"
+  fi
 fi
 
 systemctl restart php8.3-fpm
@@ -180,24 +200,41 @@ case "$DB_BACKEND" in
     if [[ "$OS_ID" == "ubuntu" ]]; then
       # MariaDB 11.4 for noble / 10.11 for jammy as in README
       if [[ "$OS_CODENAME" == "noble" ]]; then
-        echo "deb [signed-by=/etc/apt/keyrings/mariadb-keyring.pgp] https://deb.mariadb.org/11.4/ubuntu noble main" > /etc/apt/sources.list.d/mariadb.list
-      else
         cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
+# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
+# https://mariadb.org/download/
 X-Repolib-Name: MariaDB
 Types: deb
-URIs: https://deb.mariadb.org/10.11/ubuntu
-Suites: ${OS_CODENAME}
-Components: main
+# URIs: https://deb.mariadb.org/11/ubuntu
+URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
+Suites: noble
+Components: main main/debug
+Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
+EOF
+      fi
+      else
+        cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
+# MariaDB 11 Rolling repository list - created 2025-04-08 06:39 UTC
+# https://mariadb.org/download/
+X-Repolib-Name: MariaDB
+Types: deb
+# URIs: https://deb.mariadb.org/11/ubuntu
+URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
+Suites: jammy
+Components: main main/debug
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 EOF
       fi
     else
       # Debian bookworm/trixie -> 10.11 as per README (you can bump here if you wish)
       cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
+# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
+# https://mariadb.org/download/
 X-Repolib-Name: MariaDB
 Types: deb
-URIs: https://deb.mariadb.org/10.11/debian
-Suites: ${OS_CODENAME}
+# URIs: https://deb.mariadb.org/11/ubuntu
+URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/debian
+Suites: bookworm
 Components: main
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 EOF
@@ -208,7 +245,7 @@ EOF
     apt-get install -y mariadb-server mariadb-client
     log "Securing MariaDB (mysql_secure_installation)…"
     # Non-interactive secure setup: set root auth to unix_socket and remove test DB, etc.
-    mysql --user=root <<'SQL' || true
+    mariadb --user=root <<'SQL' || true
 ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket;
 DELETE FROM mysql.user WHERE User='';
 DROP DATABASE IF EXISTS test;
@@ -217,7 +254,7 @@ FLUSH PRIVILEGES;
 SQL
 
     log "Creating database and user…"
-    mysql --user=root <<SQL
+    mariadb --user=root <<SQL
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
 GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
@@ -263,7 +300,7 @@ log "Creating Loom project in $INSTALL_PATH …"
 mkdir -p "$INSTALL_PATH"
 if [[ -z "$(ls -A "$INSTALL_PATH")" ]]; then
   COMPOSER_ALLOW_SUPERUSER=1 composer create-project --no-interaction --prefer-dist \
-  argora/loom:^1.0.0-alpha1 "$INSTALL_PATH"
+  argora/loom:^1.0.0-alpha6 "$INSTALL_PATH"
 else
   warn "$INSTALL_PATH is not empty. Skipping composer create-project."
 fi
