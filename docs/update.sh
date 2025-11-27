@@ -65,7 +65,7 @@ systemctl stop caddy
 
 # Clear cache
 echo "Clearing cache..."
-php "$loom_path/bin/clear_cache.php"
+php "$loom_path/bin/clear-cache.php"
 if systemctl list-units --type=service | grep -qE '^php[0-9.]*-fpm\.service'; then
   svc=$(systemctl list-units --type=service | awk '/php[0-9.]*-fpm\.service/ {print $1; exit}')
   systemctl restart "$svc"

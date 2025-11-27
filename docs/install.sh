@@ -299,10 +299,9 @@ esac
 log "Creating Loom project in $INSTALL_PATH …"
 mkdir -p "$INSTALL_PATH"
 if [[ -z "$(ls -A "$INSTALL_PATH")" ]]; then
-  COMPOSER_ALLOW_SUPERUSER=1 composer create-project --no-interaction --prefer-dist \
-  argora/loom:^1.0.0-alpha6 "$INSTALL_PATH"
+  git clone https://github.com/getargora/loom.git "$INSTALL_PATH"
 else
-  warn "$INSTALL_PATH is not empty. Skipping composer create-project."
+  warn "$INSTALL_PATH is not empty. Skipping git clone."
 fi
 
 # ---------- .env configuration ----------
