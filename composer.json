@@ -73,14 +73,17 @@
     },
     "scripts": {
       "post-install-cmd": [
-        "@copy-tabler"
+        "@copy-tabler",
+        "@utopia-domains-import"
       ],
       "post-update-cmd": [
-        "@copy-tabler"
+        "@copy-tabler",
+        "@utopia-domains-import"
       ],
       "copy-tabler": [
         "cp -r vendor/argora/tabler-assets/public/* public/assets/"
-      ]
+      ],
+      "utopia-domains-import": "php vendor/utopia-php/domains/data/import.php"
     },
     "support": {
         "issues": "https://github.com/getargora/loom/issues",
