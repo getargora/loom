@@ -35,7 +35,6 @@ class UsersController extends Controller
 
     public function createUser(Request $request, Response $response)
     {
-        // Registrars can not create new users, then need to ask the registry
         if ($_SESSION["auth_roles"] != 0) {
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
