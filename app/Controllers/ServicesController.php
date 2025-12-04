@@ -353,7 +353,8 @@ class ServicesController extends Controller
             $years = (int) ($data['renewalYears'] ?? 1);
 
             $domain = new uDomain($domainName);
-            $tld = '.' . strtolower($domain->getTLD());
+            $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+            $tld = '.' . strtolower($tldPart);
 
             try {
                 $db->beginTransaction();
@@ -462,8 +463,9 @@ class ServicesController extends Controller
                 );
                 $pricing = json_decode($provider['pricing'], true);
 
-                $parts = explode('.', $config['domain']);
-                $tld = '.' . strtolower(end($parts));
+                $domain = new uDomain($config['domain']);
+                $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+                $tld = '.' . strtolower($tldPart);
 
                 $renewOptions = $pricing[$tld]['renew'] ?? [];
 

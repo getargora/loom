@@ -766,7 +766,20 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     throw new \Exception('Failed to connect to EPP server.');
                 }
 
-                $roles = ['registrant','admin','tech','billing'];
+                $tld = strtolower($domainData[0]['tld'] ?? '');
+                $tld = ltrim($tld, '.');
+
+                $last = substr(strrchr($tld, '.'), 1);
+                if ($last === false) {
+                    $last = $tld;
+                }
+
+                if (strlen($last) === 2 && ctype_alpha($last)) {
+                    $roles = ['registrant','admin','tech','billing'];
+                } else {
+                    $roles = [];
+                }
+
                 $roleContactIds = [];
                 $fingerprints = [];
 
