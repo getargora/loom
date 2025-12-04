@@ -311,7 +311,8 @@ class OrdersController extends Controller
             }
 
             $domain = new uDomain($domainName);
-            $tld = '.' . strtolower($domain->getTLD());
+            $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+            $tld = '.' . strtolower($tldPart);
 
             try {
                 $db->beginTransaction();
@@ -503,7 +504,8 @@ class OrdersController extends Controller
             $asciiDomain = idn_to_ascii($domainName, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
 
             $domain = new uDomain($asciiDomain);
-            $tld = '.' . strtolower($domain->getTLD());
+            $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+            $tld = '.' . strtolower($tldPart);
 
             foreach ($providers as $provider) {
                 $pricingData = json_decode($provider['pricing'], true);
@@ -571,7 +573,8 @@ class OrdersController extends Controller
 
 
             $domain = new uDomain($domainName);
-            $tld = '.' . strtolower($domain->getTLD());
+            $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+            $tld = '.' . strtolower($tldPart);
 
             try {
                 $db->beginTransaction();
@@ -686,7 +689,8 @@ class OrdersController extends Controller
             $asciiDomain = idn_to_ascii($domainName, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
 
             $domain = new uDomain($asciiDomain);
-            $tld = '.' . strtolower($domain->getTLD());
+            $tldPart = $domain->getSuffix() ?: $domain->getTLD();
+            $tld = '.' . strtolower($tldPart);
 
             foreach ($providers as $provider) {
                 $pricingData = json_decode($provider['pricing'], true);
