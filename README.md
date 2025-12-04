@@ -30,6 +30,7 @@ Argora Loom works with a variety of external services through its modular archit
 
 - **Namingo** – ✅
 - **.fi** – ✅
+- **it.com** – ✅
 - **CentralNic** – ✅🧪
 - **CoCCA** – ✅🧪
 - **CORE** – ✅🧪
@@ -38,7 +39,6 @@ Argora Loom works with a variety of external services through its modular archit
 - **Google** – ✅🧪
 - **Hello Registry** – ✅🧪
 - **Identity Digital** – ✅🧪
-- **it.com** – ✅🧪
 - **RyCE** – ✅🧪
 - **Tucows Registry** – ✅🧪
 
