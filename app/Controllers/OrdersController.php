@@ -75,7 +75,7 @@ class OrdersController extends Controller
     public function createOrder(Request $request, Response $response): Response
     {
         $db = $this->container->get('db');
-        $providers = $db->select("SELECT id, name, type, api_endpoint, credentials, pricing FROM providers WHERE status = 'active'");
+        $providers = $db->select("SELECT id, name, type, api_endpoint, credentials, pricing FROM providers WHERE status = 'active'") ?? [];
 
         $domainProducts = [];
         $otherProducts = [];
