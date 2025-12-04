@@ -625,7 +625,7 @@ function getDomainConfig($domains, \Pinga\Db\PdoDatabase $db): array
         }
 
         $domain = new uDomain($asciiDomain);
-        $tld = strtolower($domain->getTLD());
+        $tld = strtolower($domain->getSuffix() ?: $domain->getTLD());
 
         // Get all active domain providers
         $providers = $db->select('SELECT * FROM providers WHERE type = \'domain\' AND status = \'active\'');
