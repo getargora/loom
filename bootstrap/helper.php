@@ -678,7 +678,8 @@ function getDomainConfig($domains, \Pinga\Db\PdoDatabase $db): array
             'username' => $credentials['auth']['username'],
             'password' => $credentials['auth']['password'],
             'client_id' => $credentials['client_id'] ?? null,
-            'provider_id' => $matchedProvider['id']
+            'provider_id' => $matchedProvider['id'],
+            'contact_roles' => $credentials['contactRoles'] ?? ['registrant','admin','tech','billing']
         ];
     }
 
@@ -766,19 +767,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     throw new \Exception('Failed to connect to EPP server.');
                 }
 
-                $tld = strtolower($domainData[0]['tld'] ?? '');
-                $tld = ltrim($tld, '.');
-
-                $last = substr(strrchr($tld, '.'), 1);
-                if ($last === false) {
-                    $last = $tld;
-                }
-
-                if (strlen($last) === 2 && ctype_alpha($last)) {
-                    $roles = ['registrant','admin','tech','billing'];
-                } else {
-                    $roles = [];
-                }
+                $roles = $domainData[0]['contact_roles'] ?? ['registrant','admin','tech','billing'];
 
                 $roleContactIds = [];
                 $fingerprints = [];
