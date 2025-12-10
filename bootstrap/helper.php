@@ -860,15 +860,29 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                 $domainParams = [
                     'domainname' => $serviceData['domain'] ?? 'example.invalid',
                     'period'     => $serviceData['years'] ?? 1,
-                    'nss'        => $serviceData['nameservers'] ?? ['ns1.default.com', 'ns2.default.com'],
-                    'registrant' => $roleContactIds['registrant'],
-                    'contacts'   => [
-                        'admin'   => $roleContactIds['admin'],
-                        'tech'    => $roleContactIds['tech'],
-                        'billing' => $roleContactIds['billing'],
-                    ],
                     'authInfoPw' => $serviceData['authInfo'] ?? 'AutoGenAuth123!',
                 ];
+
+                $nameservers = array_filter($serviceData['nameservers'] ?? [], static function ($ns) {
+                    return trim((string)$ns) !== '';
+                });
+                if (!empty($nameservers)) {
+                    $domainParams['nss'] = $nameservers;
+                }
+
+                if (!empty($roleContactIds['registrant'] ?? null)) {
+                    $domainParams['registrant'] = $roleContactIds['registrant'];
+                }
+
+                $contacts = [];
+                foreach (['admin', 'tech', 'billing'] as $role) {
+                    if (!empty($roleContactIds[$role] ?? null)) {
+                        $contacts[$role] = $roleContactIds[$role];
+                    }
+                }
+                if (!empty($contacts)) {
+                    $domainParams['contacts'] = $contacts;
+                }
 
                 $domainParams = extendParamsForRegistry('domain', $domainParams, $registryType, $serviceData);
                 $domainCreate = $epp->domainCreate($domainParams);

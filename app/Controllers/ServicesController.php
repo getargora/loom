@@ -238,8 +238,114 @@ class ServicesController extends Controller
                                 $domainUpdateNS = $epp->domainUpdateNS($params);
 
                                 if (array_key_exists('error', $domainUpdateNS)) {
-                                    $messages[] = 'Nameserver update failed: ' . $domainUpdateNS['error'];
-                                    $db->insert('service_logs', ['service_id' => $args, 'event' => 'nameserver_update_failed', 'actor_type' => 'system', 'actor_id' => $_SESSION["auth_user_id"], 'details' => $config['domain'] . '|' . $domainUpdateNS['error']]);
+                                    // Try to auto-create host objects for the NSes and retry once
+                                    $hostsCreated = false;
+
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        $key = 'ns' . $i;
+                                        if (empty($params[$key])) {
+                                            continue;
+                                        }
+
+                                        $host = $params[$key];
+
+                                        // Resolve A + AAAA
+                                        $ips = [];
+
+                                        $aRecords = @dns_get_record($host, DNS_A);
+                                        if (is_array($aRecords)) {
+                                            foreach ($aRecords as $r) {
+                                                if (!empty($r['ip'])) {
+                                                    $ips[] = $r['ip'];
+                                                }
+                                            }
+                                        }
+
+                                        $aaaaRecords = @dns_get_record($host, DNS_AAAA);
+                                        if (is_array($aaaaRecords)) {
+                                            foreach ($aaaaRecords as $r) {
+                                                if (!empty($r['ipv6'])) {
+                                                    $ips[] = $r['ipv6'];
+                                                }
+                                            }
+                                        }
+
+                                        if (empty($ips)) {
+                                            $db->insert('service_logs', [
+                                                'service_id' => $args,
+                                                'event'      => 'host_create_skipped',
+                                                'actor_type' => 'system',
+                                                'actor_id'   => $_SESSION["auth_user_id"],
+                                                'details'    => $config['domain'] . '|No A/AAAA records for ' . $host,
+                                            ]);
+                                            continue;
+                                        }
+
+                                        $tld = strtolower(trim($domainData[0]['tld'] ?? ''));
+                                        $includeIP = false;
+
+                                        if ($tld !== '' && str_ends_with(strtolower($host), '.' . $tld)) {
+                                            $includeIP = true;
+                                        }
+
+                                        if ($includeIP && !empty($ips)) {
+                                            $hostParams = [
+                                                'hostname'  => $host,
+                                                'ipaddress' => $ips[0],
+                                            ];
+                                        } else {
+                                            $hostParams = [
+                                                'hostname'  => $host,
+                                            ];
+                                        }
+
+                                        $hostCreate = $epp->hostCreate($hostParams);
+
+                                        if (array_key_exists('error', $hostCreate)) {
+                                            $db->insert('service_logs', [
+                                                'service_id' => $args,
+                                                'event'      => 'host_create_failed',
+                                                'actor_type' => 'system',
+                                                'actor_id'   => $_SESSION["auth_user_id"],
+                                                'details'    => $config['domain'] . '|' . $host . '|' . $hostCreate['error'],
+                                            ]);
+                                        } else {
+                                            $hostsCreated = true;
+                                            $db->insert('service_logs', [
+                                                'service_id' => $args,
+                                                'event'      => 'host_created',
+                                                'actor_type' => 'system',
+                                                'actor_id'   => $_SESSION["auth_user_id"],
+                                                'details'    => $config['domain'] . '|' . $host . '|Host created',
+                                            ]);
+                                        }
+                                    }
+
+                                    // Retry once if we created at least one host
+                                    if ($hostsCreated) {
+                                        $domainUpdateNS = $epp->domainUpdateNS($params);
+
+                                        if (array_key_exists('error', $domainUpdateNS)) {
+                                            $messages[] = 'Nameserver update failed after auto hostCreate: ' . $domainUpdateNS['error'];
+                                            $db->insert('service_logs', [
+                                                'service_id' => $args,
+                                                'event'      => 'nameserver_update_failed_after_host_create',
+                                                'actor_type' => 'system',
+                                                'actor_id'   => $_SESSION["auth_user_id"],
+                                                'details'    => $config['domain'] . '|' . $domainUpdateNS['error']
+                                            ]);
+                                        } else {
+                                            $messages[] = 'Nameserver update successful after auto hostCreate.';
+                                            $config['nameservers'] = [];
+
+                                            for ($i = 1; $i <= 13; $i++) {
+                                                $key = 'ns' . $i;
+                                                if (!empty($params[$key])) {
+                                                    $config['nameservers'][] = $params[$key];
+                                                }
+                                            }
+                                        }
+                                    }
                                 } else {
                                     $messages[] = 'Nameserver update successful.';
                                     $config['nameservers'] = [];
@@ -287,6 +393,10 @@ class ServicesController extends Controller
                                     ];
                                 }
                             }
+
+                            // Re-fetch fresh domain info to avoid drift
+                            $info = $epp->domainInfo(['domainname' => $config['domain'],'authInfoPw' => '']);
+                            $config['status'] = $info['status'] ?? $config['status'] ?? [];
 
                             $currentDateTime = new \DateTime();
                             $updatedAt = $currentDateTime->format('Y-m-d H:i:s.v');
