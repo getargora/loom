@@ -417,7 +417,12 @@ class SparkController extends Controller
                 $x = 1;
                 foreach ($domainCheck['domains'] as $domain) {
                     $reason = $domain['avail'] ? null : ($domain['reason'] ?? null);
-                    $transferable = (!$domain['avail'] && is_string($reason) && strcasecmp(trim($reason), 'In use') === 0);
+
+                    $transferable = (
+                        !$domain['avail']
+                        && is_string($reason)
+                        && in_array(strtolower(trim($reason)), ['in use', 'object exists'], true)
+                    );
 
                     $fqdn = mb_strtolower($domain['name']);
 

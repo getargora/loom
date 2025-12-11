@@ -717,6 +717,17 @@ function getRegistryExtensionByTld(string $tld): string
     ];
 
     $tld = strtolower(ltrim($tld, '.'));
+    
+    // If the TLD has multiple labels, check the last one.
+    $parts = explode('.', $tld);
+    if (count($parts) > 1) {
+        $last = end($parts);
+
+        // If last label is exactly 2 chars, treat as ccTLD
+        if (strlen($last) === 2 && isset($tldMap[$last])) {
+            return $tldMap[$last];
+        }
+    }
 
     return $tldMap[$tld] ?? 'generic';
 }
