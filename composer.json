@@ -1,6 +1,6 @@
 {
     "name": "argora/loom",
-    "description": "Argora Loom – unified control panel for managing domains, DNS zones, servers, and resellers",
+    "description": "Loom – unified control panel for managing domains, DNS zones, servers, and resellers",
     "type": "project",
     "keywords": [
         "php",
@@ -16,15 +16,14 @@
         "authentication",
         "twig",
         "template",
-        "orm",
-        "argora"
+        "orm"
     ],
     "homepage": "https://github.com/getargora/loom",
     "license": "MIT",
     "authors": [
         {
-            "name": "Taras Kondratyuk",
-            "email": "help@argora.org"
+            "name": "Namingo Team",
+            "email": "help@namingo.org"
         }
     ],
     "require": {
@@ -60,7 +59,7 @@
         "stripe/stripe-php": "^19.0.0",
         "adyen/php-api-library": "^28.1",
         "argora/tabler-assets": "^1.4",
-        "pinga/tembo": "^1.1.1",
+        "pinga/tembo": "^1.1.2",
         "utopia-php/domains": "^0.8.0",
         "egulias/email-validator": "^4.0",
         "brick/postcode": "^0.5.0",
