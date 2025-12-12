@@ -554,7 +554,7 @@ function sign($ts, $method, $path, $body, $secret_key) {
     return hash_hmac('sha256', $stringToSign, $secret_key);
 }
 
-function connectToEpp(
+function connectEpp(
     string $registry,
     string $host,
     int $port,
@@ -563,46 +563,53 @@ function connectToEpp(
     string $local_pk,
     string $passphrase,
     string $clID,
-    string $pw
+    string $pw,
+    array $loginExtensions = []
 ) {
-    try {
-        $epp = EppRegistryFactory::create($registry);
+    $epp = EppRegistryFactory::create($registry);
 
-        $info = array(
-            'host' => $host,
-            'port' => $port,
-            'timeout' => 30,
-            'tls' => envi('TLS'),
-            'bind' => filter_var(envi('BIND'), FILTER_VALIDATE_BOOLEAN),
-            'bindip' => envi('BIND_IP'),
-            'verify_peer' => filter_var(envi('VERIFY_PEER'), FILTER_VALIDATE_BOOLEAN),
-            'verify_peer_name' => filter_var(envi('VERIFY_PEER_NAME'), FILTER_VALIDATE_BOOLEAN),
-            'verify_host' => filter_var(envi('VERIFY_HOST'), FILTER_VALIDATE_BOOLEAN),
-            'local_cert' => $local_cert,
-            'local_pk' => $local_pk,
-            'cafile' => $cafile ?? '',
-            'passphrase' => $passphrase ?? '',
-            'allow_self_signed' => filter_var(envi('SELF_SIGNED'), FILTER_VALIDATE_BOOLEAN),
-        );
-
-        $epp->connect($info);
-
-        $login = $epp->login(array(
-            'clID' => $clID,
-            'pw' => $pw,
-            'prefix' => 'plexepp'
-        ));
-
-        if (isset($login['error'])) {
-            throw new \Exception('Login Error: ' . $login['error']);
-        }
-
-        return $epp;
-    } catch (\Pinga\Tembo\Exception\EppException $e) {
-        //throw new \Exception("Error: " . $e->getMessage());
-    } catch (Throwable $e) {
-        //throw new \Exception("Error: " . $e->getMessage());
+    // Default extensions only for 'generic' registry
+    if ($loginExtensions === [] && $registry === 'generic') {
+        $loginExtensions = [
+            'urn:ietf:params:xml:ns:secDNS-1.1',
+            'urn:ietf:params:xml:ns:rgp-1.0',
+        ];
     }
+
+    $info = [
+        'host'             => $host,
+        'port'             => $port,
+        'timeout'          => 30,
+        'tls'              => envi('TLS'),
+        'bind'             => filter_var(envi('BIND'), FILTER_VALIDATE_BOOLEAN),
+        'bindip'           => envi('BIND_IP'),
+        'verify_peer'      => filter_var(envi('VERIFY_PEER'), FILTER_VALIDATE_BOOLEAN),
+        'verify_peer_name' => filter_var(envi('VERIFY_PEER_NAME'), FILTER_VALIDATE_BOOLEAN),
+        'verify_host'      => filter_var(envi('VERIFY_HOST'), FILTER_VALIDATE_BOOLEAN),
+        'local_cert'       => $local_cert ?? '',
+        'local_pk'         => $local_pk ?? '',
+        'cafile'           => $cafile ?? '',
+        'passphrase'       => $passphrase ?? '',
+        'allow_self_signed'=> filter_var(envi('SELF_SIGNED'), FILTER_VALIDATE_BOOLEAN),
+    ];
+
+    if (!empty($loginExtensions)) {
+        $epp->setLoginExtensions($loginExtensions);
+    }
+
+    $epp->connect($info);
+
+    $login = $epp->login([
+        'clID'   => $clID,
+        'pw'     => $pw,
+        'prefix' => 'loom',
+    ]);
+
+    if (isset($login['error'])) {
+        throw new RuntimeException('EPP login failed: ' . $login['error']);
+    }
+
+    return $epp;
 }
 
 function getDomainConfig($domains, \Pinga\Db\PdoDatabase $db): array
@@ -762,7 +769,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
 
                 $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
 
-                $epp = connectToEpp(
+                $epp = connectEpp(
                     $registryType,
                     $domainData[0]['host'],
                     $domainData[0]['port'],
@@ -773,10 +780,6 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     $domainData[0]['username'],
                     $domainData[0]['password']
                 );
-
-                if (!$epp) {
-                    throw new \Exception('Failed to connect to EPP server.');
-                }
 
                 $roles = $domainData[0]['contact_roles'] ?? ['registrant','admin','tech','billing'];
 
@@ -947,7 +950,7 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
 
                 $registryType = getRegistryExtensionByTld('.' . $domainData[0]['tld']);
 
-                $epp = connectToEpp(
+                $epp = connectEpp(
                     $registryType,
                     $domainData[0]['host'],
                     $domainData[0]['port'],
@@ -958,10 +961,6 @@ function provisionService(\Pinga\Db\PdoDatabase $db, int $invoiceId, int $actorI
                     $domainData[0]['username'],
                     $domainData[0]['password']
                 );
-
-                if (!$epp) {
-                    throw new \Exception('Failed to connect to EPP server.');
-                }
 
                 $domainRenew = $epp->domainRenew([
                     'domainname' => $serviceData['domain'] ?? throw new \Exception('Domain name missing'),

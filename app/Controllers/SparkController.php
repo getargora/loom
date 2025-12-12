@@ -389,7 +389,7 @@ class SparkController extends Controller
         $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
 
         try {
-            $epp = connectToEpp(
+            $epp = connectEpp(
                 $registryType,
                 $domainData[0]['host'],
                 $domainData[0]['port'],
@@ -400,10 +400,6 @@ class SparkController extends Controller
                 $domainData[0]['username'],
                 $domainData[0]['password']
             );
-
-            if (!$epp) {
-                throw new \Exception('Failed to connect to EPP server.');
-            }
 
             $domainCheck = $epp->domainCheck(['domains' => $domains]);
 
