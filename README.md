@@ -41,6 +41,7 @@ Argora Loom works with a variety of external services through its modular archit
 - **Google** – ✅🧪
 - **Hello Registry** – ✅🧪
 - **Identity Digital** – ✅🧪
+- **VeriSign** – ✅🧪
 
 ### Hosting
 
