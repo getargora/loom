@@ -371,7 +371,11 @@ class SparkController extends Controller
 
         $params = json_decode($request->getBody()->getContents(), true);
         $db = $this->container->get('db');
-        $domains = $params['domains'] ?? [];
+        $domains = array_map(
+            fn($d) => idn_to_ascii(mb_strtolower($d, 'UTF-8'), IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46)
+                ?: mb_strtolower($d, 'UTF-8'),
+            $params['domains'] ?? []
+        );
 
         $domainData = getDomainConfig($domains, $db);
 
@@ -420,8 +424,7 @@ class SparkController extends Controller
                         && in_array(strtolower(trim($reason)), ['in use', 'object exists'], true)
                     );
 
-                    $fqdn = mb_strtolower($domain['name']);
-
+                    $fqdn = $domain['name'];
                     $ownedServiceId = $db->selectValue(
                         'SELECT `id` FROM `services` WHERE `type` = ? AND `service_name` = ? LIMIT 1',
                         [ 'domain', $fqdn ]
