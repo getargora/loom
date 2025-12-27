@@ -567,7 +567,7 @@ function connectEpp(
     array $loginExtensions = []
 ) {
     $epp = EppRegistryFactory::create($registry);
-    $epp->setLogPath('/var/log/loom');
+    $epp->disableLogging();
 
     // Default extensions only for 'generic' registry
     if ($loginExtensions === [] && $registry === 'generic') {
