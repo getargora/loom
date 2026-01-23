@@ -79,11 +79,11 @@ Argora Loom is open source — and we’d love your help!
 
 Whether you're a developer, designer, registrar, or just exploring alternatives to commercial control panels, here's how you can contribute:
 
-- 🐞 [Report bugs or issues](https://github.com/argora/loom/issues)
-- 🌟 Suggest features and improvements
-- 🧩 Build and contribute new modules
-- 🌍 Help with language translations
-- 📄 Improve documentation or write guides
+- [Report bugs or issues](https://github.com/argora/loom/issues)
+- Suggest features and improvements
+- Build and contribute new modules
+- Help with language translations
+- Improve documentation or write guides
 
 > Planning to launch your own registrar? Argora Loom can grow with you — from simple reseller setups to full ICANN accreditation support.
 
@@ -121,13 +121,13 @@ Your feedback and inquiries are invaluable to Loom's evolutionary journey. If yo
 
 ## Acknowledgements
 
-**Argora Loom** is built on top of the **Argora Foundry** framework — a modular, extensible boilerplate designed for modern SaaS platforms, control panels, and admin tools.
+**Loom** is built on top of the **Argora Foundry** framework — a modular, extensible boilerplate designed for modern SaaS platforms, control panels, and admin tools.
 
 **Argora Foundry**, in turn, is based on the excellent [hezecom/slim-starter](https://github.com/omotsuebe/slim-starter) by [Hezekiah Omotsuebe](https://github.com/omotsuebe), which provided a solid and clean foundation using **Slim Framework 4**.
 
 ## Support This Project
 
-💖 Love Argora Loom? Help support its development by **donating**. Every contribution helps us build better tools for the open-source community.
+Love Loom? Help support its development by **donating**. Every contribution helps us build better tools for the open-source community.
 
 - [Donate via Stripe](https://donate.stripe.com/7sI2aI4jV3Offn28ww)
 - BTC: `bc1q9jhxjlnzv0x4wzxfp8xzc6w289ewggtds54uqa`
@@ -135,4 +135,4 @@ Your feedback and inquiries are invaluable to Loom's evolutionary journey. If yo
 
 ## Licensing
 
-Argora Loom is licensed under the MIT License.
+Loom is licensed under the MIT License.

@@ -27,7 +27,7 @@ try {
     if ($dbDriver == 'mysql') {
         $pdo = new PDO("mysql:host=$dbHost", $dbUser, $dbPass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->exec("CREATE DATABASE `$dbName`");
+        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         echo "Created new database '$dbName'\n";
     }
     if ($dbDriver == 'mysql') {

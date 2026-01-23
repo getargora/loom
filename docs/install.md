@@ -1,11 +1,45 @@
-# Installation Guide (Ubuntu 22.04/Ubuntu 24.04/Debian 12)
+# Installation Guide
 
 ## 1. Install the required packages:
 
+Follow the instructions for your operating system.
+
+### Ubuntu 22.04 / 24.04
+
 ```bash
+apt update
 apt install -y curl software-properties-common ufw
-add-apt-repository ppa:ondrej/php
-apt install -y bzip2 composer git net-tools php8.3 php8.3-bcmath php8.3-bz2 php8.3-cli php8.3-common php8.3-curl php8.3-ds php8.3-fpm php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip unzip wget whois
+
+add-apt-repository -y ppa:ondrej/php
+add-apt-repository -y ppa:ondrej/nginx
+apt update
+
+apt install -y bzip2 composer git net-tools php8.3 php8.3-bcmath php8.3-bz2 php8.3-cli php8.3-common php8.3-curl php8.3-ds php8.3-fpm php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip unzip ufw wget whois
+```
+
+### Debian 12 / 13
+
+```bash
+apt update
+apt install -y ca-certificates curl gnupg lsb-release ufw
+
+# PHP (SURY repo)
+curl -fsSL https://packages.sury.org/php/apt.gpg \
+ | gpg --dearmor -o /usr/share/keyrings/sury-php.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
+ > /etc/apt/sources.list.d/sury-php.list
+
+# Nginx (official repo)
+curl -fsSL https://nginx.org/keys/nginx_signing.key \
+ | gpg --dearmor -o /usr/share/keyrings/nginx.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/mainline/debian $(lsb_release -sc) nginx" \
+ > /etc/apt/sources.list.d/nginx.list
+
+apt update
+
+apt install -y bzip2 composer git net-tools php8.3 php8.3-bcmath php8.3-bz2 php8.3-cli php8.3-common php8.3-curl php8.3-ds php8.3-fpm php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip unzip ufw wget whois
 ```
 
 ### Configure PHP Settings:
@@ -112,50 +146,48 @@ ln -s /usr/share/adminer/latest.php /usr/share/adminer/adminer.php
 curl -o /etc/apt/keyrings/mariadb-keyring.pgp 'https://mariadb.org/mariadb_release_signing_key.pgp'
 ```
 
-### 3.1. Ubuntu 22.04
+Create `/etc/apt/sources.list.d/mariadb.sources` according to your system.
 
-Place the following in ```/etc/apt/sources.list.d/mariadb.sources```:
+### Ubuntu 22.04 (Jammy)
 
-```bash
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:39 UTC
-# https://mariadb.org/download/
+```ini
 X-Repolib-Name: MariaDB
 Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
+URIs: https://mirror.nextlayer.at/mariadb/repo/11.rolling/ubuntu
 Suites: jammy
-Components: main main/debug
+Components: main
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 ```
 
-### 3.2. Ubuntu 24.04
+### Ubuntu 24.04 (Noble)
 
-Place the following in ```/etc/apt/sources.list.d/mariadb.sources```:
-
-```bash
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
-# https://mariadb.org/download/
+```ini
 X-Repolib-Name: MariaDB
 Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
+URIs: https://mirror.nextlayer.at/mariadb/repo/11.rolling/ubuntu
 Suites: noble
-Components: main main/debug
+Components: main
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 ```
 
-### 3.3. Debian 12
+### Debian 12 (Bookworm)
 
-Place the following in ```/etc/apt/sources.list.d/mariadb.sources```:
-
-```bash
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
-# https://mariadb.org/download/
+```ini
 X-Repolib-Name: MariaDB
 Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/debian
+URIs: https://mirror.nextlayer.at/mariadb/repo/11.rolling/debian
 Suites: bookworm
+Components: main
+Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
+```
+
+### Debian 13 (Trixie)
+
+```ini
+X-Repolib-Name: MariaDB
+Types: deb
+URIs: https://mirror.nextlayer.at/mariadb/repo/11.rolling/debian
+Suites: trixie
 Components: main
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 ```
@@ -192,13 +224,14 @@ Replace `loom` with your desired username and `RANDOM_STRONG_PASSWORD` with a se
 ## 5. Download Loom:
 
 ```bash
-composer create-project argora/loom /var/www/loom
+git clone https://github.com/getargora/loom.git /var/www/loom
 ```
 
 ## 6. Setup Loom:
 
 ```bash
 cd /var/www/loom
+composer update
 cp env-sample .env
 chmod -R 775 logs cache
 chown -R www-data:www-data logs cache

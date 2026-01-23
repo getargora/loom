@@ -50,6 +50,33 @@ prompt() {
   eval "$var=\"\$val\""
 }
 
+install_php_repo() {
+  if [[ "$OS_ID" == "ubuntu" ]]; then
+    apt update
+    apt install -y curl software-properties-common ca-certificates gnupg
+    add-apt-repository -y ppa:ondrej/php
+    add-apt-repository -y ppa:ondrej/nginx
+  elif [[ "$OS_ID" == "debian" ]]; then
+    apt update
+    apt install -y ca-certificates curl gnupg lsb-release
+
+    # PHP (SURY)
+    curl -fsSL https://packages.sury.org/php/apt.gpg \
+      | gpg --dearmor -o /usr/share/keyrings/sury-php.gpg
+    echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" \
+      > /etc/apt/sources.list.d/sury-php.list
+
+    # Nginx mainline (official)
+    curl -fsSL https://nginx.org/keys/nginx_signing.key \
+      | gpg --dearmor -o /usr/share/keyrings/nginx.gpg
+    echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/mainline/debian $(lsb_release -sc) nginx" \
+      > /etc/apt/sources.list.d/nginx.list
+  else
+    echo "Unsupported OS: ${OS_ID:-unknown} ${VER:-unknown}"
+    exit 1
+  fi
+}
+
 # ---------- Pre-flight ----------
 require_root
 detect_os
@@ -65,7 +92,7 @@ echo
 log "Basic configuration"
 
 DEFAULT_HOST="loom.local"
-prompt HOSTNAME "Enter your Loom hostname (FQDN for HTTPS)" "$DEFAULT_HOST"
+prompt HOSTNAME "Enter the domain where the system will live (e.g., example.com or cp.example.com)" "$DEFAULT_HOST"
 prompt TLS_EMAIL "Enter email for Caddy TLS/Cert notifications" "admin@$HOSTNAME"
 prompt INSTALL_PATH "Install path for Loom" "/var/www/loom"
 
@@ -81,16 +108,16 @@ done
 
 # DB credentials (used unless SQLite)
 if [[ "$DB_BACKEND" != "SQLite" ]]; then
-  prompt DB_NAME "Database name" "loom"
-  prompt DB_USER "Database user" "loom"
-  prompt DB_PASS "Database password" "" "secret"
+  prompt DB_NAME "Choose a database name: " "loom"
+  prompt DB_USER "Choose a database username: " "loom"
+  prompt DB_PASS "Choose a password for this user: " "" "secret"
 fi
 
 # Admin user for Loom
 echo
 log "Admin user for Loom"
-prompt ADMIN_USER "Admin email" "admin@example.com"
-prompt ADMIN_PASS "Admin password" "" "secret"
+prompt ADMIN_USER "Choose an admin email" "admin@example.com"
+prompt ADMIN_PASS "Choose an admin password" "" "secret"
 
 # Optional custom bind IPs for Caddy
 USE_BIND="n"
@@ -108,69 +135,27 @@ fi
 
 # ---------- PHP 8.3 repos ----------
 log "Configuring PHP 8.3 repository…"
-if [[ "$OS_ID" == "ubuntu" ]]; then
-  add-apt-repository -y ppa:ondrej/php
-elif [[ "$OS_ID" == "debian" ]]; then
-  # Sury repo for PHP 8.3
-  install -d -m 0755 /etc/apt/keyrings
-  curl -fsSL https://packages.sury.org/php/apt.gpg | gpg --dearmor -o /etc/apt/keyrings/sury.gpg
-  echo "deb [signed-by=/etc/apt/keyrings/sury.gpg] https://packages.sury.org/php/ $OS_CODENAME main" > /etc/apt/sources.list.d/sury-php.list
-else
-  die "Unsupported OS."
-fi
+# Install necessary packages
+install_php_repo
+apt update
 
-log "Installing PHP 8.3 and extensions…"
-apt-get install -y composer php8.3 php8.3-cli php8.3-common php8.3-fpm php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-ds php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip php8.3-sqlite3
+log "Installing PHP"
+apt install -y composer php8.3 php8.3-cli php8.3-common php8.3-fpm php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-ds php8.3-gd php8.3-gmp php8.3-igbinary php8.3-imap php8.3-intl php8.3-mbstring php8.3-opcache php8.3-readline php8.3-redis php8.3-soap php8.3-swoole php8.3-uuid php8.3-xml php8.3-zip ufw git unzip bzip2 net-tools whois
 
-# DB-specific PHP ext
-if [[ "$DB_BACKEND" == "MariaDB" || "$DB_BACKEND" == "PostgreSQL" ]]; then
-  case "$DB_BACKEND" in
-    MariaDB) apt-get install -y php8.3-mysql ;;
-    PostgreSQL) apt-get install -y php8.3-pgsql ;;
-  esac
-fi
+# Update php.ini (FPM)
+set_php_ini_value "/etc/php/8.3/fpm/php.ini" "session.cookie_secure" "1"
+set_php_ini_value "/etc/php/8.3/fpm/php.ini" "session.cookie_httponly" "1"
+set_php_ini_value "/etc/php/8.3/fpm/php.ini" "session.cookie_samesite" "\"Strict\""
+set_php_ini_value "/etc/php/8.3/fpm/php.ini" "memory_limit" "$PHP_MEMORY_LIMIT"
 
-# ---------- Secure PHP configuration ----------
-log "Hardening PHP configuration (sessions, OPCache)…"
-
-# SESSION SETTINGS (FPM ONLY)
-FPM_INI="/etc/php/8.3/fpm/php.ini"
-
-if [[ -f "$FPM_INI" ]]; then
-  sed -i 's/^;\?session\.cookie_secure.*/session.cookie_secure = 1/' "$FPM_INI"
-  sed -i 's/^;\?session\.cookie_httponly.*/session.cookie_httponly = 1/' "$FPM_INI"
-
-  if ! grep -q '^session\.cookie_samesite' "$FPM_INI"; then
-    echo 'session.cookie_samesite = "Strict"' >> "$FPM_INI"
-  else
-    sed -i 's/^session\.cookie_samesite.*/session.cookie_samesite = "Strict"/' "$FPM_INI"
-  fi
-
-  # Remove forced domain, keep default behavior
-  if grep -q '^session\.cookie_domain' "$FPM_INI"; then
-    sed -i 's/^session\.cookie_domain.*/session.cookie_domain =/' "$FPM_INI"
-  fi
-fi
-
-# OPCACHE SETTINGS (GLOBAL VIA opcache.ini)
-OPC_AVAIL="/etc/php/8.3/mods-available/opcache.ini"
-
-if [[ -f "$OPC_AVAIL" ]]; then
-  sed -i 's/^;\?opcache\.enable=.*/opcache.enable=1/' "$OPC_AVAIL"
-  sed -i 's/^;\?opcache\.enable_cli=.*/opcache.enable_cli=1/' "$OPC_AVAIL"
-
-  if ! grep -q '^opcache\.jit_buffer_size=' "$OPC_AVAIL"; then
-    echo "opcache.jit_buffer_size=100M" >> "$OPC_AVAIL"
-  else
-    sed -i 's/^opcache\.jit_buffer_size=.*/opcache.jit_buffer_size=100M/' "$OPC_AVAIL"
-  fi
-
-  if ! grep -q '^opcache\.jit=' "$OPC_AVAIL"; then
-    echo "opcache.jit=1255" >> "$OPC_AVAIL"
-  else
-    sed -i 's/^opcache\.jit=.*/opcache.jit=1255/' "$OPC_AVAIL"
-  fi
-fi
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.enable" "1"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.enable_cli" "1"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.jit_buffer_size" "100M"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.jit" "1255"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.memory_consumption" "128"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.interned_strings_buffer" "16"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.max_accelerated_files" "10000"
+set_php_ini_value "/etc/php/8.3/mods-available/opcache.ini" "opcache.validate_timestamps" "0"
 
 systemctl restart php8.3-fpm
 
@@ -194,67 +179,54 @@ ln -sf /usr/share/adminer/latest.php "/usr/share/adminer/${ADMINER_SLUG}"
 case "$DB_BACKEND" in
   MariaDB)
     log "Configuring MariaDB repository…"
-    install -d -m 0755 /etc/apt/keyrings
-    curl -fsSL 'https://mariadb.org/mariadb_release_signing_key.pgp' -o /etc/apt/keyrings/mariadb-keyring.pgp
+mkdir -p /etc/apt/keyrings
+curl -fsSL 'https://mariadb.org/mariadb_release_signing_key.pgp' -o /etc/apt/keyrings/mariadb-keyring.pgp
 
-    if [[ "$OS_ID" == "ubuntu" ]]; then
-      # MariaDB 11.4 for noble / 10.11 for jammy as in README
-      if [[ "$OS_CODENAME" == "noble" ]]; then
-        cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
-# https://mariadb.org/download/
+MARIADB_URI=""
+MARIADB_SUITE=""
+
+if [[ "${OS_ID}" == "ubuntu" ]]; then
+  MARIADB_URI="https://mirror.nextlayer.at/mariadb/repo/11.rolling/ubuntu"
+  if [[ "${VER}" == "22.04" ]]; then
+    MARIADB_SUITE="jammy"
+  elif [[ "${VER}" == "24.04" ]]; then
+    MARIADB_SUITE="noble"
+  else
+    echo "Unsupported Ubuntu version for MariaDB repo: ${VER}"
+    exit 1
+  fi
+elif [[ "${OS_ID}" == "debian" ]]; then
+  MARIADB_URI="https://mirror.nextlayer.at/mariadb/repo/11.rolling/debian"
+  if [[ "${VER}" == "12" ]]; then
+    MARIADB_SUITE="bookworm"
+  elif [[ "${VER}" == "13" ]]; then
+    MARIADB_SUITE="trixie"
+  else
+    echo "Unsupported Debian version for MariaDB repo: ${VER}"
+    exit 1
+  fi
+else
+  echo "Unsupported OS for MariaDB repo: ${OS_ID:-unknown} ${VER:-unknown}"
+  exit 1
+fi
+
+cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
 X-Repolib-Name: MariaDB
 Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
-Suites: noble
-Components: main main/debug
-Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
-EOF
-      fi
-      else
-        cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:39 UTC
-# https://mariadb.org/download/
-X-Repolib-Name: MariaDB
-Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/ubuntu
-Suites: jammy
-Components: main main/debug
-Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
-EOF
-      fi
-    else
-      # Debian bookworm/trixie -> 10.11 as per README (you can bump here if you wish)
-      cat > /etc/apt/sources.list.d/mariadb.sources <<EOF
-# MariaDB 11 Rolling repository list - created 2025-04-08 06:40 UTC
-# https://mariadb.org/download/
-X-Repolib-Name: MariaDB
-Types: deb
-# URIs: https://deb.mariadb.org/11/ubuntu
-URIs: https://distrohub.kyiv.ua/mariadb/repo/11.rolling/debian
-Suites: bookworm
+URIs: ${MARIADB_URI}
+Suites: ${MARIADB_SUITE}
 Components: main
 Signed-By: /etc/apt/keyrings/mariadb-keyring.pgp
 EOF
-    fi
 
-    apt-get update -y
-    log "Installing MariaDB server + client…"
-    apt-get install -y mariadb-server mariadb-client
-    log "Securing MariaDB (mysql_secure_installation)…"
-    # Non-interactive secure setup: set root auth to unix_socket and remove test DB, etc.
-    mariadb --user=root <<'SQL' || true
-ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket;
-DELETE FROM mysql.user WHERE User='';
-DROP DATABASE IF EXISTS test;
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%';
-FLUSH PRIVILEGES;
-SQL
+apt update -y
+apt install -y mariadb-server mariadb-client php8.3-mysql
 
-    log "Creating database and user…"
-    mariadb --user=root <<SQL
+# Secure MariaDB installation
+mysql_secure_installation
+
+# MariaDB configuration
+mariadb --user=root <<SQL
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
 GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
@@ -264,7 +236,7 @@ SQL
 
   PostgreSQL)
     log "Installing PostgreSQL…"
-    apt-get install -y postgresql
+    apt-get install -y postgresql php8.3-pgsql
     systemctl enable --now postgresql
 
     log "Creating database and role…"
@@ -291,7 +263,7 @@ SQL
 
   SQLite)
     log "Using SQLite (no server install)."
-    apt-get install -y sqlite3
+    apt-get install -y sqlite3 php8.3-sqlite3
     ;;
 esac
 
@@ -350,6 +322,8 @@ chmod -R 775 logs cache
 touch /var/log/loom/caddy.log
 chown caddy:caddy /var/log/loom/caddy.log
 chmod 664 /var/log/loom/caddy.log
+
+COMPOSER_ALLOW_SUPERUSER=1 composer update --no-interaction --quiet
 
 # ---------- Install DB schema ----------
 log "Running Loom DB installer…"
