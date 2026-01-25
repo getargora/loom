@@ -77,6 +77,25 @@ install_php_repo() {
   fi
 }
 
+# Function to ensure a setting is present, uncommented, and correctly set
+set_php_ini_value() {
+    local ini_file=$1
+    local key=$2
+    local value=$3
+
+    # Escape slashes for sed compatibility
+    local escaped_value
+    escaped_value=$(printf '%s\n' "$value" | sed 's/[\/&]/\\&/g')
+
+    if grep -Eq "^\s*[;#]?\s*${key}\s*=" "$ini_file"; then
+        # Update the existing line, uncomment it and set correct value
+        sed -i -E "s|^\s*[;#]?\s*(${key})\s*=.*|\1 = ${escaped_value}|" "$ini_file"
+    else
+        # Add new line if key doesn't exist
+        echo "${key} = ${value}" >> "$ini_file"
+    fi
+}
+
 # ---------- Pre-flight ----------
 require_root
 detect_os
