@@ -47,7 +47,7 @@
             <div class="col-12">
               <div class="card mb-3">
                 <div class="card-header">
-                  <h3 class="card-title">{{ __('Contact') }} {{ contact.identifier }}&nbsp;<span class="status status-green">{{ contact.status }}</span>{% if contactLinked is not null %}&nbsp;<span class="status status-info">{{ __('linked') }}</span>{% endif %}
+                  <h3 class="card-title">{{ __('Contact') }} {{ contact.identifier }}&nbsp;
                   {% if validation_enabled is not null %}
                     <span class="status {% if contact_valid == 0 %}status-warning{% elseif contact_valid == 1 %}status-success{% elseif contact_valid == 2 %}status-success{% elseif contact_valid == 3 %}status-info{% endif %}" title="{% if contact_valid == 0 %}Pending Validation{% elseif contact_valid == 1 %}Validated by Phone{% elseif contact_valid == 2 %}Validated by Email{% elseif contact_valid == 3 %}Validated by Postal Mail{% endif %}">
                         {% if contact_valid == 0 %}
@@ -86,7 +86,7 @@
                     </div>
                     <div class="datagrid-item">
                       <div class="datagrid-title">{{ __('Client') }}</div>
-                      <div class="datagrid-content">{{ user }}</div>
+                      <div class="datagrid-content">{{ user_name }}</div>
                     </div>
                   </div>
                 </div>
@@ -109,7 +109,7 @@
                 <div class="card-header">
                   <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
                     <li class="nav-item">
-                      <a href="#tabs-int" class="nav-link{% if intExists or (not intExists and not locExists) %} active{% endif %}" data-bs-toggle="tab">{{ __('Internationalized') }}</a>
+                      <a href="#tabs-int" class="nav-link{% if intExists or (not intExists and not locExists) %} active{% endif %}" data-bs-toggle="tab">{{ __('Contact Details') }}</a>
                     </li>
                     <li class="nav-item">
                       <a href="#tabs-loc" class="nav-link{% if not intExists and locExists %} active{% endif %}" data-bs-toggle="tab">{{ __('Localized') }}</a>
@@ -123,7 +123,6 @@
                             {% for postal in contactPostal %}
                                 {% if postal.type == 'int' %}
                                 <div class="tab-pane {% if intExists or (not intExists and not locExists) %} show active{% endif %}" id="tabs-int">
-                                  <h4>{{ __('Internationalized Contact Details') }}</h4>
                                   <div class="datagrid">
                                     <div class="datagrid-item">
                                       <div class="datagrid-title">{{ __('Name') }}</div>
@@ -134,7 +133,7 @@
                                       <div class="datagrid-content">{{ postal.org }}</div>
                                     </div>
                                     <div class="datagrid-item">
-                                      <div class="datagrid-title">{{ __('Street') }} 1</div>
+                                      <div class="datagrid-title">{{ __('Address') }}</div>
                                       <div class="datagrid-content">{{ postal.street1 }}</div>
                                     </div>
                                     <div class="datagrid-item">
@@ -174,7 +173,7 @@
                             {% for postal in contactPostal %}
                                 {% if postal.type == 'loc' %}
                                 <div class="tab-pane{% if not intExists and locExists %} show active{% endif %}" id="tabs-loc">
-                                  <h4>{{ __('Localized Contact Details') }}</h4>
+                                  <h4>{{ __('Localized Contact') }}</h4>
                                   <div class="datagrid">
                                     <div class="datagrid-item">
                                       <div class="datagrid-title">{{ __('Name') }}</div>

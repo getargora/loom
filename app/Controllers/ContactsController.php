@@ -64,9 +64,9 @@ class ContactsController extends Controller
             }
 
             if ($_SESSION["auth_roles"] != 0) {
-                $clid = $user_id;
-            } else {
                 $clid = $_SESSION['auth_user_id'];
+            } else {
+                $clid = $user_id;
             }
 
             if ($postalInfoIntName) {
@@ -280,11 +280,7 @@ class ContactsController extends Controller
     }
     
     public function viewContact(Request $request, Response $response, $args) 
-    {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
+    {       
         $db = $this->container->get('db');
         // Get the current URI
         $uri = $request->getUri()->getPath();
@@ -301,23 +297,9 @@ class ContactsController extends Controller
             [ $args ]);
 
             if ($contact) {
-                $registrars = $db->selectRow('SELECT id, clid, name FROM registrar WHERE id = ?', [$contact['clid']]);
+                $user_name = $db->selectValue('SELECT username FROM users WHERE id = ?', [$contact['clid']]);
                 $iso3166 = new ISO3166();
                 $countries = $iso3166->all();
-
-                // Check if the user is not an admin (assuming role 0 is admin)
-                if ($_SESSION["auth_roles"] != 0) {
-                    $userRegistrars = $db->select('SELECT registrar_id FROM registrar_users WHERE user_id = ?', [$_SESSION['auth_user_id']]);
-
-                    // Assuming $userRegistrars returns an array of arrays, each containing 'registrar_id'
-                    $userRegistrarIds = array_column($userRegistrars, 'registrar_id');
-
-                    // Check if the registrar's ID is in the user's list of registrar IDs
-                    if (!in_array($registrars['id'], $userRegistrarIds)) {
-                        // Redirect to the contacts view if the user is not authorized for this contact
-                        return $response->withHeader('Location', '/contacts')->withStatus(302);
-                    }
-                }
 
                 $contactLinked = $db->selectRow('SELECT domain_id, type FROM domain_contact_map WHERE contact_id = ?',
                 [ $contact['id'] ]);
@@ -328,17 +310,25 @@ class ContactsController extends Controller
                     'contact' => $contact,
                     'contactLinked' => $contactLinked,
                     'contactPostal' => $contactPostal,
-                    'registrars' => $registrars,
+                    'user_name' => $user_name,
                     'currentUri' => $uri,
                     'countries' => $countries
                 ];
-                
-                $verifyPhone = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPhone'");
-                $verifyEmail = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyEmail'");
-                $verifyPostal = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPostal'");
-        
-                if ($verifyPhone == 'on' || $verifyEmail == 'on' || $verifyPostal == 'on') {
-                    $contact_validation = $db->selectRow('SELECT validation, validation_stamp, validation_log FROM contact WHERE identifier = ?', [ $args ]);
+
+                $verifyPhone  = envi('VALIDATE_PHONE');
+                $verifyEmail  = envi('VALIDATE_EMAIL');
+                $verifyPostal = envi('VALIDATE_POSTAL');
+
+                if (
+                    $verifyPhone === 'true' || $verifyPhone === true ||
+                    $verifyEmail === 'true' || $verifyEmail === true ||
+                    $verifyPostal === 'true' || $verifyPostal === true
+                ) {
+                    $contact_validation = $db->selectRow(
+                        'SELECT validation, validation_stamp, validation_log FROM contact WHERE identifier = ?',
+                        [$args]
+                    );
+
                     $responseData['contact_valid'] = $contact_validation['validation'];
                     $responseData['validation_enabled'] = true;
                 }
@@ -358,10 +348,6 @@ class ContactsController extends Controller
 
     public function updateContact(Request $request, Response $response, $args) 
     {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
         $db = $this->container->get('db');
         // Get the current URI
         $uri = $request->getUri()->getPath();
@@ -378,23 +364,9 @@ class ContactsController extends Controller
             [ $args ]);
 
             if ($contact) {
-                $registrars = $db->selectRow('SELECT id, clid, name FROM registrar WHERE id = ?', [$contact['clid']]);
+                $user_name = $db->selectValue('SELECT username FROM users WHERE id = ?', [$contact['clid']]);
                 $iso3166 = new ISO3166();
                 $countries = $iso3166->all();
-
-                // Check if the user is not an admin (assuming role 0 is admin)
-                if ($_SESSION["auth_roles"] != 0) {
-                    $userRegistrars = $db->select('SELECT registrar_id FROM registrar_users WHERE user_id = ?', [$_SESSION['auth_user_id']]);
-
-                    // Assuming $userRegistrars returns an array of arrays, each containing 'registrar_id'
-                    $userRegistrarIds = array_column($userRegistrars, 'registrar_id');
-
-                    // Check if the registrar's ID is in the user's list of registrar IDs
-                    if (!in_array($registrars['id'], $userRegistrarIds)) {
-                        // Redirect to the contacts view if the user is not authorized for this contact
-                        return $response->withHeader('Location', '/contacts')->withStatus(302);
-                    }
-                }
 
                 $contactPostal = $db->select('SELECT * FROM contact_postalInfo WHERE contact_id = ?',
                 [ $contact['id'] ]);
@@ -404,17 +376,20 @@ class ContactsController extends Controller
                 $responseData = [
                     'contact' => $contact,
                     'contactPostal' => $contactPostal,
-                    'registrars' => $registrars,
+                    'user_name' => $user_name,
                     'countries' => $countries,
                     'currentUri' => $uri
                 ];
-                
-                $verifyPhone = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPhone'");
-                $verifyEmail = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyEmail'");
-                $verifyPostal = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPostal'");
-        
-                if ($verifyPhone == 'on' || $verifyEmail == 'on' || $verifyPostal == 'on') {
-                    $contact_validation = $db->selectRow('SELECT validation, validation_stamp, validation_log FROM contact WHERE identifier = ?', [ $args ]);
+
+                $verifyPhone  = envi('VALIDATE_PHONE');
+                $verifyEmail  = envi('VALIDATE_EMAIL');
+                $verifyPostal = envi('VALIDATE_POSTAL');
+
+                if (($verifyPhone == true) || ($verifyEmail == true) || ($verifyPostal == true)) {
+                    $contact_validation = $db->selectRow(
+                        'SELECT validation, validation_stamp, validation_log FROM contact WHERE identifier = ?',
+                        [$args]
+                    );
                     $responseData['contact_valid'] = $contact_validation['validation'];
                     $responseData['validation_enabled'] = true;
                 }
@@ -434,18 +409,16 @@ class ContactsController extends Controller
     
     public function validateContact(Request $request, Response $response, $args) 
     {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
         $db = $this->container->get('db');
-        $verifyPhone = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPhone'");
-        $verifyEmail = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyEmail'");
-        $verifyPostal = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPostal'");
-                
-        if ($verifyPhone === NULL && $verifyEmail === NULL && $verifyPostal === NULL) {
-            // Redirect to the contacts view
-            return $response->withHeader('Location', '/contacts')->withStatus(302);
+
+        $verifyPhone  = envi('VALIDATE_PHONE');
+        $verifyEmail  = envi('VALIDATE_EMAIL');
+        $verifyPostal = envi('VALIDATE_POSTAL');
+
+        if ($verifyPhone === false && $verifyEmail === false && $verifyPostal === false) {
+            return $response
+                ->withHeader('Location', '/contacts')
+                ->withStatus(302);
         }
 
         // Get the current URI
@@ -463,11 +436,7 @@ class ContactsController extends Controller
             [ $args ]);
             
             if ($_SESSION["auth_roles"] != 0) {
-                $clid = $db->selectValue('SELECT registrar_id FROM registrar_users WHERE user_id = ?', [$_SESSION['auth_user_id']]);
-                $contact_clid = $contact['clid'];
-                if ($contact_clid != $clid) {
-                    return $response->withHeader('Location', '/contacts')->withStatus(302);
-                }
+                $clid = $_SESSION['auth_user_id'];
             } else {
                 $clid = $contact['clid'];
             }
@@ -489,21 +458,33 @@ class ContactsController extends Controller
                     'countries' => $countries,
                     'currentUri' => $uri
                 ];
-                
-                $verifyPhone = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPhone'");
-                $verifyEmail = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyEmail'");
-                $verifyPostal = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPostal'");
-        
-                if ($verifyPhone == 'on' || $verifyEmail == 'on' || $verifyPostal == 'on') {
-                    $contact_validation = $db->selectRow('SELECT validation, validation_stamp, validation_log FROM contact WHERE identifier = ?', [ $args ]);
+
+                $verifyPhone  = envi('VALIDATE_PHONE');
+                $verifyEmail  = envi('VALIDATE_EMAIL');
+                $verifyPostal = envi('VALIDATE_POSTAL');
+
+                $verifyPhone  = ($verifyPhone == true);
+                $verifyEmail  = ($verifyEmail == true);
+                $verifyPostal = ($verifyPostal == true);
+
+                if ($verifyPhone || $verifyEmail || $verifyPostal) {
+
+                    $contact_validation = $db->selectRow(
+                        'SELECT validation, validation_stamp, validation_log 
+                         FROM contact 
+                         WHERE identifier = ?',
+                        [$args]
+                    );
+
                     $responseData['contact_valid'] = $contact_validation['validation'];
                     $responseData['validation_enabled'] = true;
-                    $responseData['verifyPhone'] = $verifyPhone;
-                    $responseData['verifyEmail'] = $verifyEmail;
+
+                    $responseData['verifyPhone']  = $verifyPhone;
+                    $responseData['verifyEmail']  = $verifyEmail;
                     $responseData['verifyPostal'] = $verifyPostal;
                 }
                 
-                if ($verifyPhone == 'on') {
+                if ($verifyPhone == true) {
                     $phoneUtil = \libphonenumber\PhoneNumberUtil::getInstance();
                     try {
                         $numberProto = $phoneUtil->parse($contact['voice'], $contactPostal[0]['cc']);
@@ -514,7 +495,7 @@ class ContactsController extends Controller
                     }
                 }
                 
-                if ($verifyEmail == 'on') {
+                if ($verifyEmail == true) {
                     $validator = new EmailValidator();
                     $multipleValidations = new MultipleValidationWithAnd([
                         new RFCValidation(),
@@ -524,7 +505,7 @@ class ContactsController extends Controller
                     $responseData['emailDetails'] = $isValid;
                 }
                 
-                if ($verifyPostal == 'on') {
+                if ($verifyPostal == true) {
                     $formatter = new PostcodeFormatter();
                     try {
                         $isValid = $formatter->format($contactPostal[0]['cc'], $contactPostal[0]['pc']);
@@ -554,19 +535,21 @@ class ContactsController extends Controller
     
     public function approveContact(Request $request, Response $response) 
     {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
         if ($request->getMethod() === 'POST') {
             $db = $this->container->get('db');
-            $verifyPhone = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPhone'");
-            $verifyEmail = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyEmail'");
-            $verifyPostal = $db->selectValue("SELECT value FROM settings WHERE name = 'verifyPostal'");
-                    
-            if ($verifyPhone === NULL && $verifyEmail === NULL && $verifyPostal === NULL) {
+            $verifyPhone  = envi('VALIDATE_PHONE');
+            $verifyEmail  = envi('VALIDATE_EMAIL');
+            $verifyPostal = envi('VALIDATE_POSTAL');
+
+            $verifyPhone  = ($verifyPhone == true);
+            $verifyEmail  = ($verifyEmail == true);
+            $verifyPostal = ($verifyPostal == true);
+
+            if (!$verifyPhone && !$verifyEmail && !$verifyPostal) {
                 // Redirect to the contacts view
-                return $response->withHeader('Location', '/contacts')->withStatus(302);
+                return $response
+                    ->withHeader('Location', '/contacts')
+                    ->withStatus(302);
             }
         
             // Retrieve POST data
@@ -639,10 +622,10 @@ class ContactsController extends Controller
                         $currentDateTime = new \DateTime();
                         $stamp = $currentDateTime->format('Y-m-d H:i:s.v');
                         $email = $db->selectValue('SELECT email FROM users WHERE id = ?', [$_SESSION['auth_user_id']]);
-                        $registry = $db->selectValue('SELECT value FROM settings WHERE name = ?', ['company_name']);
+                        $company = envi('COMPANY_NAME');
                         $message = file_get_contents(__DIR__.'/../../resources/views/mail/validation.html');
                         $placeholders = ['{registry}', '{link}', '{app_name}', '{app_url}', '{identifier}'];
-                        $replacements = [$registry, $link, envi('APP_NAME'), envi('APP_URL'), $contact['identifier']];
+                        $replacements = [$company, $link, envi('APP_NAME'), envi('APP_URL'), $contact['identifier']];
                         $message = str_replace($placeholders, $replacements, $message);   
                         $mailsubject = '[' . envi('APP_NAME') . '] Contact Verification Required';
                         $from = ['email'=>envi('MAIL_FROM_ADDRESS'), 'name'=>envi('MAIL_FROM_NAME')];
@@ -696,10 +679,6 @@ class ContactsController extends Controller
     
     public function updateContactProcess(Request $request, Response $response)
     {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
         if ($request->getMethod() === 'POST') {
             // Retrieve POST data
             $data = $request->getParsedBody();
@@ -774,20 +753,6 @@ class ContactsController extends Controller
 
                 if ($postalInfoIntStreet1) {
                     if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet1) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet1)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid contact street');
-                        return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoIntStreet2) {
-                    if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet2) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet2)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid contact street');
-                        return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoIntStreet3) {
-                    if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet3) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet3)) {
                         $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid contact street');
                         return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
                     }
@@ -910,8 +875,6 @@ class ContactsController extends Controller
                             'name' => $postalInfoIntName ?? null,
                             'org' => $postalInfoIntOrg ?? null,
                             'street1' => $postalInfoIntStreet1 ?? null,
-                            'street2' => $postalInfoIntStreet2 ?? null,
-                            'street3' => $postalInfoIntStreet3 ?? null,
                             'city' => $postalInfoIntCity ?? null,
                             'sp' => $postalInfoIntSp ?? null,
                             'pc' => $postalInfoIntPc ?? null,
@@ -977,11 +940,7 @@ class ContactsController extends Controller
     }
     
     public function deleteContact(Request $request, Response $response, $args)
-    {
-        if (envi('MINIMUM_DATA') === 'true') {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
-        }
-        
+    {      
        // if ($request->getMethod() === 'POST') {
             $db = $this->container->get('db');
             // Get the current URI
@@ -1006,19 +965,11 @@ class ContactsController extends Controller
                         return $response->withHeader('Location', '/contacts')->withStatus(302);
                     }
                 }
-                
-                $is_linked_registrant = $db->selectRow('SELECT id FROM domain WHERE registrant = ?',
+            
+                $is_linked = $db->selectRow('SELECT contact_id FROM domain_contact_map WHERE contact_id = ?',
                 [ $contact_id ]);
                 
-                if ($is_linked_registrant) {
-                    $this->container->get('flash')->addMessage('error', 'This contact is associated with a domain as a registrant');
-                    return $response->withHeader('Location', '/contacts')->withStatus(302);
-                }
-                    
-                $is_linked_other = $db->selectRow('SELECT contact_id FROM domain_contact_map WHERE contact_id = ?',
-                [ $contact_id ]);
-                
-                if ($is_linked_other) {
+                if ($is_linked) {
                     $this->container->get('flash')->addMessage('error', 'This contact is associated with a domain');
                     return $response->withHeader('Location', '/contacts')->withStatus(302);
                 }
