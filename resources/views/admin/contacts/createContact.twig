@@ -32,231 +32,139 @@
         <!-- Page body -->
         <div class="page-body">
           <div class="container-xl">
-            <div class="col-12">
             {% include 'partials/flash.twig' %}
-                <div class="card">
-                    <div class="card-body">
-                        <form action="/contact/create" method="post">
-                        {{ csrf.field | raw }}
-                            <div class="row">
-                                <!-- First Column: General & Internationalized Info -->
-                                <div class="col-md-6">
-                                    <h5 class="card-title mb-3">{{ __('General & Internationalized Info') }}</h5>
-                                    
-                                    <!-- Internationalized Name -->
-                                    <div class="mb-3">
-                                        <label for="intName" class="form-label required">{{ __('Name') }}</label>
-                                        <input type="text" class="form-control" id="intName" name="intName">
-                                    </div>
-                                    
-                                    {% if users and not user %}
-                                        <div class="form-group mb-3">
-                                            <label for="registrarDropdown" class="form-label required">{{ __('Assign to User') }}</label>
-                                            <select id="registrarDropdown" name="user" class="form-select" required="required">
-                                                {% for user in users %}
-                                                    <option value="{{ user.id }}">{{ user.username }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    {% endif %}
-
-                                    <!-- Internationalized Organization -->
-                                    <div class="mb-3">
-                                        <label for="intOrg" class="form-label">{{ __('Organization') }}</label>
-                                        <input type="text" class="form-control" id="intOrg" name="org">
-                                    </div>
-
-                                    <!-- Internationalized Address: Street Details -->
-                                    <div class="mb-3">
-                                        <label for="street1" class="form-label required">{{ __('Street') }}</label>
-                                        <input type="text" class="form-control" id="street1" name="street1">
-                                    </div>
-
-                                    <!-- Internationalized Address: City, SP, PC, CC -->
-                                    <div class="mb-3">
-                                        <label for="city" class="form-label required">{{ __('City') }}</label>
-                                        <input type="text" class="form-control" id="city" name="city">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="sp" class="form-label">{{ __('State/Province') }}</label>
-                                        <input type="text" class="form-control" id="sp" name="sp">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="pc" class="form-label">{{ __('Postal Code') }}</label>
-                                        <input type="text" class="form-control" id="pc" name="pc">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="cc" class="form-label required">{{ __('Country') }}</label>
-                                        <select class="form-select" id="cc" name="cc">
-                                            {% for country in countries %}
-                                                <option value="{{ country.alpha2|lower }}">{{ country.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>            
-                                </div>
-
-                                <!-- Second Column: Voice, Fax, Email, and other details -->
-                                <div class="col-md-6">
-                                    <h5 class="card-title mb-3">{{ __('Contact Details') }}</h5>
-                                    
-                                    <!-- Contact ID -->
-                                    <div class="mb-3">
-                                        <label for="contactid" class="form-label required">{{ __('Contact ID') }}</label>
-                                        <input type="text" class="form-control" id="contactid" name="contactid" required="required">
-                                        <small class="form-text text-muted">{{ __('Auto-generated ID for the contact') }}.</small>
-                                    </div>
-
-                                    <!-- Voice -->
-                                    <div class="mb-3">
-                                        <label for="voice" class="form-label required">{{ __('Phone') }}</label>
-                                        <input type="tel" class="form-control" id="voice" name="voice" required="required">
-                                    </div>
-
-                                    <!-- Email -->
-                                    <div class="mb-3">
-                                        <label for="email" class="form-label required">{{ __('Email') }}</label>
-                                        <input type="text" class="form-control" id="email" name="email"  required="required" autocapitalize="none">
-                                    </div>
-                                    
-                                    <!-- NIN - National Identification Number -->
-                                    <div class="mb-3">
-                                        <label for="nin" class="form-label">{{ __('NIN - National Identification Number') }}</label>
-                                        <input type="text" class="form-control" id="nin" name="nin">
-                                    </div>
-
-                                    <!-- Personal or Business Checkbox -->
-                                    <div class="mb-3">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="isBusiness" name="isBusiness">
-                                            <label class="form-check-label" for="isBusiness">{{ __('This is a Business Contact') }}</label>
-                                        </div>
-                                        <!-- You can invert the logic if you prefer the default to be 'Personal' instead of 'Business' -->
-                                    </div>
-
-                                </div>
-                            </div>
-
-                            <!-- Localized Info Checkbox -->
-                            <div class="mb-3">
-                                <label class="form-check form-switch">
-                                  <input class="form-check-input" type="checkbox" id="toggleLoc">
-                                  <span class="form-check-label" for="toggleLoc">{{ __('Include Localized Info') }}</span>
-                                </label>
-                            </div>
-
-                            <!-- Hidden Localized Info Rows -->
-                            <div class="row" id="localizedInfo" style="display: none;">
-                                <!-- Localized Postal Info: First Column -->
-                                <div class="col-md-6">
-                                    <h5 class="card-title mb-3">{{ __('Localized Postal Info: Personal Details') }}</h5>
-
-                                    <!-- Localized Name -->
-                                    <div class="mb-3">
-                                        <label for="locName" class="form-label">{{ __('Name') }}</label>
-                                        <input type="text" class="form-control" id="locName" name="locName">
-                                    </div>
-
-                                    <!-- Localized Organization -->
-                                    <div class="mb-3">
-                                        <label for="locOrg" class="form-label">{{ __('Organization') }}</label>
-                                        <input type="text" class="form-control" id="locOrg" name="locOrg">
-
-                                    </div>
-
-                                    <!-- Localized Street Details -->
-                                    <div class="mb-3">
-                                        <label for="locStreet1" class="form-label">{{ __('Street') }}</label>
-                                        <input type="text" class="form-control" id="locStreet1" name="locStreet1">
-                                    </div>
-                                </div>
-
-                                <!-- Localized Postal Info: Second Column -->
-                                <div class="col-md-6">
-                                    <h5 class="card-title mb-3">{{ __('Localized Postal Info: Address Details') }}</h5>
-
-                                    <!-- Localized City, SP, PC, CC -->
-                                    <div class="mb-3">
-                                        <label for="locCity" class="form-label">{{ __('City') }}</label>
-                                        <input type="text" class="form-control" id="locCity" name="locCity">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locSP" class="form-label">{{ __('State/Province') }}</label>
-                                        <input type="text" class="form-control" id="locSP" name="locSP">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locPC" class="form-label">{{ __('Postal Code') }}</label>
-                                        <input type="text" class="form-control" id="locPC" name="locPC">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="locCC" class="form-label">{{ __('Country') }}</label>
-                                        <select class="form-select" id="locCC" name="locCC">
-                                            {% for country in countries %}
-                                                <option value="{{ country.alpha2|lower }}">{{ country.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>                        
-                                </div>
-                            </div>
+            <form action="/contact/create" method="post">
+            {{ csrf.field | raw }}  
+            <div class="row row-cards">
+              <div class="col-12 col-md-6">
+                <div class="card">                
+                  <div class="card-header">
+                    <h3 class="card-title">{{ __('Contact Details') }} <span class="card-subtitle">{{ __('Used for most extensions') }}</span></h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <label for="intName" class="form-label required">{{ __('Name') }}</label>
+                      <input type="text" class="form-control" id="intName" name="intName">
                     </div>
-                <div class="card-footer">
-                  <div class="row align-items-center">
-                    <div class="col-auto">
+                                    
+                    {% if users and not user %}
+                    <div class="form-group mb-3">
+                      <label for="registrarDropdown" class="form-label required">{{ __('Assign to User') }}</label>
+                      <select id="registrarDropdown" name="user" class="form-select" required="required">
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    {% endif %}
+                                    
+                    <div class="mb-3">
+                      <label for="email" class="form-label required">{{ __('Email') }}</label>
+                      <input type="text" class="form-control" id="email" name="email"  required="required" autocapitalize="none">
+                    </div>
+                                    
+                    <div class="mb-3">
+                      <label for="voice" class="form-label required">{{ __('Phone') }}</label>
+                      <input type="tel" class="form-control" id="voice" name="voice" required="required">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="intOrg" class="form-label">{{ __('Organization') }}</label>
+                      <input type="text" class="form-control" id="intOrg" name="org">
+                    </div>
+                                    
+                    <div class="mb-3">
+                      <label for="nin" class="form-label">{{ __('Identification Number') }}</label>
+                      <input type="text" class="form-control" id="nin" name="nin">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="street1" class="form-label required">{{ __('Street') }}</label>
+                      <input type="text" class="form-control" id="street1" name="street1">
+                    </div>
+
+                    <div class="row">
+                      <div class="mb-3 col-md-4">
+                        <label for="city" class="form-label required">{{ __('City') }}</label>
+                        <input type="text" class="form-control" id="city" name="city">
+                      </div>
+                      <div class="mb-3 col-md-4">
+                        <label for="sp" class="form-label">{{ __('State/Province') }}</label>
+                        <input type="text" class="form-control" id="sp" name="sp">
+                      </div>
+                      <div class="mb-3 col-md-4">
+                        <label for="pc" class="form-label">{{ __('Postal Code') }}</label>
+                        <input type="text" class="form-control" id="pc" name="pc">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="cc" class="form-label required">{{ __('Country') }}</label>
+                      <select class="form-select" id="cc" name="cc">
+                        {% for country in countries %}
+                            <option value="{{ country.alpha2|lower }}">{{ country.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="card-footer text-end">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <a href="history.back();" class="btn btn-link">{{ __('Cancel') }}</a>
                       <button type="submit" class="btn btn-primary">{{ __('Create Contact') }}</button>
                     </div>
                   </div>
                 </div>
-              </form>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">{{ __('Localized Contact') }} <span class="card-subtitle">{{ __('Optional. Used for some national extensions') }}</span></h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <label for="locName" class="form-label">{{ __('Name') }}</label>
+                      <input type="text" class="form-control" id="locName" name="locName">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="locOrg" class="form-label">{{ __('Organization') }}</label>
+                      <input type="text" class="form-control" id="locOrg" name="locOrg">
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="locStreet1" class="form-label">{{ __('Street') }}</label>
+                      <input type="text" class="form-control" id="locStreet1" name="locStreet1">
+                    </div>
+                                    
+                    <div class="row">
+                      <div class="mb-3 col-md-4">
+                        <label for="locCity" class="form-label">{{ __('City') }}</label>
+                        <input type="text" class="form-control" id="locCity" name="locCity">
+                      </div>
+                      <div class="mb-3 col-md-4">
+                        <label for="locSP" class="form-label">{{ __('State/Province') }}</label>
+                        <input type="text" class="form-control" id="locSP" name="locSP">
+                      </div>
+                      <div class="mb-3 col-md-4">
+                        <label for="locPC" class="form-label">{{ __('Postal Code') }}</label>
+                        <input type="text" class="form-control" id="locPC" name="locPC">
+                      </div>
+                    </div>
+                                    
+                    <div class="mb-3">
+                      <label for="locCC" class="form-label">{{ __('Country') }}</label>
+                      <select class="form-select" id="locCC" name="locCC">
+                        {% for country in countries %}
+                            <option value="{{ country.alpha2|lower }}">{{ country.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div> 
+                  </div>
+                </div>
+              </div>  
             </div>
-          </div>
+            </form> 
         </div>
         {% include 'partials/footer.twig' %}
       </div>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const toggleLocCheckbox = document.getElementById('toggleLoc');
-    const localizedSection = document.getElementById('localizedInfo');
-
-    toggleLocCheckbox.addEventListener('change', function() {
-        if (toggleLocCheckbox.checked) {
-            localizedSection.style.display = "flex";
-        } else {
-            localizedSection.style.display = "none";
-        }
-    });
-    
-    // Generate ID for Contact
-    const contactidInput = document.getElementById('contactid');
-    contactidInput.value = generateAuthInfo();
-    
-    function generateAuthInfo() {
-        const length = 16;
-        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let retVal = "";
-        let digitCount = 0;
-
-        // Generate initial random string
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * charset.length);
-            const char = charset.charAt(randomIndex);
-            retVal += char;
-            if (char >= '0' && char <= '9') {
-                digitCount++;
-            }
-        }
-
-        // Ensure there are at least two digits in the string
-        while (digitCount < 2) {
-            // Replace a non-digit character at a random position with a digit
-            const replacePosition = Math.floor(Math.random() * length);
-            if (!(retVal[replacePosition] >= '0' && retVal[replacePosition] <= '9')) {
-                const randomDigit = Math.floor(Math.random() * 10); // Generate a digit from 0 to 9
-                retVal = retVal.substring(0, replacePosition) + randomDigit + retVal.substring(replacePosition + 1);
-                digitCount++;
-            }
-        }
-
-        return retVal;
-    }
-});
-</script>
 {% endblock %}

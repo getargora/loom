@@ -28,20 +28,11 @@ class ContactsController extends Controller
             $db = $this->container->get('db');
             $iso3166 = new ISO3166();
             $countries = $iso3166->all();
-            $contactID = $data['contactid'] ?? null;
-            $registrar_id = $data['registrar'] ?? null;
-            $registrars = $db->select("SELECT id, clid, name FROM registrar");
-            if ($_SESSION["auth_roles"] != 0) {
-                $registrar = true;
-            } else {
-                $registrar = null;
-            }
-            
+            $user_id = $data['user'] ?? null;
+
             $postalInfoIntName = $data['intName'] ?? null;
             $postalInfoIntOrg = $data['org'] ?? null;
             $postalInfoIntStreet1 = $data['street1'] ?? null;
-            $postalInfoIntStreet2 = $data['street2'] ?? null;
-            $postalInfoIntStreet3 = $data['street3'] ?? null;
             $postalInfoIntCity = $data['city'] ?? null;
             $postalInfoIntSp = $data['sp'] ?? null;
             $postalInfoIntPc = $data['pc'] ?? null;
@@ -50,22 +41,14 @@ class ContactsController extends Controller
             $postalInfoLocName = $data['locName'] ?? null;
             $postalInfoLocOrg = $data['locOrg'] ?? null;
             $postalInfoLocStreet1 = $data['locStreet1'] ?? null;
-            $postalInfoLocStreet2 = $data['locStreet2'] ?? null;
-            $postalInfoLocStreet3 = $data['locStreet3'] ?? null;
             $postalInfoLocCity = $data['locCity'] ?? null;
             $postalInfoLocSp = $data['locSP'] ?? null;
             $postalInfoLocPc = $data['locPC'] ?? null;
             $postalInfoLocCc = $data['locCC'] ?? null;
             
             $voice = $data['voice'] ?? null;
-            $fax = $data['fax'] ?? null;
             $email = strtolower($data['email']) ?? null;
-            $authInfo_pw = $data['authInfo'] ?? null;
-
-            if (!$contactID) {
-                $this->container->get('flash')->addMessage('error', 'Unable to create contact: Please provide a contact ID');
-                return $response->withHeader('Location', '/contact/create')->withStatus(302);
-            }
+            $contactID = generateAuthInfo();
 
             // Validation for contact ID
             $invalid_identifier = validate_identifier($contactID);
@@ -80,12 +63,10 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contact/create')->withStatus(302);
             }
 
-            $result = $db->selectRow('SELECT registrar_id FROM registrar_users WHERE user_id = ?', [$_SESSION['auth_user_id']]);
-
             if ($_SESSION["auth_roles"] != 0) {
-                $clid = $result['registrar_id'];
+                $clid = $user_id;
             } else {
-                $clid = $registrar_id;
+                $clid = $_SESSION['auth_user_id'];
             }
 
             if ($postalInfoIntName) {
@@ -109,20 +90,6 @@ class ContactsController extends Controller
                 if ($postalInfoIntStreet1) {
                     if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet1) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet1)) {
                         $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid contact street');
-                        return $response->withHeader('Location', '/contact/create')->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoIntStreet2) {
-                    if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet2) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet2)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid contact street 2');
-                        return $response->withHeader('Location', '/contact/create')->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoIntStreet3) {
-                    if (preg_match('/(^\-)|(^\,)|(^\.)|(\-\-)|(\,\,)|(\.\.)|(\-$)/', $postalInfoIntStreet3) || !preg_match('/^[a-zA-Z0-9\-\&\,\.\/\s]{5,}$/', $postalInfoIntStreet3)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid contact street 3');
                         return $response->withHeader('Location', '/contact/create')->withStatus(302);
                     }
                 }
@@ -168,20 +135,6 @@ class ContactsController extends Controller
                     }
                 }
 
-                if ($postalInfoLocStreet2) {
-                    if (!validateLocField($postalInfoLocStreet2, 3)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid loc contact street 2');
-                        return $response->withHeader('Location', '/contact/create')->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoLocStreet3) {
-                    if (!validateLocField($postalInfoLocStreet3, 3)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid loc contact street 3');
-                        return $response->withHeader('Location', '/contact/create')->withStatus(302);
-                    }
-                }
-
                 if (!validateLocField($postalInfoLocCity, 3)) {
                     $this->container->get('flash')->addMessage('error', 'Unable to create contact: Invalid loc contact city');
                     return $response->withHeader('Location', '/contact/create')->withStatus(302);
@@ -215,49 +168,16 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contact/create')->withStatus(302);
             }
 
-            if (!empty($fax)) {
-                $normalizedFax = normalizePhoneNumber($fax, strtoupper($postalInfoIntCc));
-                if (isset($normalizedFax['error'])) {
-                    $this->container->get('flash')->addMessage('error', 'Unable to create contact: ' . $normalizedFax['error']);
-                    return $response->withHeader('Location', '/contact/create')->withStatus(302);
-                }
-                // Update the fax number only if normalization was successful.
-                $fax = $normalizedFax['success'];
-            }
-
             if (!validateUniversalEmail($email)) {
                 $this->container->get('flash')->addMessage('error', 'Unable to create contact: Email address failed check');
                 return $response->withHeader('Location', '/contact/create')->withStatus(302);
             }
             
-            if (!$authInfo_pw) {
-                $this->container->get('flash')->addMessage('error', 'Unable to create contact: Contact authinfo missing');
-                return $response->withHeader('Location', '/contact/create')->withStatus(302);
-            }
-
-            if ((strlen($authInfo_pw) < 6) || (strlen($authInfo_pw) > 64)) {
-                $this->container->get('flash')->addMessage('error', 'Unable to create contact: Password needs to be at least 6 and up to 64 characters long');
-                return $response->withHeader('Location', '/contact/create')->withStatus(302);
-            }
-
-            if (!preg_match('/[A-Z]/', $authInfo_pw)) {
-                $this->container->get('flash')->addMessage('error', 'Unable to create contact: Password should have both upper and lower case characters');
-                return $response->withHeader('Location', '/contact/create')->withStatus(302);
-            }
-
-            $disclose_voice = isset($data['disclose_voice']) ? 1 : 0;
-            $disclose_fax = isset($data['disclose_fax']) ? 1 : 0;
-            $disclose_email = isset($data['disclose_email']) ? 1 : 0;
-            $disclose_name_int = isset($data['disclose_name_int']) ? 1 : 0;
-            $disclose_name_loc = isset($data['disclose_name_loc']) ? 1 : 0;
-            $disclose_org_int = isset($data['disclose_org_int']) ? 1 : 0;
-            $disclose_org_loc = isset($data['disclose_org_loc']) ? 1 : 0;
-            $disclose_addr_int = isset($data['disclose_addr_int']) ? 1 : 0;
-            $disclose_addr_loc = isset($data['disclose_addr_loc']) ? 1 : 0;
+            //$disclose_voice = isset($data['disclose_voice']) ? 1 : 0;
 
             if ($data['nin']) {
                 $nin = $data['nin'];
-                $nin_type = (isset($data['isBusiness']) && $data['isBusiness'] === 'on') ? 'business' : 'personal';
+                $nin_type = !empty(trim((string)$postalInfoIntOrg)) ? 'business' : 'personal';
 
                 if (!preg_match('/\d/', $nin)) {
                     $this->container->get('flash')->addMessage('error', 'Unable to create contact: NIN should contain one or more numbers');
@@ -280,18 +200,13 @@ class ContactsController extends Controller
                     [
                         'identifier' => $contactID,
                         'voice' => $voice,
-                        'voice_x' => null,
-                        'fax' => $fax ?? null,
-                        'fax_x' => null,
                         'email' => $email,
                         'nin' => $nin ?? null,
                         'nin_type' => $nin_type ?? null,
                         'clid' => $clid,
                         'crid' => $clid,
-                        'crdate' => $crdate,
-                        'disclose_voice' => $disclose_voice,
-                        'disclose_fax' => $disclose_fax,
-                        'disclose_email' => $disclose_email
+                        'status' => 'ok',
+                        'crdate' => $crdate
                     ]
                 );
                 $contact_id = $db->getLastInsertId();
@@ -305,15 +220,10 @@ class ContactsController extends Controller
                             'name' => $postalInfoIntName ?? null,
                             'org' => $postalInfoIntOrg ?? null,
                             'street1' => $postalInfoIntStreet1 ?? null,
-                            'street2' => $postalInfoIntStreet2 ?? null,
-                            'street3' => $postalInfoIntStreet3 ?? null,
                             'city' => $postalInfoIntCity ?? null,
                             'sp' => $postalInfoIntSp ?? null,
                             'pc' => $postalInfoIntPc ?? null,
-                            'cc' => $postalInfoIntCc ?? null,
-                            'disclose_name_int' => $disclose_name_int,
-                            'disclose_org_int' => $disclose_org_int,
-                            'disclose_addr_int' => $disclose_addr_int
+                            'cc' => $postalInfoIntCc ?? null
                         ]
                     );
                 }
@@ -327,36 +237,14 @@ class ContactsController extends Controller
                             'name' => $postalInfoLocName ?? null,
                             'org' => $postalInfoLocOrg ?? null,
                             'street1' => $postalInfoLocStreet1 ?? null,
-                            'street2' => $postalInfoLocStreet2 ?? null,
-                            'street3' => $postalInfoLocStreet3 ?? null,
                             'city' => $postalInfoLocCity ?? null,
                             'sp' => $postalInfoLocSp ?? null,
                             'pc' => $postalInfoLocPc ?? null,
-                            'cc' => $postalInfoLocCc ?? null,
-                            'disclose_name_loc' => $disclose_name_loc,
-                            'disclose_org_loc' => $disclose_org_loc,
-                            'disclose_addr_loc' => $disclose_addr_loc
+                            'cc' => $postalInfoLocCc ?? null
                         ]
                     );
                 }
                 
-                $db->insert(
-                    'contact_authInfo',
-                    [
-                        'contact_id' => $contact_id,
-                        'authtype' => 'pw',
-                        'authinfo' => $authInfo_pw
-                    ]
-                );
-
-                $db->insert(
-                    'contact_status',
-                    [
-                        'contact_id' => $contact_id,
-                        'status' => 'ok'
-                    ]
-                );
-
                 $db->commit();
             } catch (Exception $e) {
                 $db->rollBack();
@@ -409,7 +297,7 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contacts')->withStatus(302);
             }
         
-            $contact = $db->selectRow('SELECT id, identifier, voice, fax, email, nin, nin_type, crdate, lastupdate, clid, disclose_voice, disclose_fax, disclose_email FROM contact WHERE identifier = ?',
+            $contact = $db->selectRow('SELECT id, identifier, voice, email, nin, nin_type, crdate, lastupdate, clid FROM contact WHERE identifier = ?',
             [ $args ]);
 
             if ($contact) {
@@ -430,11 +318,7 @@ class ContactsController extends Controller
                         return $response->withHeader('Location', '/contacts')->withStatus(302);
                     }
                 }
-                
-                $contactStatus = $db->selectRow('SELECT status FROM contact_status WHERE contact_id = ?',
-                [ $contact['id'] ]);
-                $contactAuth = $db->selectRow('SELECT authinfo FROM contact_authInfo WHERE contact_id = ?',
-                [ $contact['id'] ]);
+
                 $contactLinked = $db->selectRow('SELECT domain_id, type FROM domain_contact_map WHERE contact_id = ?',
                 [ $contact['id'] ]);
                 $contactPostal = $db->select('SELECT * FROM contact_postalInfo WHERE contact_id = ?',
@@ -442,9 +326,7 @@ class ContactsController extends Controller
                 
                 $responseData = [
                     'contact' => $contact,
-                    'contactStatus' => $contactStatus,
                     'contactLinked' => $contactLinked,
-                    'contactAuth' => $contactAuth,
                     'contactPostal' => $contactPostal,
                     'registrars' => $registrars,
                     'currentUri' => $uri,
@@ -492,7 +374,7 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contacts')->withStatus(302);
             }
             
-            $contact = $db->selectRow('SELECT id, identifier, voice, fax, email, nin, nin_type, crdate, clid, disclose_voice, disclose_fax, disclose_email FROM contact WHERE identifier = ?',
+            $contact = $db->selectRow('SELECT id, identifier, voice, email, nin, nin_type, crdate, clid FROM contact WHERE identifier = ?',
             [ $args ]);
 
             if ($contact) {
@@ -513,11 +395,7 @@ class ContactsController extends Controller
                         return $response->withHeader('Location', '/contacts')->withStatus(302);
                     }
                 }
-                
-                $contactStatus = $db->selectRow('SELECT status FROM contact_status WHERE contact_id = ?',
-                [ $contact['id'] ]);
-                $contactAuth = $db->selectRow('SELECT authinfo FROM contact_authInfo WHERE contact_id = ?',
-                [ $contact['id'] ]);
+
                 $contactPostal = $db->select('SELECT * FROM contact_postalInfo WHERE contact_id = ?',
                 [ $contact['id'] ]);
 
@@ -525,8 +403,6 @@ class ContactsController extends Controller
 
                 $responseData = [
                     'contact' => $contact,
-                    'contactStatus' => $contactStatus,
-                    'contactAuth' => $contactAuth,
                     'contactPostal' => $contactPostal,
                     'registrars' => $registrars,
                     'countries' => $countries,
@@ -583,7 +459,7 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contacts')->withStatus(302);
             }
             
-            $contact = $db->selectRow('SELECT id, identifier, voice, fax, email, nin, nin_type, crdate, clid, disclose_voice, disclose_fax, disclose_email FROM contact WHERE identifier = ?',
+            $contact = $db->selectRow('SELECT id, identifier, voice, email, nin, nin_type, crdate, clid FROM contact WHERE identifier = ?',
             [ $args ]);
             
             if ($_SESSION["auth_roles"] != 0) {
@@ -601,10 +477,6 @@ class ContactsController extends Controller
                 $iso3166 = new ISO3166();
                 $countries = $iso3166->all();
 
-                $contactStatus = $db->selectRow('SELECT status FROM contact_status WHERE contact_id = ?',
-                [ $contact['id'] ]);
-                $contactAuth = $db->selectRow('SELECT authinfo FROM contact_authInfo WHERE contact_id = ?',
-                [ $contact['id'] ]);
                 $contactPostal = $db->select('SELECT * FROM contact_postalInfo WHERE contact_id = ?',
                 [ $contact['id'] ]);
 
@@ -612,8 +484,6 @@ class ContactsController extends Controller
 
                 $responseData = [
                     'contact' => $contact,
-                    'contactStatus' => $contactStatus,
-                    'contactAuth' => $contactAuth,
                     'contactPostal' => $contactPostal,
                     'registrars' => $registrars,
                     'countries' => $countries,
@@ -716,7 +586,7 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contacts')->withStatus(302);
             }
             
-            $contact = $db->selectRow('SELECT id, identifier, voice, fax, email, nin, nin_type, crdate, clid, disclose_voice, disclose_fax, disclose_email FROM contact WHERE identifier = ?',
+            $contact = $db->selectRow('SELECT id, identifier, voice, email, nin, nin_type, crdate, clid FROM contact WHERE identifier = ?',
             [ $identifier ]);
             
             if ($_SESSION["auth_roles"] != 0) {
@@ -856,8 +726,6 @@ class ContactsController extends Controller
             $postalInfoIntName = $data['intName'] ?? null;
             $postalInfoIntOrg = $data['org'] ?? null;
             $postalInfoIntStreet1 = $data['street1'] ?? null;
-            $postalInfoIntStreet2 = $data['street2'] ?? null;
-            $postalInfoIntStreet3 = $data['street3'] ?? null;
             $postalInfoIntCity = $data['city'] ?? null;
             $postalInfoIntSp = $data['sp'] ?? null;
             $postalInfoIntPc = $data['pc'] ?? null;
@@ -866,17 +734,13 @@ class ContactsController extends Controller
             $postalInfoLocName = $data['locName'] ?? null;
             $postalInfoLocOrg = $data['locOrg'] ?? null;
             $postalInfoLocStreet1 = $data['locStreet1'] ?? null;
-            $postalInfoLocStreet2 = $data['locStreet2'] ?? null;
-            $postalInfoLocStreet3 = $data['locStreet3'] ?? null;
             $postalInfoLocCity = $data['locCity'] ?? null;
             $postalInfoLocSp = $data['locSP'] ?? null;
             $postalInfoLocPc = $data['locPC'] ?? null;
             $postalInfoLocCc = $data['locCC'] ?? null;
             
             $voice = $data['voice'] ?? null;
-            $fax = $data['fax'] ?? null;
             $email = $data['email'] ?? null;
-            $authInfo_pw = $data['authInfo'] ?? null;
 
             if (!$identifier) {
                 $this->container->get('flash')->addMessage('error', 'Unable to update contact: Please provide a contact ID');
@@ -970,20 +834,6 @@ class ContactsController extends Controller
                     }
                 }
 
-                if ($postalInfoLocStreet2) {
-                    if (!validateLocField($postalInfoLocStreet2, 3)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid loc contact street 2');
-                        return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-                    }
-                }
-
-                if ($postalInfoLocStreet3) {
-                    if (!validateLocField($postalInfoLocStreet3, 3)) {
-                        $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid loc contact street 3');
-                        return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-                    }
-                }
-
                 if (!validateLocField($postalInfoLocCity, 3)) {
                     $this->container->get('flash')->addMessage('error', 'Unable to update contact: Invalid loc contact city');
                     return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
@@ -1009,40 +859,10 @@ class ContactsController extends Controller
                 return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
             }
 
-            if ($fax && (!preg_match('/^\+\d{1,3}\.\d{1,14}$/', $fax) || strlen($fax) > 17)) {
-                $this->container->get('flash')->addMessage('error', 'Unable to update contact: Fax must be (\+[0-9]{1,3}\.[0-9]{1,14})');
-                return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-            }
-
             if (!validateUniversalEmail($email)) {
                 $this->container->get('flash')->addMessage('error', 'Unable to update contact: Email address failed check');
                 return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
             }
-
-            if (!$authInfo_pw) {
-                $this->container->get('flash')->addMessage('error', 'Unable to update contact: Contact authinfo');
-                return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-            }
-
-            if ((strlen($authInfo_pw) < 6) || (strlen($authInfo_pw) > 64)) {
-                $this->container->get('flash')->addMessage('error', 'Unable to update contact: Password needs to be at least 6 and up to 64 characters long');
-                return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-            }
-
-            if (!preg_match('/[A-Z]/', $authInfo_pw)) {
-                $this->container->get('flash')->addMessage('error', 'Unable to update contact: Password should have both upper and lower case characters');
-                return $response->withHeader('Location', '/contact/update/'.$identifier)->withStatus(302);
-            }
-
-            $disclose_voice = isset($data['disclose_voice']) ? 1 : 0;
-            $disclose_fax = isset($data['disclose_fax']) ? 1 : 0;
-            $disclose_email = isset($data['disclose_email']) ? 1 : 0;
-            $disclose_name_int = isset($data['disclose_name_int']) ? 1 : 0;
-            $disclose_name_loc = isset($data['disclose_name_loc']) ? 1 : 0;
-            $disclose_org_int = isset($data['disclose_org_int']) ? 1 : 0;
-            $disclose_org_loc = isset($data['disclose_org_loc']) ? 1 : 0;
-            $disclose_addr_int = isset($data['disclose_addr_int']) ? 1 : 0;
-            $disclose_addr_loc = isset($data['disclose_addr_loc']) ? 1 : 0;
 
             if ($data['nin']) {
                 $nin = $data['nin'];
@@ -1068,17 +888,11 @@ class ContactsController extends Controller
                     'contact',
                     [
                         'voice' => $voice,
-                        'voice_x' => null,
-                        'fax' => $fax ?? null,
-                        'fax_x' => null,
                         'email' => $email,
                         'nin' => $nin ?? null,
                         'nin_type' => $nin_type ?? null,
                         'upid' => $clid,
-                        'lastupdate' => $update,
-                        'disclose_voice' => $disclose_voice,
-                        'disclose_fax' => $disclose_fax,
-                        'disclose_email' => $disclose_email
+                        'lastupdate' => $update
                     ],
                     [
                         'identifier' => $identifier
@@ -1101,10 +915,7 @@ class ContactsController extends Controller
                             'city' => $postalInfoIntCity ?? null,
                             'sp' => $postalInfoIntSp ?? null,
                             'pc' => $postalInfoIntPc ?? null,
-                            'cc' => $postalInfoIntCc ?? null,
-                            'disclose_name_int' => $disclose_name_int,
-                            'disclose_org_int' => $disclose_org_int,
-                            'disclose_addr_int' => $disclose_addr_int
+                            'cc' => $postalInfoIntCc ?? null
                         ],
                         [
                             'contact_id' => $contact_id,
@@ -1123,15 +934,10 @@ class ContactsController extends Controller
                                 'name' => $postalInfoLocName ?? null,
                                 'org' => $postalInfoLocOrg ?? null,
                                 'street1' => $postalInfoLocStreet1 ?? null,
-                                'street2' => $postalInfoLocStreet2 ?? null,
-                                'street3' => $postalInfoLocStreet3 ?? null,
                                 'city' => $postalInfoLocCity ?? null,
                                 'sp' => $postalInfoLocSp ?? null,
                                 'pc' => $postalInfoLocPc ?? null,
-                                'cc' => $postalInfoLocCc ?? null,
-                                'disclose_name_loc' => $disclose_name_loc,
-                                'disclose_org_loc' => $disclose_org_loc,
-                                'disclose_addr_loc' => $disclose_addr_loc
+                                'cc' => $postalInfoLocCc ?? null
                             ],
                             [
                                 'contact_id' => $contact_id,
@@ -1147,32 +953,16 @@ class ContactsController extends Controller
                                 'name' => $postalInfoLocName ?? null,
                                 'org' => $postalInfoLocOrg ?? null,
                                 'street1' => $postalInfoLocStreet1 ?? null,
-                                'street2' => $postalInfoLocStreet2 ?? null,
-                                'street3' => $postalInfoLocStreet3 ?? null,
                                 'city' => $postalInfoLocCity ?? null,
                                 'sp' => $postalInfoLocSp ?? null,
                                 'pc' => $postalInfoLocPc ?? null,
-                                'cc' => $postalInfoLocCc ?? null,
-                                'disclose_name_loc' => $disclose_name_loc,
-                                'disclose_org_loc' => $disclose_org_loc,
-                                'disclose_addr_loc' => $disclose_addr_loc
+                                'cc' => $postalInfoLocCc ?? null
                             ]
                         );
                     }
 
                 }
                 
-                $db->update(
-                    'contact_authInfo',
-                    [
-                        'authinfo' => $authInfo_pw
-                    ],
-                    [
-                        'contact_id' => $contact_id,
-                        'authtype' => 'pw'
-                    ]
-                );
-
                 $db->commit();
             } catch (Exception $e) {
                 $db->rollBack();
@@ -1233,31 +1023,8 @@ class ContactsController extends Controller
                     return $response->withHeader('Location', '/contacts')->withStatus(302);
                 }
 
-                $statuses = $db->select('SELECT status FROM contact_status WHERE contact_id = ?', [$contact_id]);
-
-                foreach ($statuses as $status) {
-                    if (preg_match('/.*(UpdateProhibited|DeleteProhibited)$/', $status['status']) || preg_match('/^pending/', $status['status'])) {
-                        $this->container->get('flash')->addMessage('error', 'It has a status that does not allow deletion');
-                        return $response->withHeader('Location', '/contacts')->withStatus(302);
-                    }
-                }
-
                 $db->delete(
                     'contact_postalInfo',
-                    [
-                        'contact_id' => $contact_id
-                    ]
-                );
-                    
-                $db->delete(
-                    'contact_authInfo',
-                    [
-                        'contact_id' => $contact_id
-                    ]
-                );
-                
-                $db->delete(
-                    'contact_status',
                     [
                         'contact_id' => $contact_id
                     ]
