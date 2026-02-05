@@ -442,7 +442,7 @@ class ContactsController extends Controller
             }
 
             if ($contact) {
-                $registrars = $db->selectRow('SELECT id, clid, name FROM registrar WHERE id = ?', [$contact['clid']]);
+                $user_name = $db->selectValue('SELECT username FROM users WHERE id = ?', [$contact['clid']]);
                 $iso3166 = new ISO3166();
                 $countries = $iso3166->all();
 
@@ -454,7 +454,7 @@ class ContactsController extends Controller
                 $responseData = [
                     'contact' => $contact,
                     'contactPostal' => $contactPostal,
-                    'registrars' => $registrars,
+                    'user_name' => $user_name,
                     'countries' => $countries,
                     'currentUri' => $uri
                 ];
@@ -676,7 +676,7 @@ class ContactsController extends Controller
         }
         
     }
-    
+
     public function updateContactProcess(Request $request, Response $response)
     {
         if ($request->getMethod() === 'POST') {
