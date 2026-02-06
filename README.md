@@ -46,6 +46,7 @@ Argora Loom works with a variety of external services through its modular archit
 ### Hosting
 
 - **cPanel/WHM** – *coming soon*
+- **Hestia** – *coming soon*
 
 ### Cloud Infrastructure
 
