@@ -10,60 +10,7 @@
     {% include 'partials/css.twig' %}
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
-    <header>
-      <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-        <div class="container-xl">
-                <a class="navbar-brand d-flex align-items-center" href=".">
-                  <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbar">
-                    <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
-                        <li class="nav-item">
-                            <a {{ is_current_url('index') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('index')}}">
-                                Home
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a {{ is_current_url('contact') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('contact')}}">
-                                Contact
-                            </a>
-                        </li>
-
-                        <li class="nav-item d-none d-lg-block">
-                            <span class="nav-link disabled px-2">|</span>
-                        </li>
-
-                        {% if auth.isLogin %}
-                            <li class="nav-item">
-                                <a {{ is_current_url('home') ? 'class="btn btn-primary me-2"' : 'class="btn btn-primary me-2"' }} href="{{route('home')}}">
-                                    Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a {{ is_current_url('logout') ? 'class="btn btn-outline-primary"' : 'class="btn btn-outline-primary"' }} href="{{route('logout')}}">
-                                    Logout
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a {{ is_current_url('login') ? 'class="btn btn-outline-primary me-2"' : 'class="btn btn-outline-primary me-2"' }} href="{{route('login')}}">
-                                    Login
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a {{ is_current_url('register') ? 'class="btn btn-primary"' : 'class="btn btn-primary"' }} href="{{route('register')}}">
-                                    Register
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
+    {% include 'partials/index-header.twig' %}
 
     <main class="flex-grow-1 py-5">
         <div class="container-xl">

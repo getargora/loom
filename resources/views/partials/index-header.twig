@@ -1,0 +1,62 @@
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+        <div class="container-xl">
+                <a class="navbar-brand d-flex align-items-center" href=".">
+                  <img src="{{ logoPath }}" class="img-fluid" style="height:32px;width:auto;" alt="Loom">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbar">
+                    <ul class="navbar-nav ms-lg-auto text-center text-lg-start">
+                        <li class="nav-item">
+                            <a {{ is_current_url('index') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('index')}}">
+                                Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a {{ is_current_url('contact') ? 'class="nav-link active" aria-current="page"' : 'class="nav-link"' }} href="{{route('contact')}}">
+                                Contact
+                            </a>
+                        </li>
+
+                        <li class="nav-item d-none d-lg-block">
+                            <span class="nav-link disabled px-2">|</span>
+                        </li>
+
+                        {% if auth.isLogin %}
+                          <li class="nav-item d-flex flex-row gap-2 align-items-center ms-lg-2 w-100">
+                            <a class="btn btn-primary w-50 w-lg-auto" href="{{route('home')}}">
+                              Dashboard
+                            </a>
+                            <a class="btn btn-outline-primary w-50 w-lg-auto" href="{{route('logout')}}">
+                              Logout
+                            </a>
+                          </li>
+                        {% else %}
+                          <li class="nav-item d-flex flex-row gap-2 align-items-center ms-lg-2 w-100">
+                            <a class="btn btn-primary w-50 w-lg-auto" href="{{route('login')}}">
+							  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+								<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+								<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"></path>
+								<path d="M20 12h-13l3 -3m0 6l-3 -3"></path>
+							  </svg>
+                              Login
+                            </a>
+                            <a class="btn btn-secondary w-50 w-lg-auto" href="{{route('register')}}">
+							  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+								<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+								<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path>
+								<path d="M16 19h6"></path>
+								<path d="M19 16v6"></path>
+								<path d="M6 21v-2a4 4 0 0 1 4 -4h4"></path>
+							  </svg>
+                              Register
+                            </a>
+                          </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
