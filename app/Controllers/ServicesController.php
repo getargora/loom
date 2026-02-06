@@ -414,15 +414,30 @@ class ServicesController extends Controller
                                 } else {
                                     $messages[] = 'DNSSEC update successful.';
 
-                                    $config['dnssec'] = [
-                                        'enabled' => true,
-                                        'ds_records' => [[
-                                            'keytag' => $data['dsKeyTag'],
-                                            'alg' => $data['dsAlg'],
-                                            'digesttype' => $data['dsDigestType'],
-                                            'digest' => $data['dsDigest'],
-                                        ]]
+                                    $config['dnssec']['enabled'] = true;
+
+                                    if (!isset($config['dnssec']['ds_records']) || !is_array($config['dnssec']['ds_records'])) {
+                                        $config['dnssec']['ds_records'] = [];
+                                    }
+
+                                    $new = [
+                                        'keytag'     => (string)$data['dsKeyTag'],
+                                        'alg'        => (string)$data['dsAlg'],
+                                        'digesttype' => (string)$data['dsDigestType'],
+                                        'digest'     => (string)$data['dsDigest'],
                                     ];
+
+                                    $exists = false;
+                                    foreach ($config['dnssec']['ds_records'] as $r) {
+                                        if (strtoupper(trim((string)($r['digest'] ?? ''))) === $new['digest']) {
+                                            $exists = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!$exists) {
+                                        $config['dnssec']['ds_records'][] = $new;
+                                    }
                                 }
                             }
 
@@ -790,5 +805,119 @@ class ServicesController extends Controller
     public function serviceLogs(Request $request, Response $response): Response
     {
         return view($response, 'admin/services/logs.twig');
+    }
+
+    public function domainDeleteSecdns(Request $request, Response $response, string $service, string $keytag): Response
+    {
+        $db = $this->container->get('db');
+        $keytag = filter_var($keytag, FILTER_SANITIZE_NUMBER_INT);
+        $domain = strtolower(trim((string)($service ?? '')));
+
+        if ($keytag) {
+            if ($domain === '') {
+                $this->container->get('flash')->addMessage('error', 'Missing domain name');
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            $service = $db->selectRow(
+                'SELECT id, user_id, config 
+                 FROM services 
+                 WHERE type = ? AND LOWER(service_name) = ? 
+                 LIMIT 1',
+                ['domain', $domain]
+            );
+
+            if (!$service) {
+                $this->container->get('flash')->addMessage('error', 'Could not load service');
+                return $response->withHeader('Location', '/services')->withStatus(302);
+            }
+
+            $userId = $service['user_id'];
+            $config = json_decode($service['config'] ?? '[]', true);
+            if (!is_array($config)) {
+                $config = [];
+            }
+
+            $messages = [];
+            $keytag = (string)$keytag;
+
+            $ds = null;
+            if (isset($config['dnssec']['ds_records']) && is_array($config['dnssec']['ds_records'])) {
+                foreach ($config['dnssec']['ds_records'] as $r) {
+                    if ((string)($r['keytag'] ?? '') === $keytag) {
+                        $ds = $r;
+                        break;
+                    }
+                }
+            }
+
+            $domains = [$config['domain']];
+            $domainData = getDomainConfig($domains, $db);
+
+            if (empty($domainData) || !isset($domainData[0]['tld'])) {
+                $this->container->get('flash')->addMessage('error', 'Error checking domain');
+                return $response->withHeader('Location', '/services/'.$service['id'].'/edit')->withStatus(302);
+            }
+
+            $registryType = getRegistryExtensionByTld('.'.$domainData[0]['tld']);
+            
+            try {
+                $epp = connectEpp(
+                    $registryType,
+                    $domainData[0]['host'],
+                    $domainData[0]['port'],
+                    $domainData[0]['cafile'] ?? '',
+                    $domainData[0]['cert_file'],
+                    $domainData[0]['key_file'],
+                    $domainData[0]['passphrase'] ?? '',
+                    $domainData[0]['username'],
+                    $domainData[0]['password']
+                );
+
+                if (!$ds) {
+                    $messages[] = 'DNSSEC remove failed: DS record not found in DB config.';
+                } else {
+                    $resp = $epp->domainUpdateDNSSEC([
+                        'domainname'   => $config['domain'],
+                        'command'      => 'rem',
+                        'keyTag_1'     => (int)$ds['keytag'],
+                        'alg_1'        => (int)$ds['alg'],
+                        'digestType_1' => (int)$ds['digesttype'],
+                        'digest_1'     => (string)$ds['digest'],
+                    ]);
+
+                    if (!empty($resp['error'])) {
+                        $messages[] = 'DNSSEC remove failed: ' . $resp['error'];
+                    } else {
+                        $messages[] = 'DNSSEC DS record removed.';
+
+                        $config['dnssec']['ds_records'] = array_values(array_filter(
+                            $config['dnssec']['ds_records'],
+                            fn($r) => (string)($r['keytag'] ?? '') !== $keytag
+                        ));
+
+                        if (empty($config['dnssec']['ds_records'])) {
+                            $config['dnssec']['enabled'] = false;
+                        }
+
+                        $db->update(
+                            'services',
+                            ['config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)],
+                            ['id' => $service['id']]
+                        );
+                    }
+                }
+
+                $epp->logout();
+
+                $this->container->get('flash')->addMessage('success', implode(' ', $messages));
+                return $response->withHeader('Location', "/services/{$service['id']}/edit")->withStatus(302);
+            } catch (\Throwable $e) {
+                $this->container->get('flash')->addMessage('error', 'EPP error: ' . $e->getMessage());
+                return $response->withHeader('Location', "/services/{$service['id']}/edit")->withStatus(302);
+            }
+        } else {
+            return $response->withHeader('Location', '/services')->withStatus(302);
+        }
     }
 }
