@@ -49,6 +49,7 @@ Argora Loom works with a variety of external services through its modular archit
 
 ### Cloud Infrastructure
 
+- **Contabo** – *coming soon*
 - **Hetzner** – *coming soon*
 - **Vultr** – *coming soon*
 
