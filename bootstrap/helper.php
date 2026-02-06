@@ -1113,7 +1113,12 @@ function fetchContactByIdentifier(\Pinga\Db\PdoDatabase $db, string $identifier)
     $p = $db->selectRow(
         "SELECT * FROM contact_postalInfo 
          WHERE contact_id = ? AND type IN ('int','loc')
-         ORDER BY FIELD(type,'int','loc') LIMIT 1",
+         ORDER BY CASE type
+             WHEN 'int' THEN 1
+             WHEN 'loc' THEN 2
+             ELSE 3
+         END
+         LIMIT 1",
         [$c['id']]
     ) ?? [];
 
