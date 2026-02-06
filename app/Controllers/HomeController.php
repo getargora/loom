@@ -243,21 +243,35 @@ class HomeController extends Controller
 
             if ($type === 'whois') {
                 $output = '';
-                $socket = fsockopen($whoisServer, 43, $errno, $errstr, 30);
 
-                if (!$socket) {
-                    $payload = ['error' => 'Error fetching WHOIS data.'];
-                    $response->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-                    return $response
-                        ->withHeader('Content-Type', 'application/json; charset=utf-8')
-                        ->withStatus(200);
+                if (
+                    empty($whoisServer)
+                    || !filter_var($whoisServer, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)
+                    || str_contains($whoisServer, 'example.com')
+                ) {
+                    return $this->jsonError($response, 'WHOIS service is not configured.');
                 }
-                    
-                fwrite($socket, $domain . "\r\n");
-                while (!feof($socket)) {
-                    $output .= fgets($socket);
+
+                try {
+                    $socket = @fsockopen($whoisServer, 43, $errno, $errstr, 10);
+
+                    if (!$socket) {
+                        return $this->jsonError($response, 'WHOIS service is unavailable.');
+                    }
+
+                    fwrite($socket, $domain . "\r\n");
+
+                    while (!feof($socket)) {
+                        $output .= fgets($socket, 1024);
+                    }
+
+                    fclose($socket);
+
+                } catch (\Throwable $e) {
+                    error_log('WHOIS error: ' . $e->getMessage());
+
+                    return $this->jsonError($response, 'WHOIS lookup is currently disabled.');
                 }
-                fclose($socket);
             } elseif ($type === 'rdap') {
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $rdapServer . $domain);
@@ -580,4 +594,19 @@ class HomeController extends Controller
         $response->getBody()->write(json_encode($result));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
+
+    private function jsonError(Response $response, string $message): Response
+    {
+        $payload = ['error' => $message];
+
+        $response->getBody()->write(json_encode(
+            $payload,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        ));
+
+        return $response
+            ->withHeader('Content-Type', 'application/json; charset=utf-8')
+            ->withStatus(200);
+    }
+
 }

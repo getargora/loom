@@ -25,16 +25,16 @@
         <div class="container-xl">
           <h1 class="display-5 fw-bold text-center mb-4">Domain Lookup</h1>
             <div class="row">
-                <article class="span12 data-block">
-                    <div class="data-container">
-                        <section>
-                            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row g-2 mb-3 align-items-stretch">
                               <div class="col-12 col-md-8">
                                 <input type="text" class="form-control form-control-lg" id="domainInput" placeholder="Enter Domain Name" autocapitalize="none">
                               </div>
-                              <div class="col-12 col-md-4 mt-3 mt-md-0 d-flex flex-column flex-md-row justify-content-center justify-content-md-end text-center">
-                                <button class="btn btn-info btn-lg mb-2 mb-md-0 w-100 me-md-2" id="whoisButton">WHOIS</button>
-                                <button class="btn btn-info btn-lg mb-2 mb-md-0 w-100" id="rdapButton">RDAP</button>
+                              <div class="col-12 col-md-4 d-flex gap-2">
+                                <button class="btn btn-info btn-lg flex-fill" id="whoisButton">WHOIS</button>
+                                <button class="btn btn-info btn-lg flex-fill" id="rdapButton">RDAP</button>
                               </div>
                             </div>
                             <div class="row" id="bottom">
@@ -43,9 +43,9 @@
                                 <p id="contact"></p>
                               </div>
                             </div>
-                        </section>
+                        </div>
                     </div>
-                </article>
+                </div>
             </div>
           
           <div class="text-center mt-5">
@@ -53,7 +53,7 @@
                <div class="alert-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />        </svg>
                </div>
-                 <h4 class="alert-title">To customize this page, copy <code>contact.twig</code> from <code>resources/views</code> to <code>contact.custom.twig</code> and edit the file as required.</h4>
+                 <h4 class="alert-title">To customize this page, copy <code>whois.twig</code> from <code>resources/views</code> to <code>whois.custom.twig</code> and edit the file as required.</h4>
                  <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
             </div>
           </div>
