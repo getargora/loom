@@ -392,18 +392,18 @@ class ServicesController extends Controller
                             }
 
                             if (
-                                !empty($data['ds_keytag']) &&
-                                !empty($data['ds_alg']) &&
-                                !empty($data['ds_digesttype']) &&
-                                !empty($data['ds_digest'])
+                                !empty($data['dsKeyTag']) &&
+                                !empty($data['dsAlg']) &&
+                                !empty($data['dsDigestType']) &&
+                                !empty($data['dsDigest'])
                             ) {
                                 $dnssecParams = [
                                     'domainname' => $config['domain'],
                                     'command' => 'add',
-                                    'keyTag_1' => $data['ds_keytag'],
-                                    'alg_1' => $data['ds_alg'],
-                                    'digestType_1' => $data['ds_digesttype'],
-                                    'digest_1' => $data['ds_digest'],
+                                    'keyTag_1' => $data['dsKeyTag'],
+                                    'alg_1' => $data['dsAlg'],
+                                    'digestType_1' => $data['dsDigestType'],
+                                    'digest_1' => $data['dsDigest'],
                                 ];
 
                                 $domainUpdateDNSSEC = $epp->domainUpdateDNSSEC($dnssecParams);
@@ -417,10 +417,10 @@ class ServicesController extends Controller
                                     $config['dnssec'] = [
                                         'enabled' => true,
                                         'ds_records' => [[
-                                            'keytag' => $data['ds_keytag'],
-                                            'alg' => $data['ds_alg'],
-                                            'digesttype' => $data['ds_digesttype'],
-                                            'digest' => $data['ds_digest'],
+                                            'keytag' => $data['dsKeyTag'],
+                                            'alg' => $data['dsAlg'],
+                                            'digesttype' => $data['dsDigestType'],
+                                            'digest' => $data['dsDigest'],
                                         ]]
                                     ];
                                 }

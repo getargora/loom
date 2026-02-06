@@ -230,32 +230,26 @@
                           </div>
                         <div class="row">
                           <div class="col-md-12">
-                            <div class="mb-3 mt-2 form-check">
-                              <input type="checkbox" class="form-check-input" id="addDnssec" name="addDnssec">
-                              <label class="form-check-label" for="addDnssec">{{ __('Enable DNSSEC') }}</label>
-                            </div>
-                          </div>
-                          <div id="dnssecData" style="display: none;">
-                            <div class="row mb-3">
-                              <label for="dsKeyTag" class="form-label">{{ __('DS Record') }}</label>
+                            <div class="row mb-3 mt-2">
+                              <label for="dsKeyTag" class="form-label">{{ __('Add DS Record') }}</label>
                               <div class="col-sm-4 col-md-4">
                                 <input type="text" class="form-control mb-2" placeholder="{{ __('Key Tag') }}" name="dsKeyTag" id="dsKeyTag">
                               </div>
                               <div class="col-sm-4 col-md-4">
                                 <select class="form-select mb-2" name="dsAlg">
                                   <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
-                                  <option value="8">RSA/SHA-256</option>
-                                  <option value="13">ECDSA Curve P-256 with SHA-256</option>
-                                  <option value="14">ECDSA Curve P-384 with SHA-384</option>
-                                  <option value="15">Ed25519</option>
-                                  <option value="16">Ed448</option>
+                                  <option value="8">RSA/SHA-256 (8)</option>
+                                  <option value="13">ECDSA Curve P-256 with SHA-256 (13)</option>
+                                  <option value="14">ECDSA Curve P-384 with SHA-384 (14)</option>
+                                  <option value="15">Ed25519 (15)</option>
+                                  <option value="16">Ed448 (16)</option>
                                 </select>
                               </div>
                               <div class="col-sm-4 col-md-4">
                                 <select class="form-select mb-2" name="dsDigestType">
                                   <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
-                                  <option value="2">SHA-256</option>
-                                  <option value="4">SHA-384</option>
+                                  <option value="2">SHA-256 (2)</option>
+                                  <option value="4">SHA-384 (4)</option>
                                 </select>
                               </div>
                               <div class="col-sm-12 col-md-12">
@@ -282,18 +276,18 @@
                               <div class="col-sm-4 col-md-4">
                                 <select class="form-select mb-2" name="dsAlg">
                                   <option value="" disabled selected>{{ __('Select Algorithm') }}</option>
-                                  <option value="8">RSA/SHA-256</option>
-                                  <option value="13">ECDSA Curve P-256 with SHA-256</option>
-                                  <option value="14">ECDSA Curve P-384 with SHA-384</option>
-                                  <option value="15">Ed25519</option>
-                                  <option value="16">Ed448</option>
+                                  <option value="8">RSA/SHA-256 (8)</option>
+                                  <option value="13">ECDSA Curve P-256 with SHA-256 (13)</option>
+                                  <option value="14">ECDSA Curve P-384 with SHA-384 (14)</option>
+                                  <option value="15">Ed25519 (15)</option>
+                                  <option value="16">Ed448 (16)</option>
                                 </select>
                               </div>
                               <div class="col-sm-4 col-md-4">
                                 <select class="form-select mb-2" name="dsDigestType">
                                   <option value="" disabled selected>{{ __('Select Digest Type') }}</option>
-                                  <option value="2">SHA-256</option>
-                                  <option value="4">SHA-384</option>
+                                  <option value="2">SHA-256 (2)</option>
+                                  <option value="4">SHA-384 (4)</option>
                                 </select>
                               </div>
                               <div class="col-sm-12 col-md-12">
