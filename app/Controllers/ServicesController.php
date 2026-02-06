@@ -158,7 +158,11 @@ class ServicesController extends Controller
                             $newRegistrant = trim((string)($data['contact_registrant'] ?? ''));
                             $oldRegistrant = (string)($config['contacts']['registrant']['registry_id'] ?? '');
 
-                            if ($newRegistrant !== '' && strcasecmp($newRegistrant, $oldRegistrant) !== 0) {
+                            if (
+                                $newRegistrant !== ''
+                                && strcasecmp($newRegistrant, 'OWNER') !== 0
+                                && strcasecmp($newRegistrant, $oldRegistrant) !== 0
+                            ) {
                                 $resp = $epp->domainUpdateContact([
                                     'domainname' => $config['domain'],
                                     'contacttype' => 'registrant',
@@ -212,6 +216,7 @@ class ServicesController extends Controller
                             }
 
                             $hasNs = false;
+                            $needsGlue = false;
                             for ($i = 1; $i <= 13; $i++) {
                                 if (!empty($params['ns' . $i])) {
                                     $hasNs = true;
@@ -228,6 +233,14 @@ class ServicesController extends Controller
                                             $params['nss'][] = ['hostName' => $value];
                                         }
                                     }
+                                }
+
+                                if ($needsGlue) {
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        unset($params['ns' . $i]);
+                                    }
+                                } else {
+                                    unset($params['nss']);
                                 }
 
                                 $domainUpdateNS = $epp->domainUpdateNS($params);
@@ -268,11 +281,12 @@ class ServicesController extends Controller
                                         if (empty($ips)) {
                                             $db->insert('service_logs', [
                                                 'service_id' => $args,
-                                                'event'      => 'host_create_skipped',
+                                                'event'      => 'host_create_skipped_no_ip',
                                                 'actor_type' => 'system',
                                                 'actor_id'   => $_SESSION["auth_user_id"],
-                                                'details'    => $config['domain'] . '|No A/AAAA records for ' . $host,
+                                                'details'    => $config['domain'] . '|' . $host . '|No A/AAAA records',
                                             ]);
+                                            $hostsCreated = true;
                                             continue;
                                         }
 
@@ -281,6 +295,7 @@ class ServicesController extends Controller
 
                                         if ($tld !== '' && str_ends_with(strtolower($host), '.' . $tld)) {
                                             $includeIP = true;
+                                            $needsGlue = true;
                                         }
 
                                         if ($includeIP && !empty($ips)) {
@@ -297,6 +312,20 @@ class ServicesController extends Controller
                                         $hostCreate = $epp->hostCreate($hostParams);
 
                                         if (array_key_exists('error', $hostCreate)) {
+                                            if (stripos($hostCreate['error'], 'exist') !== false) {
+                                                $hostsCreated = true;
+
+                                                $db->insert('service_logs', [
+                                                    'service_id' => $args,
+                                                    'event'      => 'host_already_exists',
+                                                    'actor_type' => 'system',
+                                                    'actor_id'   => $_SESSION["auth_user_id"],
+                                                    'details'    => $config['domain'] . '|' . $host . '|Host already exists',
+                                                ]);
+
+                                                continue;
+                                            }
+
                                             $db->insert('service_logs', [
                                                 'service_id' => $args,
                                                 'event'      => 'host_create_failed',
@@ -318,6 +347,14 @@ class ServicesController extends Controller
 
                                     // Retry once if we created at least one host
                                     if ($hostsCreated) {
+                                        if ($needsGlue) {
+                                            for ($i = 1; $i <= 13; $i++) {
+                                                unset($params['ns' . $i]);
+                                            }
+                                        } else {
+                                            unset($params['nss']);
+                                        }
+
                                         $domainUpdateNS = $epp->domainUpdateNS($params);
 
                                         if (array_key_exists('error', $domainUpdateNS)) {
@@ -411,6 +448,9 @@ class ServicesController extends Controller
                                     $type = 'error';
                                     break;
                                 }
+                            }
+                            if (empty($messages)) {
+                                $messages[] = 'Domain updated successfully.';
                             }
 
                             $epp->logout();
