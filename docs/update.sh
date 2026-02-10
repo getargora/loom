@@ -144,6 +144,16 @@ composer_update "$loom_path"
 
 wget "http://www.adminer.org/latest.php" -O /usr/share/adminer/latest.php
 
+if ! grep -q "^IANA_ID=" "$env_file"; then
+  cat >> "$env_file" <<EOF
+
+# ICANN MoSAPI Configuration
+IANA_ID=YOUR_IANA_ID
+MOSAPI_USERNAME=YOUR_RR_USERNAME
+MOSAPI_PASSWORD=YOUR_RR_PASSWORD
+EOF
+fi
+
 # Start services
 echo "Starting services..."
 systemctl start caddy

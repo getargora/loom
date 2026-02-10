@@ -1,0 +1,224 @@
+{% extends "layouts/app.twig" %}
+
+{% block title %}{{ __('ICANN MoSAPI Monitor') }}{% endblock %}
+
+{% block content %}
+      <div class="page-wrapper">
+        <!-- Page header -->
+        <div class="page-header d-print-none">
+          <div class="container-xl">
+            <div class="row g-2 align-items-center">
+              <div class="col">
+                <div class="mb-1">
+                  <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                      <a href="{{route('home')}}"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="5 12 3 12 12 3 21 12 19 12" /><path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8" /><rect x="10" y="12" width="4" height="4" /></svg></a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                      {{ __('ICANN MoSAPI Monitor') }}
+                    </li>
+                  </ol>
+                </div>
+                <h2 class="page-title">
+                  {{ __('ICANN MoSAPI Monitor') }}
+                </h2>
+              </div>
+              <!-- Page title actions -->
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  <a href="/mosapi/refresh" class="btn btn-primary d-none d-sm-inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                    {{ __('Refresh now') }}
+                  </a>
+                  <a href="/mosapi/refresh" class="btn btn-primary d-sm-none btn-icon" aria-label="{{ __('Refresh now') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Page body -->
+        <div class="page-body">
+          <div class="container-xl">
+            {% if error %}
+              <div class="alert alert-danger">
+                <strong>{{ __('Error:') }}</strong> {{ error }}
+              </div>
+            {% endif %}
+
+            {% if data and data.meta %}
+              <div class="alert alert-info">
+                <strong>{{ __('Cache:') }}</strong> {{ data.meta.cache|default('unknown') }}
+                {% if data.meta.fetched_at %} | <strong>{{ __('Fetched:') }}</strong> {{ data.meta.fetched_at }}{% endif %}
+              </div>
+            {% endif %}
+            <div class="col-12">
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <h3 class="card-title mb-0">{{ __('Registrar State') }}</h3>
+                  </div>
+                  <div class="card-body">
+
+                    {% if not data %}
+                      <div class="text-muted">{{ __('No data yet.') }}</div>
+                    {% else %}
+                      {% set state = data.state %}
+
+                      <table class="table table-striped">
+                        <tr>
+                          <th style="width:220px;">{{ __('Registrar') }}</th>
+                          <td>{{ (state.tld ?? state.registrarID ?? 'N/A')|e }}</td>
+                        </tr>
+                        <tr>
+                          <th>{{ __('Status') }}</th>
+                          <td>{{ (state.status ?? 'Unknown')|e }}</td>
+                        </tr>
+                        <tr>
+                          <th>{{ __('Updated') }}</th>
+                          <td>
+                            {% if state.lastUpdateApiDatabase is defined and state.lastUpdateApiDatabase %}
+                              {{ state.lastUpdateApiDatabase|date('Y-m-d H:i:s') }}
+                            {% else %}
+                              N/A
+                            {% endif %}
+                          </td>
+                        </tr>
+                      </table>
+
+                      <h4 class="mt-4">{{ __('Tested Services') }}</h4>
+
+                      <table class="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>{{ __('Service') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Emergency Threshold') }}</th>
+                            <th>{{ __('Incidents') }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% if state.testedServices is defined and state.testedServices %}
+                            {% for name, svc in state.testedServices %}
+                              <tr>
+                                <td>{{ name|e }}</td>
+                                <td>{{ (svc.status ?? 'Unknown')|e }}</td>
+                                <td>
+                                  {% if svc.emergencyThreshold is defined and svc.emergencyThreshold is not null %}
+                                    {{ svc.emergencyThreshold }}%
+                                  {% else %}
+                                    0%
+                                  {% endif %}
+                                </td>
+                                <td>
+                                  {% if svc.incidents is defined and svc.incidents %}
+                                    {% for inc in svc.incidents %}
+                                      <div class="mb-2">
+                                        <strong>{{ inc.incidentID|default('N/A')|e }}</strong>:
+                                        {{ inc.state|default('Unknown')|e }}<br>
+                                        <small class="text-muted">
+                                          since {{ inc.startTime|date('Y-m-d H:i:s') }}
+                                          (end:
+                                          {% if inc.endTime %}
+                                            {{ inc.endTime|date('Y-m-d H:i:s') }}
+                                          {% else %}
+                                            Active
+                                          {% endif %}
+                                          )
+                                        </small>
+                                      </div>
+                                      {% if not loop.last %}<hr class="my-2">{% endif %}
+                                    {% endfor %}
+                                  {% else %}
+                                    <span class="text-muted">{{ __('None') }}</span>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          {% else %}
+                            <tr><td colspan="4" class="text-muted">{{ __('No testedServices data found.') }}</td></tr>
+                          {% endif %}
+                        </tbody>
+                      </table>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title mb-0">{{ __('Domain METRICA (latest)') }}</h3>
+                  </div>
+                  <div class="card-body">
+
+                    {% if not data %}
+                      <div class="text-muted">{{ __('No data yet.') }}</div>
+                    {% else %}
+                      {% set m = data.metrica %}
+
+                      <table class="table table-striped">
+                        <tr>
+                          <th style="width:220px;">{{ __('Report Date') }}</th>
+                          <td>{{ (m.domainListDate ?? 'N/A')|e }}</td>
+                        </tr>
+                        <tr>
+                          <th>{{ __('IANA ID') }}</th>
+                          <td>{{ (m.ianaId ?? 'N/A')|e }}</td>
+                        </tr>
+                        <tr>
+                          <th>{{ __('Unique Abuses') }}</th>
+                          <td>{{ (m.uniqueAbuseDomains ?? 'N/A')|e }}</td>
+                        </tr>
+                      </table>
+
+                      <h4 class="mt-4">{{ __('Threat Types') }}</h4>
+                      <table class="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>{{ __('Threat') }}</th>
+                            <th>{{ __('Count') }}</th>
+                            <th>{{ __('Domains') }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% if m.domainListData is defined and m.domainListData %}
+                            {% for entry in m.domainListData %}
+                              <tr>
+                                <td>{{ (entry.threatType ?? 'Unknown')|e }}</td>
+                                <td>
+                                  {% if entry.count is defined and entry.count >= 0 %}
+                                    {{ entry.count }}
+                                  {% else %}
+                                    N/A
+                                  {% endif %}
+                                </td>
+                                <td>
+                                  {% if cfg.show_domains %}
+                                    {% if entry.domains is defined and entry.domains %}
+                                      <div style="max-height:220px; overflow:auto;" class="border rounded p-2">
+                                        {% for d in entry.domains %}
+                                          {{ d|e }}<br>
+                                        {% endfor %}
+                                      </div>
+                                    {% else %}
+                                      <span class="text-muted">{{ __('None') }}</span>
+                                    {% endif %}
+                                  {% else %}
+                                    <span class="text-muted">{{ __('Hidden') }}</span>
+                                  {% endif %}
+                                </td>
+                              </tr>
+                            {% endfor %}
+                          {% else %}
+                            <tr><td colspan="3" class="text-muted">{{ __('No domainListData found.') }}</td></tr>
+                          {% endif %}
+                        </tbody>
+                      </table>
+
+                    {% endif %}
+                  </div>
+                </div>
+            </div>
+          </div>
+        </div>
+        {% include 'partials/footer.twig' %}
+      </div>
+{% endblock %}

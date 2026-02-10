@@ -22,6 +22,7 @@ use App\Controllers\ServicesController;
 use App\Controllers\ContactsController;
 use App\Controllers\ProvidersController;
 use App\Controllers\SupportController;
+use App\Controllers\MosapiController;
 use App\Controllers\SparkController;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\GuestMiddleware;
@@ -152,6 +153,9 @@ $app->group('', function ($route) {
     $route->get('/lang', HomeController::class .':lang')->setName('lang');
     $route->get('/logout', AuthController::class . ':logout')->setName('logout');
     $route->post('/change-password', PasswordController::class . ':changePassword')->setName('change.password');
+
+    $route->get('/mosapi', MosapiController::class .':mosapi')->setName('mosapi');
+    $route->get('/mosapi/refresh', MosapiController::class .':mosapiRefresh')->setName('mosapiRefresh');
 
     $route->get('/spark/orders', [SparkController::class, 'listOrders']);
     $route->get('/spark/transactions', [SparkController::class, 'listTransactions']);

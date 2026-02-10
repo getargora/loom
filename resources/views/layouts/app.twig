@@ -53,6 +53,7 @@
               </a>
               <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                 <a href="{{route('profile')}}" class="dropdown-item">{{ __('My Profile') }}</a>
+                {% if roles == 0 %}<a href="{{route('mosapi')}}" class="dropdown-item">{{ __('MoSAPI Monitor') }}</a>{% endif %}
                 {% if isAdminImpersonation %}<a href="{{ route('leave_impersonation') }}" class="dropdown-item">{{ __('Leave Impersonation') }}</a>{% endif %}
                 <a href="{{route('logout')}}" class="dropdown-item">{{ __('Logout') }}</a>
               </div>
